@@ -1,0 +1,24 @@
+services:
+  alma-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "9010:9010"
+    volumes:
+      - ./data:/app/data
+      - /usr/bin:/host/usr/bin:ro
+      - /opt:/host/opt:ro
+    environment:
+      ALMA_BRIDGE_SANDBOX_ENABLED: "true"
+      ALMA_BRIDGE_API_HOST: "0.0.0.0"
+      ALMA_BRIDGE_API_PORT: "9010"
+    depends_on:
+      - sandbox
+
+  sandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: alma-bridge-sandbox:latest
+    command: ["sleep", "infinity"]

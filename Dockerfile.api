@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY alma_bridge ./alma_bridge
+
+ENV ALMA_BRIDGE_DATA_DIR=/app/data
+ENV ALMA_BRIDGE_DB_PATH=/app/data/outcomes.db
+ENV ALMA_BRIDGE_API_HOST=0.0.0.0
+ENV ALMA_BRIDGE_API_PORT=9010
+
+EXPOSE 9010
+
+CMD ["python", "-m", "alma_bridge.main"]
