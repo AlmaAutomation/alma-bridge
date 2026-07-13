@@ -50,7 +50,7 @@ Secret scan on pending files: no credentials, tokens, or key material detected.
 | Size | 226832384 | 226832384 |
 | PE linker date | Apr 28 2026 | Apr 28 2026 |
 | Imported DLLs | Same set | Same set |
-| `app.asar` SHA-256 | `c6cd21f4…` (15277305 B) | `d4e8b1a2…` (15277307 B) |
+| `app.asar` SHA-256 | `c6cd21f4…` (15277305 B) | `2182e27d…` (15277307 B) |
 | Sidecar/wrapper hashes | Differ | Differ |
 
 **Classification: A — different application build** (same size/name, not mergeable identities).
