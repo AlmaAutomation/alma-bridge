@@ -38,8 +38,11 @@ END_TS=$(date +%s)
 RUNTIME_SEC=$((END_TS - START_TS))
 PASS_LINE="$(grep -E '^[0-9]+ passed' data/validation/logs/pilot-001/test-baseline-${TS}.log | tail -1)"
 PASS_COUNT="$(echo "$PASS_LINE" | awk '{print $1}')"
-FAIL_COUNT="$(echo "$PASS_LINE" | awk '{print $4}' | tr -d ',')"
-FAIL_COUNT="${FAIL_COUNT:-0}"
+if echo "$PASS_LINE" | grep -qE '[0-9]+ failed'; then
+  FAIL_COUNT="$(echo "$PASS_LINE" | sed -n 's/.*\([0-9][0-9]*\) failed.*/\1/p')"
+else
+  FAIL_COUNT=0
+fi
 if [ "${PASS_COUNT:-0}" -lt 505 ] || [ "${FAIL_COUNT:-0}" -gt 0 ]; then
   echo "BLOCKER: Test baseline not met (passed=${PASS_COUNT:-0}, failed=${FAIL_COUNT:-0})"
   exit 1
