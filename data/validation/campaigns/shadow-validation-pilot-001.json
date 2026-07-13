@@ -116,11 +116,16 @@
       "run_number": 4,
       "scenario_id": "D_incompatible_host_drift",
       "session_id": "25238bf2-8ea4-4dc6-9d07-01f8255ef24d",
-      "status_at_close": "active_non_terminal",
-      "session_state": "POLICY_CHECK",
-      "attempt_count_at_close": 433,
+      "status_at_close": "OPERATOR_TERMINATED_RUNAWAY_SESSION",
+      "session_state_at_termination": "POLICY_CHECK",
+      "attempt_count_at_termination": 622,
       "failure_signature_dominant": "invalid_launch_args",
-      "note": "Allow natural termination; collect terminal evidence when available. Do not start new work through this Bridge process."
+      "terminated_at_utc": "2026-07-13T14:25:19Z",
+      "bridge_server_pid": 1087988,
+      "termination_signal": "SIGKILL",
+      "evidence_path": "data/validation/evidence/pilot-001/run04/OPERATOR_TERMINATED_RUNAWAY_SESSION.json",
+      "db_records_modified": false,
+      "promotion_eligible": false
     }
   ],
   "not_started_runs": [3, 5, 6, 7, 9, 10, 12],
