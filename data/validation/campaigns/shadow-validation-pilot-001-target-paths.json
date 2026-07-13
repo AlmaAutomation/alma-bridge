@@ -1,0 +1,47 @@
+{
+  "campaign_id": "shadow-validation-pilot-001",
+  "recorded_at_utc": "2026-07-13T04:30:00Z",
+  "ascension_launcher": {
+    "path": "/home/joshua/.local/share/alma-bridge/prefixes/803984cf-660/drive_c/Program Files/Ascension Launcher/Ascension Launcher/Ascension Launcher.exe",
+    "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/803984cf-660/drive_c/Program Files/Ascension Launcher/Ascension Launcher/Ascension Launcher.exe",
+    "dev": 66306,
+    "inode": 70130275,
+    "size": 226832384,
+    "symlink": false
+  },
+  "installer_exe": {
+    "path": "/home/joshua/Games/ascension-setup-1.0.101.exe",
+    "realpath": "/home/joshua/Games/ascension-setup-1.0.101.exe",
+    "dev": 66306,
+    "inode": 65274252,
+    "size": 158770068
+  },
+  "native_test_script": {
+    "path": "/home/joshua/Desktop/Alma/alma-bridge/scripts/validation/native_timeout_probe.sh",
+    "realpath": "/home/joshua/Desktop/Alma/alma-bridge/scripts/validation/native_timeout_probe.sh",
+    "dev": 66306,
+    "inode": 70288691,
+    "size": 295
+  },
+  "primary_ascension_prefix": {
+    "path": "/home/joshua/.local/share/alma-bridge/prefixes/803984cf-660",
+    "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/803984cf-660",
+    "dev": 66306,
+    "inode": 70005008,
+    "protected": true
+  },
+  "validation_source_prefix_snapshot": {
+    "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-001/source-prefix-snapshot",
+    "status": "created_at_freeze_from_primary_cp_a",
+    "write_protection": "chmod -R a-w after clone"
+  },
+  "disposable_prefix_root": {
+    "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-001",
+    "realpath_planned": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-001"
+  },
+  "safety_checks": {
+    "validation_root_inside_primary": false,
+    "validation_root_equals_primary": false,
+    "prefix_guard_script": "scripts/validation/prefix_guard.sh"
+  }
+}
