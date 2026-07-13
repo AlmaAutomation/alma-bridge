@@ -28,7 +28,8 @@ MANIFEST_HASH="$(sha256_file "$MANIFEST")"
 CSV_HASH="$(sha256_file "$REPO/data/validation/campaigns/${CAMPAIGN_ID}-runs.csv")"
 CMD_HASH="$(sha256_file "$REPO/data/validation/campaigns/${CAMPAIGN_ID}-commands.md")"
 SCENARIO_HASH="$(sha256_file "$REPO/data/validation/shadow_scenario_manifest_v1.json")"
-COMMIT_HASH="$(git rev-parse HEAD:.)"
+COMMIT_HASH="$(git rev-parse HEAD)"
+COMMIT_TREE_HASH="$(git rev-parse 'HEAD^{tree}')"
 
 echo "=== 3. Test suite (>=505 passed, 0 failed) ==="
 START_TS=$(date +%s)
@@ -98,7 +99,8 @@ manifest.update({
         "runs_csv_sha256": "$CSV_HASH",
         "commands_md_sha256": "$CMD_HASH",
         "scenario_manifest_sha256": "$SCENARIO_HASH",
-        "git_commit_tree_sha256": "$COMMIT_HASH",
+        "git_commit_sha": "$COMMIT_HASH",
+        "git_commit_tree_sha256": "$COMMIT_TREE_HASH",
         "db_backup_sha256": "$DB_BACKUP_HASH",
         "source_prefix_snapshot_aggregate_sha256": "$SOURCE_SNAPSHOT_HASH",
     },
@@ -131,7 +133,8 @@ cat > "$FREEZE_RECORD" <<EOF
     "runs_csv_sha256": "${CSV_HASH}",
     "commands_md_sha256": "${CMD_HASH}",
     "scenario_manifest_sha256": "${SCENARIO_HASH}",
-    "git_commit_tree_sha256": "${COMMIT_HASH}",
+    "git_commit_sha": "${COMMIT_HASH}",
+    "git_commit_tree_sha256": "${COMMIT_TREE_HASH}",
     "db_backup_sha256": "${DB_BACKUP_HASH}",
     "source_prefix_snapshot_aggregate_sha256": "${SOURCE_SNAPSHOT_HASH}"
   }
