@@ -141,8 +141,8 @@ def ascension_main_launcher_path(wine_prefix: str) -> Optional[str]:
         / "drive_c/Program Files/Ascension Launcher"
     )
     candidates = [
-        base / "Ascension Launcher.exe",
         base / "Ascension Launcher/Ascension Launcher.exe",
+        base / "Ascension Launcher.exe",
     ]
     for launcher in candidates:
         if launcher.is_file() and launcher.stat().st_size > 500_000:

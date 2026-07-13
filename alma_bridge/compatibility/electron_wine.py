@@ -168,6 +168,14 @@ def launcher_exe_name(app_file: str, resources: Path) -> str:
     return "Ascension Launcher.exe"
 
 
+def _wine_prefix_from_app_file(app_file: str) -> Optional[str]:
+    path = Path(app_file).expanduser()
+    for parent in path.parents:
+        if parent.name == "drive_c":
+            return str(parent.parent)
+    return None
+
+
 def prepare_electron_wine(app_file: str) -> Dict[str, object]:
     """Build+install the Electron-on-Wine workarounds for the given app.
 
@@ -184,6 +192,14 @@ def prepare_electron_wine(app_file: str) -> Dict[str, object]:
     if not resources:
         report["actions"].append({"status": "skipped", "reason": "no Electron resources dir"})
         return report
+    if "ascension" in app_file.lower():
+        from alma_bridge.compatibility.ascension_layout import quarantine_stale_ascension_flat_layout
+
+        wine_prefix = _wine_prefix_from_app_file(app_file)
+        if wine_prefix:
+            report["actions"].append(
+                quarantine_stale_ascension_flat_layout(wine_prefix, app_file)
+            )
     name = launcher_exe_name(app_file, resources)
     report["launcher_exe_name"] = name
     report["actions"].append(install_elevate_passthrough(resources))
