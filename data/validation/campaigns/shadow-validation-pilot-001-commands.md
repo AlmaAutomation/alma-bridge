@@ -1,33 +1,22 @@
 # Pilot-001 Execution Commands
 
-Replace placeholders before each run. Do **not** execute until campaign baseline is frozen and approved.
+Source `scripts/validation/pilot_env.sh` before every run. Mutating scenarios must pass `prefix_guard.sh`.
 
-## Placeholders
-
-| Token | Set to |
-|---|---|
-| `REPO` | `/home/joshua/Desktop/Alma/alma-bridge` |
-| `ASCENSION_LAUNCHER` | Verified Ascension launcher `.exe` path |
-| `INSTALLER_EXE` | Disposable Windows installer `.exe` |
-| `NATIVE_SCRIPT` | Executable `.sh` test binary |
-| `SOURCE_PREFIX` | Read-only source prefix to clone (not production Ascension) |
-| `PILOT_PREFIX` | `$HOME/.local/share/alma-bridge/prefixes/validation/pilot-001/run-NN` |
-| `OPERATOR` | Your operator id |
-| `API` | `http://127.0.0.1:9010` |
+```bash
+source /home/joshua/Desktop/Alma/alma-bridge/scripts/validation/pilot_env.sh
+cd "$REPO"
+```
 
 ---
 
 ## Run 1 — A_stable_repeat_success
 
-**Prerequisites:** Profile exists for Ascension launcher hash; flags on.
+**Prerequisites:** Profile may be seeded by this run; primary prefix read-only.
 
 ```bash
-cd $REPO
-export ALMA_BRIDGE_COMPATIBILITY_PROFILES_ENABLED=true
-export ALMA_BRIDGE_COMPATIBILITY_PROFILE_CREATION_ENABLED=true
-export ALMA_BRIDGE_COMPATIBILITY_PROFILE_SHADOW_MODE=true
-export ALMA_BRIDGE_COMPATIBILITY_PROFILE_REUSE_ENABLED=false
-export WINEPREFIX="<validated_prefix_same_as_profile_source>"
+source "$REPO/scripts/validation/pilot_env.sh"
+cd "$REPO"
+export WINEPREFIX="$PRIMARY_PREFIX"
 
 curl -s -X POST $API/bridge/run -H 'Content-Type: application/json' -d "$(jq -n \
   --arg fp "$ASCENSION_LAUNCHER" --arg wp "$WINEPREFIX" \
@@ -215,11 +204,14 @@ alma-bridge-shadow-validation add-label --shadow-event-id "$(sqlite3 data/outcom
 
 ## Run 9 — I_trust_state_imported
 
-```bash
-# On TEST profile only:
-# sqlite3 data/outcomes.db "UPDATE compatibility_profiles SET trust_state='imported' WHERE profile_id='<TEST_PROFILE_ID>';"
+Label post-run: `rejected_correct` if imported profile is blocked from winner selection; `winner_correct` only if another locally verified profile is correctly selected.
 
-export WINEPREFIX="<prefix_for_matching_profile>"
+```bash
+source "$REPO/scripts/validation/pilot_env.sh"
+# TEST profile only:
+# python3 -c "import sqlite3; c=sqlite3.connect('data/outcomes.db'); c.execute(\"UPDATE compatibility_profiles SET trust_state='imported' WHERE profile_id=?\", ('<TEST_PROFILE_ID>',)); c.commit()"
+
+export WINEPREFIX="$PRIMARY_PREFIX"
 curl -s -X POST $API/bridge/run -H 'Content-Type: application/json' -d "$(jq -n \
   --arg fp "$ASCENSION_LAUNCHER" --arg wp "$WINEPREFIX" \
   '{file_path:$fp, wine_prefix:$wp, max_attempts:12}')" \
@@ -237,10 +229,11 @@ alma-bridge-shadow-validation register-run --session-id "$SESSION_ID" \
 
 ## Run 10 — J_multiple_candidate_ranking
 
-**Prerequisites:** Two profiles for same executable hash (seed via runs 1 + 5 or dedicated setup).
+**Prerequisites:** Run `shadow-validation-pilot-001-run10-precheck.md` query first. Block if `CANDIDATE_SET_OK` is absent.
 
 ```bash
-export WINEPREFIX="<prefix_with_both_profiles_eligible>"
+source "$REPO/scripts/validation/pilot_env.sh"
+export WINEPREFIX="$PRIMARY_PREFIX"
 curl -s -X POST $API/bridge/run -H 'Content-Type: application/json' -d "$(jq -n \
   --arg fp "$ASCENSION_LAUNCHER" --arg wp "$WINEPREFIX" \
   '{file_path:$fp, wine_prefix:$wp, max_attempts:12}')" \
@@ -256,6 +249,61 @@ alma-bridge-shadow-validation register-run --session-id "$SESSION_ID" \
 
 sqlite3 data/outcomes.db \
   "SELECT profile_id, profile_revision, eligibility_status, final_rank_score FROM compatibility_profile_shadow_candidates WHERE shadow_event_id='$SHADOW_EVENT_ID';"
+```
+
+---
+
+## Run 11 — F_clean_prefix_reconstruction
+
+Fresh disposable prefix via `wineboot -i`. Label from shadow eligibility evidence, not application success.
+
+```bash
+source "$REPO/scripts/validation/pilot_env.sh"
+export PILOT_PREFIX="$VALIDATION_ROOT/run-11"
+rm -rf "$PILOT_PREFIX"
+mkdir -p "$PILOT_PREFIX"
+export WINEPREFIX="$PILOT_PREFIX"
+WINEPREFIX="$PILOT_PREFIX" wineboot -i
+
+curl -s -X POST $API/bridge/run -H 'Content-Type: application/json' -d "$(jq -n \
+  --arg fp "$ASCENSION_LAUNCHER" --arg wp "$WINEPREFIX" \
+  '{file_path:$fp, wine_prefix:$wp, max_attempts:12}')" \
+  | tee data/validation/evidence/pilot-001/run11/response.json
+
+SESSION_ID=$(jq -r .session_id data/validation/evidence/pilot-001/run11/response.json)
+alma-bridge-shadow-validation register-run --session-id "$SESSION_ID" \
+  --scenario-id F_clean_prefix_reconstruction --program-kind pe_electron_launcher \
+  --application-family ascension
+alma-bridge-shadow-validation export --session-id "$SESSION_ID" \
+  --output data/validation/evidence/pilot-001/run11/export.json
+rm -rf "$PILOT_PREFIX"
+```
+
+---
+
+## Run 12 — I_trust_state_invalidated
+
+Scoped invalidation on test profile only. Expect `INVALIDATED_PROFILE_DIAGNOSTIC_ONLY`.
+
+```bash
+source "$REPO/scripts/validation/pilot_env.sh"
+# Insert scoped invalidation on TEST profile, then:
+export WINEPREFIX="$PRIMARY_PREFIX"
+curl -s -X POST $API/bridge/run -H 'Content-Type: application/json' -d "$(jq -n \
+  --arg fp "$ASCENSION_LAUNCHER" --arg wp "$WINEPREFIX" \
+  '{file_path:$fp, wine_prefix:$wp, max_attempts:12}')" \
+  | tee data/validation/evidence/pilot-001/run12/response.json
+
+SESSION_ID=$(jq -r .session_id data/validation/evidence/pilot-001/run12/response.json)
+SHADOW_EVENT_ID=$(sqlite3 data/outcomes.db \
+  "SELECT shadow_event_id FROM compatibility_profile_shadow_predictions WHERE session_id='$SESSION_ID';")
+alma-bridge-shadow-validation register-run --session-id "$SESSION_ID" \
+  --scenario-id I_trust_state_invalidated --program-kind pe_electron_launcher \
+  --application-family ascension
+alma-bridge-shadow-validation add-label --shadow-event-id "$SHADOW_EVENT_ID" \
+  --label-type rejected_correct --reviewer "$REVIEWER" \
+  --reason "Invalidated profile observable diagnostically; not selected as winner"
+# Deactivate invalidation / restore profile state after evidence export
 ```
 
 ---
