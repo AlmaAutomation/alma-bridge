@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Protocol, Tuple
 
-VERIFIER_VERSION = "1.0.0"
+VERIFIER_VERSION = "1.1.0"
 
 DEFAULT_POLICY_ID = "bridge_aggregate_v1"
 DEFAULT_POLICY_VERSION = "1.0.0"

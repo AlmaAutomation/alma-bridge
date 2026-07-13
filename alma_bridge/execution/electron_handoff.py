@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import re
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -39,6 +41,51 @@ REAL_EXE_MARKERS = (
     "clientservices.real.exe",
 )
 
+# Sidecar handoff evidence contract (electron_handoff verifier).
+# v1.0.0: required alma-cs-output.log growth or exact "sidecar exited code=0" substring.
+# v1.1.0: parse current + legacy wrapper exit lines; require corroboration before handoff pass.
+SIDECAR_HANDOFF_CONTRACT_VERSION = "1.1.0"
+
+_CURRENT_WRAPPER_EXIT_RE = re.compile(
+    r"\[cs-wrapper\]\s*sidecar exited code=(\d+)",
+    re.IGNORECASE,
+)
+_LEGACY_WRAPPER_EXIT_RE = re.compile(
+    r"\[cs-wrapper\]\s*real client-services exited with code\s+(\d+)",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True)
+class SidecarHandoffEvidence:
+    """Structured evidence parsed from Alma sidecar wrapper logs."""
+
+    contract_version: str
+    real_exe_invoked: bool
+    wrapper_exit_code: Optional[int]
+    wrapper_log_format: Optional[str]
+    decoy_spawned: bool
+    invoke_bytes: int
+    output_bytes: int
+    output_has_success_marker: bool
+    stderr_has_success_marker: bool
+
+    @property
+    def wrapper_reported_clean_exit(self) -> bool:
+        return self.wrapper_exit_code == 0
+
+    def to_evidence_lines(self) -> List[str]:
+        lines = [
+            f"handoff_contract={self.contract_version}",
+            f"real_exe_invoked={self.real_exe_invoked}",
+            f"wrapper_exit_code={self.wrapper_exit_code}",
+            f"wrapper_log_format={self.wrapper_log_format}",
+            f"decoy_spawned={self.decoy_spawned}",
+            f"invoke_bytes={self.invoke_bytes}",
+            f"output_bytes={self.output_bytes}",
+        ]
+        return lines
+
 
 def _sidecar_output_log(wine_prefix: str) -> Path:
     return Path(wine_prefix).expanduser() / "drive_c" / "alma-cs-output.log"
@@ -54,32 +101,115 @@ def sidecar_produced_output(wine_prefix: str) -> bool:
     return path.is_file() and path.stat().st_size > 0
 
 
-def sidecar_exited_successfully(wine_prefix: str) -> bool:
-    """True when the latest wrapper log line reports a clean sidecar exit."""
-    path = _sidecar_invoke_log(wine_prefix)
+def _output_has_success_marker(wine_prefix: str) -> bool:
+    path = _sidecar_output_log(wine_prefix)
     if not path.is_file() or not path.stat().st_size:
         return False
     try:
-        tail = path.read_text(encoding="utf-8", errors="replace")[-2000:]
+        text = path.read_text(encoding="utf-8", errors="replace").lower()
     except OSError:
         return False
-    for line in reversed(tail.splitlines()):
-        lower = line.lower()
-        if "sidecar exited code=0" in lower:
-            return True
-        if "sidecar exited code=" in lower:
-            return False
-    return False
+    return any(marker in text for marker in CLIENT_SERVICES_SUCCESS_MARKERS)
 
 
-def client_services_handoff_verified(wine_prefix: str, stderr: str) -> bool:
-    """Positive proof the elevated sidecar came up — not just bootstrap noise."""
+def _stderr_has_success_marker(stderr: str) -> bool:
     combined = (stderr or "").lower()
-    if any(marker in combined for marker in CLIENT_SERVICES_SUCCESS_MARKERS):
+    return any(marker in combined for marker in CLIENT_SERVICES_SUCCESS_MARKERS)
+
+
+def _parse_wrapper_exit_code(invoke_text: str) -> Tuple[Optional[int], Optional[str]]:
+    for line in reversed(invoke_text.splitlines()):
+        current = _CURRENT_WRAPPER_EXIT_RE.search(line)
+        if current:
+            return int(current.group(1)), "current_cs_wrapper"
+        legacy = _LEGACY_WRAPPER_EXIT_RE.search(line)
+        if legacy:
+            return int(legacy.group(1)), "legacy_cs_wrapper"
+        lower = line.lower()
+        if "sidecar exited code=" in lower and "code=0" not in lower:
+            return 1, "current_cs_wrapper"
+        if "real client-services exited with code" in lower and "code 0" not in lower:
+            return 1, "legacy_cs_wrapper"
+    return None, None
+
+
+def parse_sidecar_handoff_evidence(
+    wine_prefix: str,
+    stderr: str = "",
+) -> SidecarHandoffEvidence:
+    """Parse sidecar invoke/output logs into structured handoff evidence."""
+    invoke_text = _recent_invoke_text(wine_prefix)
+    invoke_lower = invoke_text.lower()
+    exit_code, log_format = _parse_wrapper_exit_code(invoke_text)
+    decoy_match = re.search(r"decoy_pid=([1-9]\d*)", invoke_lower)
+    return SidecarHandoffEvidence(
+        contract_version=SIDECAR_HANDOFF_CONTRACT_VERSION,
+        real_exe_invoked=any(marker in invoke_lower for marker in REAL_EXE_MARKERS),
+        wrapper_exit_code=exit_code,
+        wrapper_log_format=log_format,
+        decoy_spawned=bool(decoy_match),
+        invoke_bytes=_sidecar_invoke_size(wine_prefix),
+        output_bytes=_sidecar_output_size(wine_prefix),
+        output_has_success_marker=_output_has_success_marker(wine_prefix),
+        stderr_has_success_marker=_stderr_has_success_marker(stderr),
+    )
+
+
+def sidecar_exited_successfully(wine_prefix: str) -> bool:
+    """True when the latest wrapper log reports a clean sidecar exit (any supported format)."""
+    evidence = parse_sidecar_handoff_evidence(wine_prefix)
+    return evidence.wrapper_reported_clean_exit
+
+
+def _launcher_process_alive(
+    wine_prefix: str,
+    launcher_path: Optional[str],
+    exclude_pids: Optional[set[int]],
+) -> bool:
+    if not launcher_path:
+        return False
+    return wine_has_main_launcher_process(
+        wine_prefix,
+        launcher_path,
+        exclude_pids=exclude_pids or set(),
+    )
+
+
+def client_services_handoff_verified(
+    wine_prefix: str,
+    stderr: str,
+    *,
+    launcher_path: Optional[str] = None,
+    exclude_pids: Optional[set[int]] = None,
+) -> bool:
+    """Positive proof the elevated sidecar handoff succeeded.
+
+    Exit code 0 alone is insufficient. Requires at least two independent signals
+    where possible: wrapper/real.exe evidence plus output, stderr, or launcher survival.
+    """
+    evidence = parse_sidecar_handoff_evidence(wine_prefix, stderr)
+
+    if evidence.stderr_has_success_marker:
         return True
-    if sidecar_produced_output(wine_prefix):
+    if evidence.output_has_success_marker:
         return True
-    return sidecar_exited_successfully(wine_prefix)
+    if evidence.output_bytes > 0 and sidecar_produced_output(wine_prefix):
+        return True
+
+    if not evidence.real_exe_invoked:
+        return False
+    if not evidence.wrapper_reported_clean_exit:
+        return False
+
+    corroborations = 0
+    if evidence.output_bytes > 0:
+        corroborations += 1
+    if _launcher_process_alive(wine_prefix, launcher_path, exclude_pids):
+        corroborations += 1
+    if evidence.decoy_spawned:
+        corroborations += 1
+
+    return corroborations >= 1
 
 
 def reached_client_services_phase(stderr: str) -> bool:
@@ -144,6 +274,9 @@ def watch_sidecar_handoff(
     watch_sec: float = POST_HANDOFF_WATCH_SEC,
     silent_crash_sec: float = SIDECAR_SILENT_CRASH_SEC,
     poll_sec: float = 0.5,
+    launcher_path: Optional[str] = None,
+    exclude_pids: Optional[set[int]] = None,
+    stderr: str = "",
 ) -> Tuple[Optional[str], str]:
     """Poll sidecar logs after client-services handoff begins.
 
@@ -159,8 +292,17 @@ def watch_sidecar_handoff(
         silent_deadline = time.monotonic() + silent_crash_sec
 
     while time.monotonic() < deadline:
-        if client_services_handoff_verified(wine_prefix, ""):
-            return None, "Sidecar handoff verified during watchdog."
+        if client_services_handoff_verified(
+            wine_prefix,
+            stderr,
+            launcher_path=launcher_path,
+            exclude_pids=exclude_pids,
+        ):
+            evidence = parse_sidecar_handoff_evidence(wine_prefix, stderr)
+            return None, (
+                "Sidecar handoff verified during watchdog "
+                f"({', '.join(evidence.to_evidence_lines())})."
+            )
 
         if _sidecar_output_size(wine_prefix) > baseline_output:
             return None, "Sidecar output log is growing."
@@ -175,6 +317,17 @@ def watch_sidecar_handoff(
 
         if saw_real_exe and silent_deadline and time.monotonic() >= silent_deadline:
             if _sidecar_output_size(wine_prefix) <= baseline_output:
+                if client_services_handoff_verified(
+                    wine_prefix,
+                    stderr,
+                    launcher_path=launcher_path,
+                    exclude_pids=exclude_pids,
+                ):
+                    evidence = parse_sidecar_handoff_evidence(wine_prefix, stderr)
+                    return None, (
+                        "Sidecar handoff corroborated at silent-crash deadline "
+                        f"({', '.join(evidence.to_evidence_lines())})."
+                    )
                 detail = (
                     "Sidecar .real.exe was invoked but produced no output within "
                     f"{int(silent_crash_sec)}s."
@@ -306,15 +459,30 @@ def evaluate_electron_launch_result(
         exit_code=exit_code,  # type: ignore[arg-type]
         wine_prefix=wine_prefix,
     )
-    handoff_verified = client_services_handoff_verified(wine_prefix, stderr)
+    handoff_verified = client_services_handoff_verified(
+        wine_prefix,
+        stderr,
+        launcher_path=launcher_path,
+        exclude_pids=pid_skip,
+    )
     saw_client_services = reached_client_services_phase(stderr)
 
     if saw_client_services and not handoff_verified:
-        watch_sig, watch_detail = watch_sidecar_handoff(wine_prefix)
+        watch_sig, watch_detail = watch_sidecar_handoff(
+            wine_prefix,
+            launcher_path=launcher_path,
+            exclude_pids=pid_skip,
+            stderr=stderr,
+        )
         stderr = f"{stderr}\n\n[Alma] Sidecar watchdog: {watch_detail}\n"
         updated["stderr"] = stderr
         if watch_sig is None:
-            handoff_verified = client_services_handoff_verified(wine_prefix, stderr)
+            handoff_verified = client_services_handoff_verified(
+                wine_prefix,
+                stderr,
+                launcher_path=launcher_path,
+                exclude_pids=pid_skip,
+            )
         else:
             signature = watch_sig
 
@@ -362,7 +530,11 @@ def evaluate_electron_launch_result(
                         "check your desktop for the Ascension window."
                     )
                 if handoff_verified:
-                    verification.append("Elevated client-services sidecar produced output.")
+                    handoff_evidence = parse_sidecar_handoff_evidence(wine_prefix, stderr)
+                    verification.extend(
+                        ["Elevated client-services sidecar handoff verified."]
+                        + handoff_evidence.to_evidence_lines()
+                    )
                 updated = {
                     **updated,
                     "success": True,

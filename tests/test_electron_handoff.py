@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from alma_bridge.execution.electron_handoff import (
+    SIDECAR_HANDOFF_CONTRACT_VERSION,
     client_services_handoff_verified,
     detect_electron_launcher_failure,
     evaluate_electron_launch_result,
     format_electron_launch_stderr,
+    parse_sidecar_handoff_evidence,
+    sidecar_exited_successfully,
     sidecar_produced_output,
     watch_sidecar_handoff,
 )
@@ -233,3 +238,155 @@ def test_evaluate_runs_watchdog_for_stalled_handoff(monkeypatch, tmp_path):
     assert signature == "sidecar_silent_crash"
     assert "Sidecar watchdog" in result["stderr"]
     assert recommended
+
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "sidecar"
+
+
+def _write_fixture(prefix: Path, invoke_name: str, *, output: str = "") -> Path:
+    drive_c = prefix / "drive_c"
+    drive_c.mkdir(parents=True, exist_ok=True)
+    invoke = drive_c / "alma-cs-invoke.log"
+    invoke.write_text((FIXTURES / invoke_name).read_text(encoding="utf-8"), encoding="utf-8")
+    if output:
+        (drive_c / "alma-cs-output.log").write_text(output, encoding="utf-8")
+    return prefix
+
+
+def test_parse_current_wrapper_exit_format(tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "current_wrapper_success_invoke.log")
+    evidence = parse_sidecar_handoff_evidence(str(prefix))
+    assert evidence.wrapper_exit_code == 0
+    assert evidence.wrapper_log_format == "current_cs_wrapper"
+    assert evidence.real_exe_invoked
+    assert evidence.decoy_spawned
+    assert evidence.contract_version == SIDECAR_HANDOFF_CONTRACT_VERSION
+
+
+def test_parse_c7_legacy_wrapper_exit_format(tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "c7_legacy_exit0_invoke.log")
+    evidence = parse_sidecar_handoff_evidence(str(prefix))
+    assert evidence.wrapper_exit_code == 0
+    assert evidence.wrapper_log_format == "legacy_cs_wrapper"
+    assert evidence.real_exe_invoked
+    assert not evidence.decoy_spawned
+
+
+def test_sidecar_exited_successfully_supports_legacy_and_current(tmp_path):
+    legacy = _write_fixture(tmp_path / "legacy", "c7_legacy_exit0_invoke.log")
+    current = _write_fixture(tmp_path / "current", "current_wrapper_success_invoke.log")
+    assert sidecar_exited_successfully(str(legacy))
+    assert sidecar_exited_successfully(str(current))
+
+
+def test_exit0_without_corroboration_fails_handoff(tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "exit0_no_downstream_invoke.log")
+    assert not client_services_handoff_verified(
+        str(prefix),
+        "",
+        launcher_path="/tmp/Ascension Launcher.exe",
+    )
+
+
+def test_exit0_with_launcher_process_passes_handoff(monkeypatch, tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "c7_legacy_exit0_invoke.log")
+    monkeypatch.setattr(
+        "alma_bridge.execution.electron_handoff.wine_has_main_launcher_process",
+        lambda *args, **kwargs: True,
+    )
+    assert client_services_handoff_verified(
+        str(prefix),
+        "",
+        launcher_path="/tmp/Ascension Launcher.exe",
+    )
+
+
+def test_exit0_with_output_success_marker_passes_without_launcher(tmp_path):
+    prefix = _write_fixture(
+        tmp_path / "prefix",
+        "c7_legacy_exit0_invoke.log",
+        output="client services ready\n",
+    )
+    assert client_services_handoff_verified(str(prefix), "")
+
+
+def test_nonzero_wrapper_exit_fails_handoff(tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "silent_crash_invoke.log")
+    assert not client_services_handoff_verified(str(prefix), "")
+
+
+def test_malformed_invoke_log_fails_closed(tmp_path):
+    prefix = tmp_path / "prefix"
+    (prefix / "drive_c").mkdir(parents=True)
+    (prefix / "drive_c" / "alma-cs-invoke.log").write_text("truncated [cs-wrap\n", encoding="utf-8")
+    assert not client_services_handoff_verified(str(prefix), "")
+
+
+def test_fatal_signature_overrides_positive_wrapper_exit(monkeypatch, tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "c7_legacy_exit0_invoke.log")
+    monkeypatch.setattr(
+        "alma_bridge.execution.electron_handoff.wait_for_main_launcher_process",
+        lambda *args, **kwargs: False,
+    )
+    stderr = "[client-services] Launching elevated\nwine: int3 trap\n"
+    result, signature, _ = evaluate_electron_launch_result(
+        {"success": False, "exit_code": 3, "stderr": stderr, "stdout": ""},
+        wine_prefix=str(prefix),
+        launcher_path="/tmp/Ascension Launcher.exe",
+        wait_sec=0.1,
+    )
+    assert result["success"] is False
+    assert signature == "wine_int3_crash"
+
+
+def test_c7_fixture_reproduces_old_failure_without_launcher(tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "c7_legacy_exit0_invoke.log")
+    signature, detail = watch_sidecar_handoff(
+        str(prefix),
+        watch_sec=0.2,
+        silent_crash_sec=0.05,
+        poll_sec=0.02,
+        launcher_path="/tmp/Ascension Launcher.exe",
+    )
+    assert signature == "sidecar_silent_crash"
+
+
+def test_c7_fixture_passes_with_launcher_corroboration(monkeypatch, tmp_path):
+    prefix = _write_fixture(tmp_path / "prefix", "c7_legacy_exit0_invoke.log")
+    monkeypatch.setattr(
+        "alma_bridge.execution.electron_handoff.wine_has_main_launcher_process",
+        lambda *args, **kwargs: True,
+    )
+    signature, detail = watch_sidecar_handoff(
+        str(prefix),
+        watch_sec=0.2,
+        silent_crash_sec=0.05,
+        poll_sec=0.02,
+        launcher_path="/tmp/Ascension Launcher.exe",
+    )
+    assert signature is None
+    assert "handoff verified" in detail.lower() or "corroborated" in detail.lower()
+
+
+def test_verification_records_handoff_contract(monkeypatch, tmp_path):
+    from alma_bridge.session.services.verification import VERIFIER_VERSION, DefaultVerificationEngine
+
+    monkeypatch.setattr(
+        "alma_bridge.execution.electron_handoff.wait_for_main_launcher_process",
+        lambda *args, **kwargs: True,
+    )
+    monkeypatch.setattr(
+        "alma_bridge.execution.electron_handoff.wine_has_main_launcher_process",
+        lambda *args, **kwargs: True,
+    )
+    prefix = _write_fixture(tmp_path / "prefix", "current_wrapper_success_invoke.log")
+    engine = DefaultVerificationEngine()
+    outcome = engine.verify_launcher(
+        result={"success": False, "exit_code": 0, "stderr": "[client-services] Launching elevated\n", "stdout": ""},
+        wine_prefix=str(prefix),
+        launcher_path="/tmp/Ascension Launcher.exe",
+    )
+    assert VERIFIER_VERSION == "1.1.0"
+    assert outcome.checks[0].verifier_id == "electron_handoff"
+    assert outcome.checks[0].verifier_version == "1.1.0"
+    assert any("handoff_contract=" in line for line in outcome.checks[0].evidence)
