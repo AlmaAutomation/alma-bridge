@@ -33,7 +33,7 @@ COMMIT_TREE_HASH="$(git rev-parse 'HEAD^{tree}')"
 
 echo "=== 3. Test suite (>=505 passed, 0 failed) ==="
 START_TS=$(date +%s)
-.venv/bin/pytest -q --tb=line -ra | tee "data/validation/logs/pilot-001/test-baseline-${TS}.log"
+PYTHONPATH=. .venv/bin/pytest -q --tb=line -ra | tee "data/validation/logs/pilot-001/test-baseline-${TS}.log"
 END_TS=$(date +%s)
 RUNTIME_SEC=$((END_TS - START_TS))
 PASS_LINE="$(grep -E '^[0-9]+ passed' data/validation/logs/pilot-001/test-baseline-${TS}.log | tail -1)"
