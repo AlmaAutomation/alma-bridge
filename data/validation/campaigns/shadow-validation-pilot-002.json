@@ -3,17 +3,33 @@
   "campaign_type": "pilot",
   "status": "planned",
   "promotion_eligible": false,
+  "workstream": "A_general_compatibility_profile_validation",
+  "ascension_workstream": {
+    "status": "research_deferred",
+    "classification": "ASCENSION_NESTED_SIDECAR_TOKEN_ATTESTATION_BLOCKED_UNDER_WINE",
+    "research_note": "data/validation/research/ascension-nested-sidecar-token-attestation.md",
+    "blocks_pilot_002": false,
+    "blocks_ascension_profile_promotion": true
+  },
   "predecessor_campaign_id": "shadow-validation-pilot-001",
   "predecessor_status": "exploratory_non_promotable",
-  "git_commit_sha": null,
+  "predecessor_evidence_policy": "exclude_from_gate_calculations",
+  "git_commit_sha": "982cf76",
   "git_branch": "master",
-  "working_tree_clean": false,
+  "working_tree_clean": true,
+  "full_suite_at_prep": {
+    "passed": 545,
+    "failed": 0,
+    "recorded_at_utc": "2026-07-13T18:25:22Z"
+  },
   "created_at_utc": "2026-07-13T13:30:00Z",
+  "prepared_at_utc": "2026-07-13T19:00:00Z",
   "started_at_utc": null,
   "completed_at_utc": null,
   "operator": null,
   "reviewer": null,
   "scenario_manifest_version": "1.0.0",
+  "validation_matrix": "data/validation/campaigns/pilot-002-validation-matrix.md",
   "shadow_evaluation_version": "shadow_eval_v1",
   "ranking_formula_id": "profile_shadow_rank_v1",
   "ranking_formula_version": "1.0.0",
@@ -34,26 +50,92 @@
     "ALMA_BRIDGE_OPERATOR_ALLOW_MUTATIONS": false,
     "ALMA_BRIDGE_VALIDATION_CAMPAIGN_MODE": true
   },
+  "target_programs": [
+    {
+      "target_id": "T1_native_success_probe",
+      "program_class": "native_script",
+      "application_family": "alma_validation_native",
+      "canonical_path": "scripts/validation/native_success_probe.sh",
+      "canonical_executable_hash": "record_at_freeze",
+      "verification_phase": "native",
+      "verification_required_checks": ["exit_code_zero"],
+      "disposable_strategy": "independent_temp_cwd_no_wine_prefix",
+      "seed_runs": [1, 2]
+    },
+    {
+      "target_id": "T2_wine_notepad64",
+      "program_class": "windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "canonical_path": "{disposable_prefix}/drive_c/windows/system32/notepad.exe",
+      "canonical_executable_hash": "record_at_freeze_from_wineboot_prefix",
+      "verification_phase": "launcher",
+      "verification_required_checks": ["process_survives"],
+      "disposable_strategy": "fresh_wine_prefix_per_seed_under_pilot_002_root",
+      "seed_runs": [3, 4, 5, 7, 9, 12]
+    },
+    {
+      "target_id": "T3_wine_notepad32",
+      "program_class": "windows_gui_pe32",
+      "application_family": "wine_builtin_notepad32",
+      "canonical_path": "{disposable_prefix}/drive_c/windows/syswow64/notepad.exe",
+      "canonical_executable_hash": "record_at_freeze_from_wineboot_prefix",
+      "verification_phase": "launcher",
+      "verification_required_checks": ["process_survives"],
+      "disposable_strategy": "independent_pe32_prefix",
+      "seed_runs": [6, 8, 10]
+    }
+  ],
   "target_paths": {
+    "native_success_script": "scripts/validation/native_success_probe.sh",
+    "native_failure_script": "scripts/validation/native_timeout_probe.sh",
+    "wine_notepad64_relative": "drive_c/windows/system32/notepad.exe",
+    "wine_notepad32_relative": "drive_c/windows/syswow64/notepad.exe",
+    "disposable_prefix_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-002",
     "ascension_launcher": null,
-    "installer_exe": null,
-    "native_test_script": "/home/joshua/Desktop/Alma/alma-bridge/scripts/validation/native_timeout_probe.sh",
-    "primary_ascension_prefix": null,
-    "validation_source_prefix_snapshot": null,
-    "disposable_prefix_root": null
+    "ascension_installer": null,
+    "ascension_primary_prefix": "guard_reference_only_not_execution_target",
+    "ascension_source_snapshot": "forbidden_as_run_target"
   },
   "prerequisites": [
-    "Corrective engineering complete (lifecycle, budget, terminal observation, campaign guards)",
-    "Full test suite pass on freeze commit",
-    "Reproducible verified Ascension baseline on disposable clone",
-    "New source snapshot and DB backup at freeze",
-    "pilot-001 evidence excluded from gate calculations"
+    "Corrective engineering complete (982cf76 lineage)",
+    "Full test suite 545/545 pass at prep freeze",
+    "Three non-Ascension target programs selected and documented",
+    "Ascension research classification recorded (Workstream B)",
+    "New outcomes.db backup at execution freeze",
+    "pilot-001 evidence excluded from gate calculations",
+    "Explicit operator approval before first run"
   ],
   "campaign_notes": [
-    "Do not start until explicitly approved after completion gate.",
-    "All Wine/Proton Bridge runs must use disposable prefixes under validation_campaign_disposable_root.",
-    "Primary prefix and source snapshot are forbidden execution targets when validation_campaign_mode=true.",
-    "pilot-001 remains exploratory_non_promotable forensic evidence only."
+    "DO NOT EXECUTE until explicitly approved.",
+    "Ascension is NOT required for Pilot-002 approval.",
+    "All Bridge runs use disposable prefixes under validation_campaign_disposable_root.",
+    "Primary Ascension prefix and source snapshot are forbidden execution targets when validation_campaign_mode=true.",
+    "Do not promote Ascension profiles until Workstream B conditions are met.",
+    "Do not loosen VerificationEngine or promotion thresholds.",
+    "Active profile reuse remains disabled for entire campaign."
+  ],
+  "planned_scenario_ids": [
+    "A_stable_repeat_success",
+    "A_stable_repeat_success",
+    "B_relocated_executable",
+    "C_compatible_host_drift",
+    "D_incompatible_host_drift",
+    "D_incompatible_host_drift",
+    "E_prefix_drift_windows",
+    "E_prefix_drift_component",
+    "F_clean_prefix_reconstruction",
+    "G_known_compatibility_failure",
+    "H_unrelated_runtime_failure",
+    "J_multiple_candidate_ranking"
+  ],
+  "planned_run_count": 12,
+  "ascension_deferred_scenarios": [
+    "ascension_nested_c7_baseline",
+    "ascension_baseline_run_a",
+    "ascension_baseline_run_b",
+    "ascension_locally_verified_promotion",
+    "ascension_stable_repeat_success",
+    "ascension_relocated_executable"
   ],
   "stop_conditions_extended": [
     "baseline commit changes after freeze",
@@ -64,6 +146,8 @@
     "unverified profile enters VERIFIED state",
     "AUTO_COMPATIBILITY_BUDGET_EXHAUSTED without terminal session",
     "illegal lifecycle transition",
-    "setup-run evidence mixed into scenario metrics"
+    "setup-run evidence mixed into scenario metrics",
+    "ascension_target_used_in_workstream_a_run",
+    "compatibility_profile_reuse_enabled_during_campaign"
   ]
 }

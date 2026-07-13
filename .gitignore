@@ -21,6 +21,8 @@ data/*
 !data/validation/
 data/validation/*
 !data/validation/campaigns/
+!data/validation/research/
+!data/validation/research/**
 !data/validation/shadow_scenario_manifest_v1.json
 data/validation/campaigns/*
 !data/validation/campaigns/**
