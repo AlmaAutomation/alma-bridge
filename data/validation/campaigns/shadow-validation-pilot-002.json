@@ -1,0 +1,69 @@
+{
+  "campaign_id": "shadow-validation-pilot-002",
+  "campaign_type": "pilot",
+  "status": "planned",
+  "promotion_eligible": false,
+  "predecessor_campaign_id": "shadow-validation-pilot-001",
+  "predecessor_status": "exploratory_non_promotable",
+  "git_commit_sha": null,
+  "git_branch": "master",
+  "working_tree_clean": false,
+  "created_at_utc": "2026-07-13T13:30:00Z",
+  "started_at_utc": null,
+  "completed_at_utc": null,
+  "operator": null,
+  "reviewer": null,
+  "scenario_manifest_version": "1.0.0",
+  "shadow_evaluation_version": "shadow_eval_v1",
+  "ranking_formula_id": "profile_shadow_rank_v1",
+  "ranking_formula_version": "1.0.0",
+  "verification_policy_id": "bridge_aggregate_v1",
+  "verification_policy_version": "1.0.0",
+  "fingerprint_schema_version": "fingerprint_schema_v1",
+  "host_class_schema_version": "host_class_v1",
+  "profile_schema_version": "profile_candidate_v1",
+  "prediction_schema_version": "shadow_prediction_v1",
+  "comparison_schema_version": "shadow_comparison_v1",
+  "label_schema_version": "shadow_label_v1",
+  "feature_flags": {
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILES_ENABLED": true,
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_CREATION_ENABLED": true,
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_SHADOW_MODE": true,
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_REUSE_ENABLED": false,
+    "ALMA_BRIDGE_OPERATOR_ENABLED": false,
+    "ALMA_BRIDGE_OPERATOR_ALLOW_MUTATIONS": false,
+    "ALMA_BRIDGE_VALIDATION_CAMPAIGN_MODE": true
+  },
+  "target_paths": {
+    "ascension_launcher": null,
+    "installer_exe": null,
+    "native_test_script": "/home/joshua/Desktop/Alma/alma-bridge/scripts/validation/native_timeout_probe.sh",
+    "primary_ascension_prefix": null,
+    "validation_source_prefix_snapshot": null,
+    "disposable_prefix_root": null
+  },
+  "prerequisites": [
+    "Corrective engineering complete (lifecycle, budget, terminal observation, campaign guards)",
+    "Full test suite pass on freeze commit",
+    "Reproducible verified Ascension baseline on disposable clone",
+    "New source snapshot and DB backup at freeze",
+    "pilot-001 evidence excluded from gate calculations"
+  ],
+  "campaign_notes": [
+    "Do not start until explicitly approved after completion gate.",
+    "All Wine/Proton Bridge runs must use disposable prefixes under validation_campaign_disposable_root.",
+    "Primary prefix and source snapshot are forbidden execution targets when validation_campaign_mode=true.",
+    "pilot-001 remains exploratory_non_promotable forensic evidence only."
+  ],
+  "stop_conditions_extended": [
+    "baseline commit changes after freeze",
+    "campaign input hash mismatch",
+    "target path resolves outside approved validation scope",
+    "source and disposable prefix share inode/path",
+    "primary prefix mutation during campaign",
+    "unverified profile enters VERIFIED state",
+    "AUTO_COMPATIBILITY_BUDGET_EXHAUSTED without terminal session",
+    "illegal lifecycle transition",
+    "setup-run evidence mixed into scenario metrics"
+  ]
+}

@@ -1,13 +1,22 @@
 {
   "campaign_id": "shadow-validation-pilot-001",
   "campaign_type": "pilot",
-  "status": "planned",
-  "git_commit_sha": null,
+  "status": "exploratory_non_promotable",
+  "promotion_eligible": false,
+  "git_commit_sha": "bd40fc4b2129eabfda03f8b6ea80c8dac33719e4",
   "git_branch": "master",
-  "working_tree_clean": false,
+  "working_tree_clean": true,
   "created_at_utc": "2026-07-13T04:15:00Z",
-  "started_at_utc": null,
+  "started_at_utc": "2026-07-13T05:04:34Z",
+  "stopped_at_utc": "2026-07-13T13:11:00Z",
   "completed_at_utc": null,
+  "decision": "C",
+  "decision_reason_codes": [
+    "PRIMARY_PREFIX_MUTATED",
+    "LIFECYCLE_ROUTE_LOOP_DEFECT",
+    "VERIFIED_PROFILE_SEED_UNAVAILABLE"
+  ],
+  "decision_note": "Preserve pilot-001 as exploratory/non-promotable evidence. Do not include in promotion-gate calculations. Start pilot-002 after corrective engineering.",
   "operator": "Joshua",
   "reviewer": "Joshua/manual-review",
   "automation_agent": "Cursor",
@@ -27,9 +36,9 @@
   "alma_bridge_version": "0.1.0",
   "alma_bridge_build": "2026.06.08-launcher-decoy",
   "python_version": "3.12.3",
-  "os_distribution": "Ubuntu 24.04",
+  "os_distribution": "Ubuntu 24.04.4 LTS",
   "kernel_version": "6.17.0-35-generic",
-  "wine_version": null,
+  "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)",
   "proton_version": null,
   "feature_flags": {
     "ALMA_BRIDGE_COMPATIBILITY_PROFILES_ENABLED": true,
@@ -48,8 +57,8 @@
     "validation_source_prefix_snapshot": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-001/source-prefix-snapshot",
     "disposable_prefix_root": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-001"
   },
-  "outcomes_db_backup_path": null,
-  "outcomes_db_backup_sha256": null,
+  "outcomes_db_backup_path": "data/validation/backups/outcomes.db.bak.20260713T045040Z",
+  "outcomes_db_backup_sha256": "d00a574b19acb5cc6662c9f7d109447af9a6f47c2341bbabfbb3d1ec11366517",
   "evidence_directory": "data/validation/evidence/pilot-001",
   "log_directory": "data/validation/logs/pilot-001",
   "planned_scenario_ids": [
@@ -67,16 +76,95 @@
     "I_trust_state_invalidated"
   ],
   "planned_run_count": 12,
+  "completed_runs": [
+    {
+      "run_number": 1,
+      "scenario_id": "A_stable_repeat_success",
+      "session_id": "fb47461a-36aa-4ee4-b447-4f125f7b33c8",
+      "terminal_state": "POLICY_CHECK",
+      "success": false,
+      "failure_signature": "sidecar_silent_crash"
+    },
+    {
+      "run_number": 2,
+      "scenario_id": "B_relocated_executable",
+      "session_id": "303df425-3d77-4abc-b0b8-7f494c9184cf",
+      "terminal_state": "AWAITING_APPROVAL",
+      "success": false,
+      "failure_signature": "wine_int3_crash"
+    },
+    {
+      "run_number": 8,
+      "scenario_id": "H_unrelated_runtime_failure",
+      "session_id": "76b7e6dc-5e70-4ca0-9d79-4c76358ff015",
+      "terminal_state": "CLASSIFYING",
+      "success": false,
+      "failure_signature": "lifecycle_exception",
+      "lifecycle_defect": "CLASSIFYING->EXECUTING"
+    },
+    {
+      "run_number": 11,
+      "scenario_id": "F_clean_prefix_reconstruction",
+      "session_id": "c60c5afa-d923-4dd8-92a5-96aba36631a2",
+      "terminal_state": "POLICY_CHECK",
+      "success": false,
+      "failure_signature": "unknown_error"
+    }
+  ],
+  "incomplete_runs": [
+    {
+      "run_number": 4,
+      "scenario_id": "D_incompatible_host_drift",
+      "session_id": "25238bf2-8ea4-4dc6-9d07-01f8255ef24d",
+      "status_at_close": "active_non_terminal",
+      "session_state": "POLICY_CHECK",
+      "attempt_count_at_close": 433,
+      "failure_signature_dominant": "invalid_launch_args",
+      "note": "Allow natural termination; collect terminal evidence when available. Do not start new work through this Bridge process."
+    }
+  ],
+  "not_started_runs": [3, 5, 6, 7, 9, 10, 12],
   "completed_scenario_ids": [],
   "aborted_scenario_ids": [],
-  "input_hashes": {},
+  "evidence_references": {
+    "lifecycle_defect": {
+      "session_id": "76b7e6dc-5e70-4ca0-9d79-4c76358ff015",
+      "illegal_transition": "CLASSIFYING->EXECUTING",
+      "orchestrator_location": "alma_bridge/learning/orchestrator.py:_try_auto_compatibility route loop",
+      "reproduction": "Run 8 native_timeout_probe.sh max_attempts=1"
+    },
+    "primary_prefix_mutation": {
+      "primary_prefix": "/home/joshua/.local/share/alma-bridge/prefixes/803984cf-660",
+      "snapshot": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-001/source-prefix-snapshot",
+      "content_changed_files": 6,
+      "added_files": 12,
+      "mtime_only_files": 1522,
+      "snapshot_aggregate_sha256": "3dd37497bf725a115881b69fb57a31d55af18dac3046842f69011bdba4ef238a"
+    },
+    "run_4_interim": {
+      "session_id": "25238bf2-8ea4-4dc6-9d07-01f8255ef24d",
+      "status": "active_at_close",
+      "attempt_count_at_close": 433
+    }
+  },
+  "input_hashes": {
+    "campaign_manifest_sha256": "41a1e872e3ace239550672ff450de98a9da285bbdbeed3cfac7536c8eac1d831",
+    "runs_csv_sha256": "366f66630f9af1261f26728a4f2e2d356c5944a4bc668e67c793f89bb1e90225",
+    "commands_md_sha256": "141c0f2c645b60045652a5dc50bd725ef8e03865955669235a1d2aa406fe3ccc",
+    "scenario_manifest_sha256": "8a0f95a46ccadd57665f0a24e6b6eeb4fd8d6c6a17a3d97aa9ce6a10f4dabf28",
+    "git_commit_sha": "bd40fc4b2129eabfda03f8b6ea80c8dac33719e4",
+    "git_commit_tree_sha256": "8f15bf8f47b020006ca4583a0f7fb0b8a451448e",
+    "db_backup_sha256": "d00a574b19acb5cc6662c9f7d109447af9a6f47c2341bbabfbb3d1ec11366517",
+    "source_prefix_snapshot_aggregate_sha256": "3dd37497bf725a115881b69fb57a31d55af18dac3046842f69011bdba4ef238a"
+  },
   "test_baseline": {
     "required_passing": 505,
     "required_failures": 0,
-    "last_known_passing": 505,
-    "last_known_run_at_utc": "2026-07-13T03:32:35Z",
-    "verified_for_this_campaign": false,
-    "runtime_seconds": null
+    "verified_for_this_campaign": true,
+    "passed": 505,
+    "failed": 0,
+    "runtime_seconds": 827,
+    "verified_at_utc": "2026-07-13T05:04:34Z"
   },
   "campaign_notes": [
     "Pilot validates evidence pipeline before full A-J campaign (61+ runs).",
@@ -84,7 +172,8 @@
     "Clone from source-prefix-snapshot only for mutating scenarios; never mutate primary prefix.",
     "Run 10 blocked until >=2 eligible candidates verified via read-only query.",
     "Run 9 label: rejected_correct or winner_correct based on observed trust-state behavior.",
-    "Run 7 label: eligibility based on environment reusability, not application success alone."
+    "Run 7 label: eligibility based on environment reusability, not application success alone.",
+    "CLOSED 2026-07-13: Decision C accepted. promotion_eligible=false. Evidence preserved for forensic comparison only."
   ],
   "stop_conditions_extended": [
     "baseline commit changes after freeze",

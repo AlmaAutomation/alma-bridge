@@ -88,6 +88,21 @@ class Settings(BaseSettings):
     session_timeout_sec: int = 3600
     per_remediation_retry_limit: int = 2
 
+    # Auto-compatibility escalation budget (session-scoped)
+    auto_compat_max_execution_attempts: int = 64
+    auto_compat_max_routes: int = 12
+    auto_compat_max_bridge_retries: int = 8
+    auto_compat_max_remediations: int = 32
+    auto_compat_max_identical_tuple: int = 4
+    auto_compat_wall_clock_sec: int = 3600
+
+    # Validation campaign guards (operational only; not global production policy)
+    validation_campaign_mode: bool = False
+    validation_campaign_id: str | None = None
+    validation_campaign_disposable_root: str | None = None
+    validation_campaign_primary_prefix: str | None = None
+    validation_campaign_source_snapshot: str | None = None
+
     # Compatibility profiles (Phase 1 infrastructure; creation gated separately)
     compatibility_profiles_enabled: bool = False
     compatibility_profile_creation_enabled: bool = False

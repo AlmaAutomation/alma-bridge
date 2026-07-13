@@ -284,6 +284,15 @@ def bridge_plan(request: BridgeRequest) -> dict:
 async def bridge_run(request: BridgeRequest) -> BridgeSessionResult:
     if not Path(request.file_path).exists():
         raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
+    from alma_bridge.validation.campaign_guard import (
+        CampaignPrefixRejected,
+        validate_campaign_bridge_request,
+    )
+
+    try:
+        validate_campaign_bridge_request(request)
+    except CampaignPrefixRejected as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     result = await asyncio.to_thread(orchestrator.run, request)
     if settings.auto_retrain_after_run:
         maybe_auto_retrain(
@@ -297,6 +306,15 @@ async def bridge_run(request: BridgeRequest) -> BridgeSessionResult:
 async def bridge_run_async(request: BridgeRequest) -> BridgeRunStartedResponse:
     if not Path(request.file_path).exists():
         raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
+    from alma_bridge.validation.campaign_guard import (
+        CampaignPrefixRejected,
+        validate_campaign_bridge_request,
+    )
+
+    try:
+        validate_campaign_bridge_request(request)
+    except CampaignPrefixRejected as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     hardware = profile_hardware()
     digest = file_hash(request.file_path)
     session_id = outcomes.new_session(request.file_path, digest, hardware)

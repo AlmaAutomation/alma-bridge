@@ -81,6 +81,10 @@ from alma_bridge.schemas.models import (
     ExecutionMode,
     RerankEvent,
 )
+from alma_bridge.session.auto_compat_budget import (
+    AUTO_COMPATIBILITY_BUDGET_EXHAUSTED,
+    AutoCompatibilityBudget,
+)
 from alma_bridge.session.fingerprint import RetryGuard, remediation_fingerprint
 from alma_bridge.session.lease import SessionLeaseManager
 from alma_bridge.session.lifecycle import InvalidSessionTransition, SessionLifecycleManager
@@ -192,6 +196,8 @@ class BridgeOrchestrator:
             per_remediation_limit=settings.per_remediation_retry_limit,
             session_timeout_sec=settings.session_timeout_sec,
         )
+        budget = AutoCompatibilityBudget.from_settings(settings)
+        result: Optional[BridgeSessionResult] = None
 
         try:
             self._transition(lifecycle, SessionState.INSPECTING, reason="session_start")
@@ -209,30 +215,43 @@ class BridgeOrchestrator:
                 session_id=session_id,
                 lifecycle=lifecycle,
                 retry_guard=retry_guard,
+                budget=budget,
                 hardware=hardware,
                 started_at=started_at,
                 digest=digest,
                 inspection=inspection,
                 cancel_check=cancel_check,
             )
-            self._record_shadow_actual_outcome(lifecycle=lifecycle, result=result)
-            return result
         except InvalidSessionTransition as exc:
-            summary = f"Session lifecycle error: {exc}"
-            outcomes.finalize_session(session_id, success=False, summary=summary)
-            return BridgeSessionResult(
+            result = self._lifecycle_error_result(
+                request=request,
                 session_id=session_id,
-                file_path=request.file_path,
-                file_hash=digest,
+                lifecycle=lifecycle,
                 started_at=started_at,
-                finished_at=datetime.now(timezone.utc),
-                success=False,
-                attempts=[],
-                hardware_profile=hardware,
-                summary=summary,
+                digest=digest,
+                hardware=hardware,
+                exc=exc,
+            )
+        except Exception as exc:  # noqa: BLE001
+            result = self._internal_error_result(
+                request=request,
+                session_id=session_id,
+                lifecycle=lifecycle,
+                started_at=started_at,
+                digest=digest,
+                hardware=hardware,
+                exc=exc,
             )
         finally:
+            if result is not None:
+                self._finalize_bridge_session(
+                    lifecycle=lifecycle,
+                    result=result,
+                    budget=budget,
+                )
             self._lease_manager.release(session_id)
+
+        return result  # type: ignore[return-value]
 
     def _run_session(
         self,
@@ -247,7 +266,21 @@ class BridgeOrchestrator:
         inspection: Any,
         cancel_check: Optional[callable],
         resume_after_escalation: bool = False,
+        budget: Optional[AutoCompatibilityBudget] = None,
     ) -> BridgeSessionResult:
+        session_budget = budget or AutoCompatibilityBudget.from_settings(settings)
+        if exhausted := session_budget.check():
+            return self._budget_exhausted_result(
+                request=request,
+                session_id=session_id,
+                lifecycle=lifecycle,
+                started_at=started_at,
+                digest=digest,
+                hardware=hardware,
+                attempts=[],
+                budget=session_budget,
+                detail=exhausted,
+            )
         if self._check_cancelled(lifecycle, retry_guard, cancel_check):
             return self._cancelled_result(
                 request, session_id, started_at, digest, hardware, []
@@ -465,6 +498,31 @@ class BridgeOrchestrator:
 
                 tried_remediation_ids.add(remediation.get("id"))
                 attempt_number += 1
+                if exhausted := session_budget.record_execution_attempt():
+                    return self._budget_exhausted_result(
+                        request=request,
+                        session_id=session_id,
+                        lifecycle=lifecycle,
+                        started_at=started_at,
+                        digest=digest,
+                        hardware=hardware,
+                        attempts=attempt_records,
+                        budget=session_budget,
+                        detail=exhausted,
+                    )
+                if remediation.get("id"):
+                    if exhausted := session_budget.record_remediation():
+                        return self._budget_exhausted_result(
+                            request=request,
+                            session_id=session_id,
+                            lifecycle=lifecycle,
+                            started_at=started_at,
+                            digest=digest,
+                            hardware=hardware,
+                            attempts=attempt_records,
+                            budget=session_budget,
+                            detail=exhausted,
+                        )
                 env, launch_args = apply_remediation(plan["env"], remediation, plan_args)
                 shim_prep = apply_electron_remediation_shims(
                     remediation,
@@ -660,6 +718,7 @@ class BridgeOrchestrator:
                 attempt_records.append(record)
 
                 if not record.success:
+                    session_budget.record_failure_signature(signature)
                     active_prefix = env.get("WINEPREFIX", wine_prefix or "")
                     _maybe_apply_immediate_wine_fix(
                         session_id,
@@ -688,6 +747,7 @@ class BridgeOrchestrator:
                             last_signature=record.error_signature,
                             wine_prefix=wine_prefix,
                             inspection=inspection,
+                            budget=session_budget,
                         )
                         if auto_result is not None:
                             return auto_result
@@ -734,6 +794,7 @@ class BridgeOrchestrator:
                                 prior_attempts=attempt_records,
                                 skipped_installer=False,
                                 install_summary=summary,
+                                budget=session_budget,
                             )
                     candidate_id = self._persist_profile_candidate_before_success(
                         session_id=session_id,
@@ -803,6 +864,7 @@ class BridgeOrchestrator:
             last_signature=last_signature,
             wine_prefix=wine_prefix,
             inspection=inspection,
+            budget=session_budget,
         )
         if auto_result is not None:
             return auto_result
@@ -860,8 +922,28 @@ class BridgeOrchestrator:
         last_signature: Optional[str] = None,
         wine_prefix: Optional[str] = None,
         inspection: Any = None,
+        budget: Optional[AutoCompatibilityBudget] = None,
     ) -> Optional[BridgeSessionResult]:
-        """In-session escalation via route services — no orphan child sessions."""
+        """In-session escalation via route services — no orphan child sessions.
+
+        Canonical multi-route lifecycle for bridge-retry routes:
+          initial exhaustion: CLASSIFYING → ESCALATING
+          per route (first):  ESCALATING → POLICY_CHECK → EXECUTING
+          after failed retry: CLASSIFYING → RETRYING → POLICY_CHECK → EXECUTING
+        """
+        session_budget = budget or AutoCompatibilityBudget.from_settings(settings)
+        if exhausted := session_budget.check():
+            return self._budget_exhausted_result(
+                request=request,
+                session_id=session_id,
+                lifecycle=lifecycle,
+                started_at=started_at,
+                digest=digest,
+                hardware=hardware,
+                attempts=attempt_records,
+                budget=session_budget,
+                detail=exhausted,
+            )
         if request.auto_remediate is not None:
             enabled = request.auto_remediate
         else:
@@ -880,25 +962,29 @@ class BridgeOrchestrator:
         )
 
         if lifecycle:
-            try:
+            if lifecycle.state == SessionState.CLASSIFYING:
                 self._transition(lifecycle, SessionState.ESCALATING, reason="retry_exhausted")
-            except InvalidSessionTransition:
-                return None
+            elif lifecycle.state != SessionState.ESCALATING:
+                self._prepare_route_policy_check(
+                    lifecycle,
+                    attempt_number=len(attempt_records) + 1,
+                )
 
         discovery = self._route_discovery.discover(err, file_path=target)
         routes = self._route_selection.select(
             discovery,
             budget=int(settings.operator_max_route_attempts),
         )
-        exhausted = [
+        exhausted_ids = [
             str(record.remediation_id)
             for record in attempt_records
             if record.remediation_id
         ]
         escalation_meta = {
             "triggering_signature": last_signature,
-            "exhausted_remediation_ids": exhausted,
+            "exhausted_remediation_ids": exhausted_ids,
             "routes_considered": [route.get("id") for route in routes],
+            "auto_compat_budget": session_budget.to_dict(),
         }
         outcomes.update_session_escalation(session_id, escalation_meta)
 
@@ -917,8 +1003,21 @@ class BridgeOrchestrator:
 
         winning_route: Optional[str] = None
         bridge_retry_request = request
+        route_attempt_number = len(attempt_records)
 
         for route in routes:
+            if exhausted := session_budget.record_route():
+                return self._budget_exhausted_result(
+                    request=request,
+                    session_id=session_id,
+                    lifecycle=lifecycle,
+                    started_at=started_at,
+                    digest=digest,
+                    hardware=hardware,
+                    attempts=attempt_records,
+                    budget=session_budget,
+                    detail=exhausted,
+                )
             intent = build_route_intent(
                 route=route,
                 session_id=session_id,
@@ -938,11 +1037,10 @@ class BridgeOrchestrator:
                     except InvalidSessionTransition:
                         pass
                 continue
+
             if lifecycle:
-                try:
-                    self._transition(lifecycle, SessionState.POLICY_CHECK, reason="route_approved")
-                except InvalidSessionTransition:
-                    pass
+                route_attempt_number += 1
+                self._prepare_route_policy_check(lifecycle, attempt_number=route_attempt_number)
 
             result = self._route_executor.execute_route(
                 route,
@@ -961,13 +1059,31 @@ class BridgeOrchestrator:
                             "file_path": target,
                         }
                     )
+                if exhausted := session_budget.record_bridge_retry():
+                    return self._budget_exhausted_result(
+                        request=request,
+                        session_id=session_id,
+                        lifecycle=lifecycle,
+                        started_at=started_at,
+                        digest=digest,
+                        hardware=hardware,
+                        attempts=attempt_records,
+                        budget=session_budget,
+                        detail=exhausted,
+                    )
                 if lifecycle:
-                    self._transition(lifecycle, SessionState.EXECUTING, reason="route_bridge_retry")
+                    self._transition(
+                        lifecycle,
+                        SessionState.EXECUTING,
+                        reason="route_bridge_retry",
+                        attempt_number=route_attempt_number,
+                    )
                 retry_result = self._run_session(
                     request=bridge_retry_request,
                     session_id=session_id,
                     lifecycle=lifecycle or SessionLifecycleManager(session_id),
                     retry_guard=retry_guard or RetryGuard(max_attempts=settings.max_attempts),
+                    budget=session_budget,
                     hardware=hardware,
                     started_at=started_at,
                     digest=digest,
@@ -975,6 +1091,8 @@ class BridgeOrchestrator:
                     cancel_check=None,
                     resume_after_escalation=True,
                 )
+                if not retry_result.success and lifecycle:
+                    self._normalize_post_bridge_retry_lifecycle(lifecycle)
                 if retry_result.success:
                     summary = (
                         f"Auto-compatibility succeeded via {winning_route or result.route_id}: "
@@ -1029,8 +1147,10 @@ class BridgeOrchestrator:
         prior_attempts: List[AttemptRecord],
         skipped_installer: bool,
         install_summary: str = "",
+        budget: Optional[AutoCompatibilityBudget] = None,
     ) -> BridgeSessionResult:
         """Run the installed app launcher instead of (or after) the installer."""
+        session_budget = budget or AutoCompatibilityBudget.from_settings(settings)
         win_ok, win_msg = require_wine_windows_version(wine_prefix)
         if not win_ok:
             _report_progress(session_id, f"Launcher blocked: Wine still reports XP — {win_msg}")
@@ -1108,6 +1228,31 @@ class BridgeOrchestrator:
             tried_remediation_ids.add(remediation.get("id"))
             applied_remediations.append(remediation)
             attempt_number += 1
+            if exhausted := session_budget.record_execution_attempt():
+                return self._budget_exhausted_result(
+                    request=request,
+                    session_id=session_id,
+                    lifecycle=lifecycle,
+                    started_at=started_at,
+                    digest=digest,
+                    hardware=hardware,
+                    attempts=attempt_records,
+                    budget=session_budget,
+                    detail=exhausted,
+                )
+            if remediation.get("id"):
+                if exhausted := session_budget.record_remediation():
+                    return self._budget_exhausted_result(
+                        request=request,
+                        session_id=session_id,
+                        lifecycle=lifecycle,
+                        started_at=started_at,
+                        digest=digest,
+                        hardware=hardware,
+                        attempts=attempt_records,
+                        budget=session_budget,
+                        detail=exhausted,
+                    )
             remediation_label = remediation.get("id") or "baseline"
             _report_progress(
                 session_id,
@@ -1233,6 +1378,39 @@ class BridgeOrchestrator:
             attempt_records.append(record)
 
             if not record.success:
+                program_identity = digest or file_hash(launcher_path)
+                fp = remediation_fingerprint(
+                    strategy_id=record.strategy_id,
+                    remediation_id=record.remediation_id,
+                    env=record.env,
+                    launch_args=launch_args,
+                    phase="launcher",
+                )
+                verify_conf = float(
+                    (verification_dict.get("confidence") or 0.0)
+                    if verification_dict
+                    else 0.0
+                )
+                if exhausted := session_budget.record_no_progress_tuple(
+                    program_identity=program_identity,
+                    strategy_id=record.strategy_id,
+                    remediation_ids=[r.get("id") for r in applied_remediations],
+                    failure_signature=signature,
+                    state_fingerprint=fp,
+                    verification_confidence=verify_conf,
+                ):
+                    return self._budget_exhausted_result(
+                        request=request,
+                        session_id=session_id,
+                        lifecycle=lifecycle,
+                        started_at=started_at,
+                        digest=digest,
+                        hardware=hardware,
+                        attempts=attempt_records,
+                        budget=session_budget,
+                        detail=exhausted,
+                    )
+                session_budget.record_failure_signature(signature)
                 if record.error_signature in {"dotnet_missing", "wine_int3_crash"}:
                     invalidate_prefix_profile(wine_prefix)
                 _maybe_apply_immediate_wine_fix(
@@ -1251,6 +1429,8 @@ class BridgeOrchestrator:
                     auto_result = self._try_auto_compatibility(
                         request=request,
                         session_id=session_id,
+                        lifecycle=lifecycle,
+                        retry_guard=RetryGuard(max_attempts=settings.max_attempts),
                         attempt_records=attempt_records,
                         hardware=hardware,
                         started_at=started_at,
@@ -1261,6 +1441,9 @@ class BridgeOrchestrator:
                         installed_launcher_path=launcher_path,
                         skipped_installer=skipped_installer,
                         install_summary=install_summary,
+                        last_signature=record.error_signature,
+                        wine_prefix=wine_prefix,
+                        budget=session_budget,
                     )
                     if auto_result is not None:
                         return auto_result
@@ -1315,6 +1498,8 @@ class BridgeOrchestrator:
         auto_result = self._try_auto_compatibility(
             request=request,
             session_id=session_id,
+            lifecycle=lifecycle,
+            retry_guard=RetryGuard(max_attempts=settings.max_attempts),
             attempt_records=attempt_records,
             hardware=hardware,
             started_at=started_at,
@@ -1325,6 +1510,9 @@ class BridgeOrchestrator:
             installed_launcher_path=launcher_path,
             skipped_installer=skipped_installer,
             install_summary=install_summary,
+            last_signature=last_signature,
+            wine_prefix=wine_prefix,
+            budget=session_budget,
         )
         if auto_result is not None:
             return auto_result
@@ -1356,6 +1544,96 @@ class BridgeOrchestrator:
             skipped_installer=skipped_installer,
         )
 
+
+    def _normalize_post_bridge_retry_lifecycle(
+        self,
+        lifecycle: SessionLifecycleManager,
+    ) -> None:
+        """Return lifecycle to CLASSIFYING after a failed nested bridge retry."""
+        state = lifecycle.state
+        if state == SessionState.CLASSIFYING:
+            return
+        if state == SessionState.EXECUTING:
+            self._transition(
+                lifecycle,
+                SessionState.OBSERVING,
+                reason="route_bridge_retry_failed",
+            )
+            state = lifecycle.state
+        if state == SessionState.OBSERVING:
+            self._transition(
+                lifecycle,
+                SessionState.CLASSIFYING,
+                reason="route_bridge_retry_failed",
+            )
+            return
+        if state == SessionState.VERIFYING:
+            self._transition(
+                lifecycle,
+                SessionState.CLASSIFYING,
+                reason="route_bridge_retry_failed",
+            )
+
+    def _prepare_route_policy_check(
+        self,
+        lifecycle: SessionLifecycleManager,
+        *,
+        attempt_number: int,
+    ) -> None:
+        """Legal policy-check spine before route execution or bridge retry.
+
+        Canonical paths:
+          ESCALATING → POLICY_CHECK  (first route in escalation batch)
+          CLASSIFYING → RETRYING → POLICY_CHECK  (after failed nested bridge retry)
+        """
+        state = lifecycle.state
+        if state == SessionState.POLICY_CHECK:
+            return
+        if state == SessionState.ESCALATING:
+            self._transition(
+                lifecycle,
+                SessionState.POLICY_CHECK,
+                reason="route_approved",
+                attempt_number=attempt_number,
+            )
+            return
+        if state in {
+            SessionState.CLASSIFYING,
+            SessionState.VERIFYING,
+            SessionState.OBSERVING,
+        }:
+            self._transition(
+                lifecycle,
+                SessionState.RETRYING,
+                reason="route_bridge_retry_prepare",
+                attempt_number=attempt_number,
+            )
+            self._transition(
+                lifecycle,
+                SessionState.POLICY_CHECK,
+                reason="route_bridge_retry_prepare",
+                attempt_number=attempt_number,
+            )
+            return
+        if state == SessionState.REMEDIATING:
+            self._transition(
+                lifecycle,
+                SessionState.POLICY_CHECK,
+                reason="remediation_complete",
+                attempt_number=attempt_number,
+            )
+            return
+        if state == SessionState.AWAITING_APPROVAL:
+            self._transition(
+                lifecycle,
+                SessionState.POLICY_CHECK,
+                reason="route_retry_after_denial",
+                attempt_number=attempt_number,
+            )
+            return
+        raise InvalidSessionTransition(
+            f"Cannot prepare route policy check from {state.value}"
+        )
 
     def _prepare_retry_attempt(
         self,
@@ -1532,6 +1810,7 @@ class BridgeOrchestrator:
         *,
         lifecycle: SessionLifecycleManager,
         result: BridgeSessionResult,
+        budget: Optional[AutoCompatibilityBudget] = None,
     ) -> None:
         winning = result.winning_attempt
         candidate_id: Optional[str] = None
@@ -1565,6 +1844,12 @@ class BridgeOrchestrator:
                 if attempt.error_signature:
                     failure_signature = attempt.error_signature
                     break
+        if budget and budget.exhausted:
+            failure_signature = failure_signature or AUTO_COMPATIBILITY_BUDGET_EXHAUSTED
+
+        escalation_indicators: List[str] = []
+        if budget and budget.exhausted:
+            escalation_indicators.append(budget.exhaustion_dimension or "budget_exhausted")
 
         try:
             ProfileShadowService.record_actual_outcome(
@@ -1583,12 +1868,176 @@ class BridgeOrchestrator:
                     verification_policy_version=policy_version,
                     failure_signature=failure_signature,
                     fallback_indicators=["skipped_installer"] if result.skipped_installer else [],
-                    escalation_indicators=[],
+                    escalation_indicators=escalation_indicators,
                     profile_candidate_id=candidate_id,
                 )
             )
         except Exception:  # noqa: BLE001
             pass
+
+    def _finalize_bridge_session(
+        self,
+        *,
+        lifecycle: SessionLifecycleManager,
+        result: BridgeSessionResult,
+        budget: AutoCompatibilityBudget,
+    ) -> None:
+        """Single terminal observation boundary for every finalized Bridge session."""
+        if not result.finished_at:
+            result.finished_at = datetime.now(timezone.utc)
+        if budget.exhausted:
+            outcomes.update_session_escalation(
+                lifecycle.session_id,
+                {"auto_compat_budget": budget.to_dict()},
+            )
+        self._ensure_terminal_lifecycle_state(lifecycle=lifecycle, result=result, budget=budget)
+        self._record_shadow_actual_outcome(lifecycle=lifecycle, result=result, budget=budget)
+
+    def _ensure_terminal_lifecycle_state(
+        self,
+        *,
+        lifecycle: SessionLifecycleManager,
+        result: BridgeSessionResult,
+        budget: AutoCompatibilityBudget,
+    ) -> None:
+        if lifecycle.state in {
+            SessionState.SUCCEEDED,
+            SessionState.FAILED,
+            SessionState.CANCELLED,
+        }:
+            return
+        try:
+            if result.success:
+                return
+            if budget.exhausted:
+                self._transition(
+                    lifecycle,
+                    SessionState.FAILED,
+                    reason=AUTO_COMPATIBILITY_BUDGET_EXHAUSTED,
+                )
+                return
+            if "lifecycle error" in (result.summary or "").lower():
+                self._transition(lifecycle, SessionState.FAILED, reason="lifecycle_exception")
+                return
+            self._transition(lifecycle, SessionState.FAILED, reason="session_terminal_failure")
+        except InvalidSessionTransition:
+            pass
+
+    def _lifecycle_error_result(
+        self,
+        *,
+        request: BridgeRequest,
+        session_id: str,
+        lifecycle: SessionLifecycleManager,
+        started_at: datetime,
+        digest: Optional[str],
+        hardware: Dict[str, Any],
+        exc: InvalidSessionTransition,
+    ) -> BridgeSessionResult:
+        summary = f"Session lifecycle error: {exc}"
+        attempts = self._load_attempt_records(session_id)
+        outcomes.finalize_session(session_id, success=False, summary=summary)
+        return BridgeSessionResult(
+            session_id=session_id,
+            file_path=request.file_path,
+            file_hash=digest,
+            started_at=started_at,
+            finished_at=datetime.now(timezone.utc),
+            success=False,
+            attempts=attempts,
+            hardware_profile=hardware,
+            summary=summary,
+        )
+
+    def _internal_error_result(
+        self,
+        *,
+        request: BridgeRequest,
+        session_id: str,
+        lifecycle: SessionLifecycleManager,
+        started_at: datetime,
+        digest: Optional[str],
+        hardware: Dict[str, Any],
+        exc: Exception,
+    ) -> BridgeSessionResult:
+        summary = f"Bridge session internal error: {exc}"
+        attempts = self._load_attempt_records(session_id)
+        outcomes.finalize_session(session_id, success=False, summary=summary)
+        return BridgeSessionResult(
+            session_id=session_id,
+            file_path=request.file_path,
+            file_hash=digest,
+            started_at=started_at,
+            finished_at=datetime.now(timezone.utc),
+            success=False,
+            attempts=attempts,
+            hardware_profile=hardware,
+            summary=summary,
+        )
+
+    def _budget_exhausted_result(
+        self,
+        *,
+        request: BridgeRequest,
+        session_id: str,
+        lifecycle: Optional[SessionLifecycleManager],
+        started_at: datetime,
+        digest: Optional[str],
+        hardware: Dict[str, Any],
+        attempts: List[AttemptRecord],
+        budget: AutoCompatibilityBudget,
+        detail: str,
+    ) -> BridgeSessionResult:
+        summary = (
+            f"Auto-compatibility budget exhausted ({budget.exhaustion_dimension}): {detail}. "
+            f"Counters: {budget.to_dict()}"
+        )
+        if lifecycle:
+            try:
+                if lifecycle.state in {
+                    SessionState.CLASSIFYING,
+                    SessionState.VERIFYING,
+                    SessionState.OBSERVING,
+                }:
+                    self._transition(lifecycle, SessionState.FAILED, reason=detail)
+                elif lifecycle.state not in {
+                    SessionState.SUCCEEDED,
+                    SessionState.FAILED,
+                    SessionState.CANCELLED,
+                }:
+                    self._transition(lifecycle, SessionState.FAILED, reason=detail)
+            except InvalidSessionTransition:
+                pass
+        outcomes.update_session_escalation(
+            session_id,
+            {"auto_compat_budget": budget.to_dict()},
+        )
+        outcomes.finalize_session(session_id, success=False, summary=summary)
+        return BridgeSessionResult(
+            session_id=session_id,
+            file_path=request.file_path,
+            file_hash=digest,
+            started_at=started_at,
+            finished_at=datetime.now(timezone.utc),
+            success=False,
+            winning_attempt=None,
+            attempts=attempts,
+            hardware_profile=hardware,
+            summary=summary,
+        )
+
+    def _load_attempt_records(self, session_id: str) -> List[AttemptRecord]:
+        session = outcomes.get_session(session_id)
+        if not session:
+            return []
+        raw = session.get("attempts") or []
+        records: List[AttemptRecord] = []
+        for item in raw:
+            try:
+                records.append(AttemptRecord.model_validate(item))
+            except Exception:  # noqa: BLE001
+                continue
+        return records
 
     def _transition(
         self,
