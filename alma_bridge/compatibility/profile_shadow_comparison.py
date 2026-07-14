@@ -3,7 +3,12 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Mapping, Optional
 
-from alma_bridge.compatibility.profile_store import get_profile_by_idempotency_key
+from alma_bridge.compatibility.profile_store import (
+    _connect,
+    ensure_profile_tables,
+    get_profile_by_idempotency_key,
+    load_candidate_for_session_attempt,
+)
 
 
 def build_shadow_comparison_metrics(
@@ -118,7 +123,20 @@ def build_shadow_comparison_metrics(
 
     duplicate_lineage = 0
     if profile_candidate_id and predicted_profile_id:
-        duplicate_lineage = 1
+        promoted_profile_id: Optional[str] = None
+        try:
+            with _connect() as conn:
+                ensure_profile_tables(conn)
+                row = conn.execute(
+                    "SELECT promoted_profile_id FROM compatibility_profile_candidates WHERE candidate_id = ?",
+                    (profile_candidate_id,),
+                ).fetchone()
+                if row and row["promoted_profile_id"]:
+                    promoted_profile_id = str(row["promoted_profile_id"])
+        except Exception:  # noqa: BLE001
+            promoted_profile_id = None
+        if promoted_profile_id and promoted_profile_id != predicted_profile_id:
+            duplicate_lineage = 1
 
     reconstruction_required = 1 if predicted_profile_id and actual_success else 0
 

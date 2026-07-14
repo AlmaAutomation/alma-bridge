@@ -7,14 +7,15 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 from uuid import uuid4
 
+from alma_bridge.compatibility.profile_shadow_validation_labels import validate_label_not_trust_category
 from alma_bridge.compatibility.profile_shadow_validation_models import (
     FAILURE_ANALYSIS_SCHEMA_VERSION,
     LABEL_SCHEMA_VERSION,
     MANIFEST_SCHEMA_VERSION,
     ShadowLabelInput,
 )
-from alma_bridge.compatibility.profile_store import _connect, ensure_profile_tables
 from alma_bridge.compatibility.profile_shadow_store import ensure_shadow_tables
+from alma_bridge.compatibility.profile_store import _connect, ensure_profile_tables
 from alma_bridge.config import settings
 
 _MANIFEST_PATH = (
@@ -211,10 +212,7 @@ def register_validation_run(
 
 
 def add_label(label: ShadowLabelInput) -> str:
-    from alma_bridge.compatibility.profile_shadow_validation_models import VALID_LABEL_TYPES
-
-    if label.label_type not in VALID_LABEL_TYPES:
-        raise ValueError(f"invalid label_type: {label.label_type}")
+    validated_type = validate_label_not_trust_category(label.label_type)
 
     label_id = str(uuid4())
     with _connect() as conn:
@@ -230,7 +228,7 @@ def add_label(label: ShadowLabelInput) -> str:
                 label_id,
                 label.shadow_event_id,
                 label.profile_id,
-                label.label_type,
+                validated_type,
                 label.label_source,
                 label.reviewer,
                 label.reason,

@@ -319,6 +319,21 @@ class BridgeOrchestrator:
         if not wine_prefix:
             wine_prefix = fresh_prefix_path(session_id)
 
+        self._create_shadow_prediction_before_plan(
+            session_id=session_id,
+            correlation_id=lifecycle.correlation_id,
+            file_path=request.file_path,
+            executable_hash=digest or "",
+            hardware=hardware,
+            wine_prefix=wine_prefix,
+            runtime_hint=request.runtime_hint,
+            preferred_strategy_id=(
+                request.preferred_strategy_id
+                or getattr(inspection, "recommended_strategy_id", None)
+            ),
+            shadow_host_payload_overlay=request.shadow_host_payload_overlay,
+        )
+
         if kind.get("needs_wine") and wine_prefix:
             win_ok, win_msg = require_wine_windows_version(wine_prefix)
             if not win_ok:
@@ -382,19 +397,6 @@ class BridgeOrchestrator:
                 )
                 _ensure_prefix_runtimes(session_id, wine_prefix, request.file_path, kind)
 
-        self._create_shadow_prediction_before_plan(
-            session_id=session_id,
-            correlation_id=lifecycle.correlation_id,
-            file_path=request.file_path,
-            executable_hash=digest or "",
-            hardware=hardware,
-            wine_prefix=wine_prefix,
-            runtime_hint=request.runtime_hint,
-            preferred_strategy_id=(
-                request.preferred_strategy_id
-                or getattr(inspection, "recommended_strategy_id", None)
-            ),
-        )
         execution_plan = self._planner.plan(
             request.file_path,
             runtime_hint=request.runtime_hint,
@@ -1195,6 +1197,7 @@ class BridgeOrchestrator:
             wine_prefix=wine_prefix,
             runtime_hint=request.runtime_hint,
             preferred_strategy_id=request.preferred_strategy_id,
+            shadow_host_payload_overlay=request.shadow_host_payload_overlay,
         )
         plans = build_execution_plan(
             launcher_path,
@@ -1807,6 +1810,7 @@ class BridgeOrchestrator:
         wine_prefix: Optional[str],
         runtime_hint: Optional[Any] = None,
         preferred_strategy_id: Optional[str] = None,
+        shadow_host_payload_overlay: Optional[Dict[str, Any]] = None,
     ) -> None:
         try:
             ProfileShadowService.create_prediction(
@@ -1819,6 +1823,7 @@ class BridgeOrchestrator:
                     wine_prefix=wine_prefix,
                     runtime_hint=str(runtime_hint) if runtime_hint else None,
                     preferred_strategy_id=preferred_strategy_id,
+                    host_payload_overlay=shadow_host_payload_overlay,
                     feature_flags={
                         "compatibility_profiles_enabled": settings.compatibility_profiles_enabled,
                         "compatibility_profile_shadow_mode": settings.compatibility_profile_shadow_mode,

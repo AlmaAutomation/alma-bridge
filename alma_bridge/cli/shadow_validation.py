@@ -170,14 +170,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     vf.add_argument(
         "--campaign-manifest",
-        default="data/validation/campaigns/shadow-validation-pilot-003.json",
+        default="data/validation/campaigns/shadow-validation-pilot-004.json",
     )
-    vf.add_argument("--matrix", default="data/validation/campaigns/pilot-003-matrix.json")
+    vf.add_argument("--matrix", default="data/validation/campaigns/pilot-004-matrix.json")
     vf.add_argument(
         "--scenario-manifest",
         default="data/validation/shadow_scenario_manifest_v1.json",
     )
-    vf.add_argument("--evidence-dir", default="data/validation/evidence/pilot-003")
+    vf.add_argument("--evidence-dir", default="data/validation/evidence/pilot-004")
     vf.set_defaults(func=_cmd_validate_freeze)
 
     args = parser.parse_args(argv)

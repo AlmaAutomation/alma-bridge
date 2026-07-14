@@ -1,25 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
+
+from alma_bridge.compatibility.profile_shadow_validation_labels import (
+    TRUST_CATEGORIES,
+    VALID_LABEL_TYPES,
+    validate_label_not_trust_category,
+)
 
 MANIFEST_SCHEMA_VERSION = "shadow_validation_manifest_v1"
 LABEL_SCHEMA_VERSION = "shadow_label_v1"
 FAILURE_ANALYSIS_SCHEMA_VERSION = "shadow_failure_analysis_v1"
-
-VALID_LABEL_TYPES = frozenset(
-    {
-        "eligible_correct",
-        "eligible_incorrect",
-        "rejected_correct",
-        "rejected_incorrect",
-        "drift_correct",
-        "drift_incorrect",
-        "winner_correct",
-        "winner_incorrect",
-        "indeterminate",
-    }
-)
 
 FAILURE_KINDS = frozenset(
     {

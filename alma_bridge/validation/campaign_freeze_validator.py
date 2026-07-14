@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
+from alma_bridge.validation.campaign_semantic_validator import validate_campaign_semantics
+
 
 @dataclass
 class CampaignValidationIssue:
@@ -20,9 +22,10 @@ class CampaignValidationResult:
     campaign_id: str
     passed: bool
     issues: List[CampaignValidationIssue] = field(default_factory=list)
+    semantic: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        payload = {
             "campaign_id": self.campaign_id,
             "passed": self.passed,
             "issues": [
@@ -30,6 +33,9 @@ class CampaignValidationResult:
                 for i in self.issues
             ],
         }
+        if self.semantic is not None:
+            payload["semantic"] = self.semantic
+        return payload
 
 
 def _load_json(path: Path) -> Dict[str, Any]:
@@ -213,6 +219,19 @@ def validate_campaign_matrix(
         audit_path = repo_root / str(eligibility_audit)
         if not audit_path.exists():
             issue("ELIGIBILITY_AUDIT_MISSING", f"Eligibility audit missing: {eligibility_audit}")
+
+    semantic = validate_campaign_semantics(
+        campaign_manifest=campaign_manifest,
+        matrix_runs=matrix_runs,
+        repo_root=repo_root,
+    )
+    for sem_issue in semantic.issues:
+        issue(
+            sem_issue.code,
+            sem_issue.message,
+            severity=sem_issue.severity,
+        )
+    result.semantic = semantic.to_dict()
 
     return result
 

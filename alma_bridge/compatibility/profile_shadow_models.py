@@ -22,6 +22,7 @@ class ShadowPlanningInputs:
     runtime_hint: Optional[str] = None
     preferred_strategy_id: Optional[str] = None
     feature_flags: Optional[Mapping[str, bool]] = None
+    host_payload_overlay: Optional[Mapping[str, Any]] = None
 
 
 @dataclass(frozen=True)

@@ -343,6 +343,48 @@ def test_run_f_profile_reconstruction_blocked_when_reuse_disabled(shadow_env, mo
     assert any(d.reason_code == "PREFIX_UNAVAILABLE" for d in dimensions)
 
 
+def test_host_overlay_applied_before_prediction_persisted(shadow_env):
+    profile_id = _seed_verified_profile()
+    bundle = _bundle(profile_id)
+    stored_host = json.loads(bundle["host"]["host_class_json"])
+    assert stored_host.get("host_arch") == "x86_64"
+
+    inputs = ShadowPlanningInputs(
+        session_id="overlay-sess",
+        correlation_id="overlay-corr",
+        file_path="/tmp/notepad.exe",
+        executable_hash=bundle["program"]["executable_hash"],
+        hardware=sample_hardware(),
+        host_payload_overlay={"host_arch": "aarch64"},
+    )
+    ProfileShadowService.create_prediction(inputs)
+    prediction = load_shadow_prediction("overlay-sess")
+    assert prediction is not None
+    flags = json.loads(prediction["feature_flags_json"])
+    assert flags.get("shadow_host_payload_overlay") == {"host_arch": "aarch64"}
+    effective = flags.get("effective_host_compatibility_class_payload") or {}
+    assert effective.get("host_arch") == "aarch64"
+
+    candidates = load_shadow_candidates(str(prediction["shadow_event_id"]))
+    canonical = next(c for c in candidates if c["profile_id"] == profile_id)
+    reasons = json.loads(canonical["rejection_reason_codes_json"])
+    assert "HOST_ARCH_MISMATCH" in reasons
+
+    # Without overlay, eligibility restores
+    inputs2 = ShadowPlanningInputs(
+        session_id="overlay-sess-2",
+        correlation_id="overlay-corr-2",
+        file_path="/tmp/notepad.exe",
+        executable_hash=bundle["program"]["executable_hash"],
+        hardware=sample_hardware(),
+    )
+    ProfileShadowService.create_prediction(inputs2)
+    prediction2 = load_shadow_prediction("overlay-sess-2")
+    candidates2 = load_shadow_candidates(str(prediction2["shadow_event_id"]))
+    canonical2 = next(c for c in candidates2 if c["profile_id"] == profile_id)
+    assert canonical2["eligibility_status"] == "eligible"
+
+
 def test_duplicate_prediction_prevented(shadow_env):
     snap = build_test_snapshot()
     _seed_verified_profile()

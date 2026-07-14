@@ -9,6 +9,7 @@ from alma_bridge.compatibility.profile_shadow_models import DriftDimension
 from alma_bridge.compatibility.profile_shadow_reasons import EligibilityReasonCode
 from alma_bridge.execution.installer_verify import snapshot_wine_prefix
 from alma_bridge.execution.preflight import read_wine_windows_version
+from alma_bridge.validation.prefix_drift import read_prefix_installed_components
 
 
 def predict_bridge_drift(
@@ -81,16 +82,30 @@ def predict_bridge_drift(
                 )
             )
         else:
-            dimensions.append(
-                DriftDimension(
-                    dimension="installed_components",
-                    status="indeterminate",
-                    reason_code="COMPONENT_INSPECTION_READONLY_LIMITED",
-                    expected=expected_components,
-                    observed="not_mutated_readonly",
-                    severity=0.15,
+            observed_components = read_prefix_installed_components(str(prefix_path))
+            missing = [c for c in expected_components if c not in observed_components]
+            if missing:
+                dimensions.append(
+                    DriftDimension(
+                        dimension="installed_components",
+                        status="drift",
+                        reason_code="COMPONENT_MISSING",
+                        expected=expected_components,
+                        observed=observed_components,
+                        severity=0.55,
+                    )
                 )
-            )
+            else:
+                dimensions.append(
+                    DriftDimension(
+                        dimension="installed_components",
+                        status="match",
+                        reason_code="COMPONENT_MATCH",
+                        expected=expected_components,
+                        observed=observed_components,
+                        severity=0.0,
+                    )
+                )
 
     expected_dll = profile_manifest.get("dll_overrides") or {}
     if expected_dll:

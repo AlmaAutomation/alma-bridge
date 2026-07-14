@@ -88,6 +88,8 @@ class ProfileShadowService:
                 inputs.hardware,
                 program_needs_gpu=bool(kind.get("needs_gui")),
             )
+            if inputs.host_payload_overlay:
+                host_payload = {**host_payload, **dict(inputs.host_payload_overlay)}
             host_class_id = build_host_compatibility_class_id(host_payload)
             expected_verification = expected_verification_contract_for_kind(kind)
 
@@ -168,6 +170,9 @@ class ProfileShadowService:
                 "compatibility_profile_creation_enabled",
                 settings.compatibility_profile_creation_enabled,
             )
+            if inputs.host_payload_overlay:
+                feature_flags["shadow_host_payload_overlay"] = dict(inputs.host_payload_overlay)
+                feature_flags["effective_host_compatibility_class_payload"] = dict(host_payload)
 
             persist_shadow_prediction(
                 shadow_event_id=shadow_event_id,

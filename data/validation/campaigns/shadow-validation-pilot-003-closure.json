@@ -1,0 +1,74 @@
+{
+  "campaign_id": "shadow-validation-pilot-003",
+  "terminal_status": "aborted_non_promotable",
+  "promotion_eligible": false,
+  "exclude_from_gate_calculations": true,
+  "abort_reason_code": "INVALID_LABEL_TYPE",
+  "secondary_defect_reason_codes": [
+    "WINDOWS_VERSION_DRIFT_NOT_INDUCED",
+    "COMPONENT_DRIFT_NOT_INDUCED",
+    "KNOWN_FAILURE_SCENARIO_DID_NOT_FAIL",
+    "POST_HOC_HOST_OVERLAY_NOT_FROZEN_PREDICTION",
+    "RUN_J_CANDIDATE_PROVENANCE_MISMATCH"
+  ],
+  "abort_detail": "Executor used label_type=shadow_observation_only at Run 11; VALID_LABEL_TYPES excludes this value (trust_category, not rubric label). Campaign stopped per frozen stop policy.",
+  "started_at_utc": "2026-07-14T05:10:49.803731+00:00",
+  "stopped_at_utc": "2026-07-14T05:18:49.037863+00:00",
+  "freeze_commit_sha": "24248e1d883b1ccb65075b121ac6286cd21c62fa",
+  "freeze_tree_sha": "aef04022925bb622e1d7c3fd29b00ec76ed3a9d7",
+  "completed_runs": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  "registered_runs": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  "not_started_runs": [12, 13],
+  "run_11_label_failure": {
+    "session_id": "299c994f-da22-4b4c-b8ad-ce6c2584a151",
+    "shadow_event_id": "ddb584f0-ca6a-49c4-a05c-602bc907f04a",
+    "attempted_label_type": "shadow_observation_only",
+    "bridge_success": true,
+    "imported_fixture_selected": false,
+    "retroactive_label_or_resume": false
+  },
+  "pre_run_db_hash": "fde1f6dee2174bf303fbb416adc035f0802ef11ef02e3b8902fb6b1b63cc4b1b",
+  "final_db_hash": "d8561a48f09df41ed722b1d396d8f8de5ebd7f53f94cf43818e138fbca2ee4d3",
+  "db_preservation_note": "Imported trust-state mutation on fixture 425f8664 preserved in aborted DB for audit. Do not restore.",
+  "source_snapshot_integrity": {
+    "verified": true,
+    "t2_aggregate_sha256": "0cbbe4a348ae907f0f1cce8c9c1d1d73079c725e79569a6355e323e3a7ff6c8e",
+    "t3_wordpad_aggregate_sha256": "2e482c17aaacdf5d2f55153174c0494d2ae8904ff339f0c63a2a5c5eda4a8607",
+    "t3_notepad32_aggregate_sha256": "874d2d41c96867efc302222fe2212048ccb83e498bdd0db72555d4cc79e6eed2"
+  },
+  "active_reuse_enabled": false,
+  "evidence_paths": [
+    "data/validation/evidence/pilot-003/preflight.json",
+    "data/validation/evidence/pilot-003/campaign-state.json",
+    "data/validation/evidence/pilot-003/campaign-abort.json",
+    "data/validation/evidence/pilot-003/shadow-validation-pilot-003-closure.json",
+    "data/validation/evidence/pilot-003/run-01",
+    "data/validation/evidence/pilot-003/run-02",
+    "data/validation/evidence/pilot-003/run-03",
+    "data/validation/evidence/pilot-003/run-04",
+    "data/validation/evidence/pilot-003/run-05",
+    "data/validation/evidence/pilot-003/run-06",
+    "data/validation/evidence/pilot-003/run-07",
+    "data/validation/evidence/pilot-003/run-08",
+    "data/validation/evidence/pilot-003/run-09",
+    "data/validation/evidence/pilot-003/run-10",
+    "data/validation/evidence/pilot-003/run-11",
+    "data/validation/logs/pilot-003/campaign-execution.log"
+  ],
+  "exploratory_findings_valid": [
+    "T2 stable profile selection (Runs 1-3)",
+    "Relocated executable identity stable (Run 2)",
+    "Imported candidate non-selectable; canonical winner selected (Run 11 shadow)",
+    "Run F shadow-only: reuse disabled, reconstruction_required, no active reconstruction",
+    "Source snapshot integrity and export redaction passed"
+  ],
+  "invalid_for_promotion_evidence": [
+    "Runs 4-5 HOST_ARCH_MISMATCH (post-hoc overlay only)",
+    "Run 6 windows-version drift not induced",
+    "Run 7 component drift not induced",
+    "Run 9 known failure scenario succeeded",
+    "Run 11 label command invalid"
+  ],
+  "successor_campaign_id": "shadow-validation-pilot-004",
+  "do_not_resume": true
+}

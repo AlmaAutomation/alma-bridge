@@ -1,15 +1,30 @@
 {
   "campaign_id": "shadow-validation-pilot-003",
   "campaign_type": "pilot",
-  "status": "ready_for_execution_approval",
+  "status": "aborted_non_promotable",
   "promotion_eligible": false,
+  "exclude_from_gate_calculations": true,
   "corrective_commit_sha": "6bf06ca14e760a4f976279f1ee9fd201dffa2080",
+  "freeze_commit_sha": "24248e1d883b1ccb65075b121ac6286cd21c62fa",
   "workstream": "A_general_compatibility_profile_validation",
   "predecessor_campaign_id": "shadow-validation-pilot-002",
   "predecessor_status": "aborted_non_promotable",
   "predecessor_abort_reason": "SCENARIO_ID_MANIFEST_MISMATCH",
   "predecessor_evidence_policy": "exclude_from_gate_calculations",
+  "successor_campaign_id": "shadow-validation-pilot-004",
+  "closure_record": "data/validation/campaigns/shadow-validation-pilot-003-closure.json",
+  "abort_reason_code": "INVALID_LABEL_TYPE",
+  "secondary_defect_reason_codes": [
+    "WINDOWS_VERSION_DRIFT_NOT_INDUCED",
+    "COMPONENT_DRIFT_NOT_INDUCED",
+    "KNOWN_FAILURE_SCENARIO_DID_NOT_FAIL",
+    "POST_HOC_HOST_OVERLAY_NOT_FROZEN_PREDICTION",
+    "RUN_J_CANDIDATE_PROVENANCE_MISMATCH"
+  ],
+  "do_not_resume": true,
   "pilot001_evidence_policy": "exclude_from_gate_calculations",
+  "pilot002_evidence_policy": "exclude_from_gate_calculations",
+  "pilot003_evidence_policy": "exclude_from_gate_calculations",
   "freeze_package": "data/validation/campaigns/pilot-003-freeze-package.md",
   "execution_commands": "data/validation/campaigns/pilot-003-commands.md",
   "validation_matrix": "data/validation/campaigns/pilot-003-matrix.json",
@@ -118,11 +133,8 @@
     "ascension_primary_prefix": "guard_reference_only_not_execution_target"
   },
   "campaign_notes": [
-    "Scenario execution NOT APPROVED until operator explicitly approves after this freeze.",
-    "Pilot-001 and Pilot-002 evidence excluded from promotion gate calculations.",
-    "Ascension remains research-only (Workstream B).",
-    "Active reuse remains disabled.",
-    "Run 4/5 use shadow host_payload_overlay for deterministic HOST_ARCH_MISMATCH.",
-    "Run 13 blocked until Run J precondition query passes."
+    "ABORTED_NON_PROMOTABLE — do not resume.",
+    "Pilot-001/002/003 evidence excluded from promotion gate calculations.",
+    "Closure: data/validation/campaigns/shadow-validation-pilot-003-closure.json"
   ]
 }

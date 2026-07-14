@@ -36,6 +36,7 @@ class BridgeRequest(BaseModel):
     max_attempts: Optional[int] = None
     launch_after_install: bool = True
     auto_remediate: Optional[bool] = None
+    shadow_host_payload_overlay: Optional[Dict[str, Any]] = None
 
 
 class AttemptRecord(BaseModel):

@@ -118,7 +118,10 @@ def test_pilot003_matrix_passes_scenario_id_validation():
         repo_root=repo,
         evidence_dir=repo / "data" / "validation" / "evidence" / "pilot-003",
     )
-    assert result.passed is True, result.to_dict()
+    assert not any(i.code == "SCENARIO_ID_MANIFEST_MISMATCH" for i in result.issues)
+    # Pilot-003 is aborted; semantic validator must catch known corrective defects.
+    semantic_codes = {i.code for i in result.issues}
+    assert "PRE_PLAN_OVERLAY_REQUIRED" in semantic_codes or "POST_HOC_OVERLAY_FORBIDDEN" in semantic_codes
 
 
 def test_wine_gui_profile_exact_policy_compatible(profile_env, pe_gui_exe):
