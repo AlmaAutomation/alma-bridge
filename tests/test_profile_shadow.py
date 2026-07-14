@@ -11,6 +11,9 @@ from alma_bridge.compatibility.profile_lineage import promote_candidate_snapshot
 from alma_bridge.compatibility.profile_metrics import get_profile_counters, reset_profile_counters
 from alma_bridge.compatibility.profile_shadow import ProfileShadowService, shadow_mode_enabled
 from alma_bridge.compatibility.profile_shadow_drift import predict_bridge_drift
+from alma_bridge.compatibility.expected_verification_contract import (
+    expected_verification_contract_for_kind,
+)
 from alma_bridge.compatibility.profile_shadow_eligibility import evaluate_candidate_eligibility
 from alma_bridge.compatibility.profile_shadow_models import ShadowActualInputs, ShadowPlanningInputs
 from alma_bridge.compatibility.profile_shadow_ranking import rank_eligible_candidates, select_predicted_winner
@@ -61,6 +64,10 @@ def _bundle(profile_id: str):
     bundle = load_profile_bundle(profile_id)
     assert bundle is not None
     return bundle
+
+
+def _native_expected_verification():
+    return expected_verification_contract_for_kind({"program_kind": "native_script"})
 
 
 def test_shadow_mode_requires_both_flags(monkeypatch):
@@ -159,6 +166,7 @@ def test_program_identity_mismatch_rejection(shadow_env):
         program_identity_key="different-key",
         host_compatibility_class_id=bundle["profile"]["host_compatibility_class_id"],
         host_payload=json.loads(bundle["host"]["host_class_json"]),
+        expected_verification=_native_expected_verification(),
     )
     assert evaluation.eligibility_status == "rejected"
     assert EligibilityReasonCode.PROGRAM_IDENTITY_MISMATCH.value in evaluation.rejection_reason_codes
@@ -181,6 +189,7 @@ def test_active_host_class_invalidation_rejection(shadow_env):
         program_identity_key=bundle["program"]["program_identity_key"],
         host_compatibility_class_id=host_id,
         host_payload=json.loads(bundle["host"]["host_class_json"]),
+        expected_verification=_native_expected_verification(),
         active_invalidations=bundle["invalidations"],
     )
     assert EligibilityReasonCode.ACTIVE_HOST_CLASS_INVALIDATION.value in evaluation.rejection_reason_codes
@@ -201,6 +210,7 @@ def test_imported_trust_state_shadow_only_not_winner(shadow_env):
         program_identity_key=bundle["program"]["program_identity_key"],
         host_compatibility_class_id=bundle["profile"]["host_compatibility_class_id"],
         host_payload=json.loads(bundle["host"]["host_class_json"]),
+        expected_verification=_native_expected_verification(),
     )
     assert evaluation.trust_category == "shadow_observation_only"
     assert evaluation.winner_selectable is False
@@ -221,6 +231,7 @@ def test_retired_profile_not_selected_as_winner(shadow_env):
         program_identity_key=bundle["program"]["program_identity_key"],
         host_compatibility_class_id=bundle["profile"]["host_compatibility_class_id"],
         host_payload=json.loads(bundle["host"]["host_class_json"]),
+        expected_verification=_native_expected_verification(),
     )
     assert evaluation.eligibility_status == "rejected"
     ranked = rank_eligible_candidates(
@@ -241,6 +252,7 @@ def test_ranking_skipped_for_rejected_candidates(shadow_env):
         program_identity_key="wrong",
         host_compatibility_class_id=bundle["profile"]["host_compatibility_class_id"],
         host_payload=json.loads(bundle["host"]["host_class_json"]),
+        expected_verification=_native_expected_verification(),
     )
     ranked = rank_eligible_candidates(
         candidates=[rejected],

@@ -51,6 +51,32 @@ def sample_verification_payload() -> Dict[str, Any]:
     }
 
 
+def sample_wine_gui_verification_payload() -> Dict[str, Any]:
+    return {
+        "success_policy": {
+            "policy_id": "wine_gui_process_v1",
+            "policy_version": "1.0.0",
+            "required_checks": {"wine_gui": ["process_survives", "target_process_identity"]},
+        },
+        "checks": [
+            {
+                "check_kind": "process_survives",
+                "passed": True,
+                "verifier_id": "wine_gui_process",
+                "verifier_version": "1",
+            },
+            {
+                "check_kind": "target_process_identity",
+                "passed": True,
+                "verifier_id": "wine_gui_process",
+                "verifier_version": "1",
+            },
+        ],
+        "confidence": 0.95,
+        "evidence": ["process_survives", "target_process_identity"],
+    }
+
+
 def build_test_snapshot(
     *,
     session_id: str = "sess-1",
@@ -63,6 +89,7 @@ def build_test_snapshot(
     file_path: str = "/tmp/game.sh",
     executable_hash: str = "abc123",
     verification_payload: Optional[Dict[str, Any]] = None,
+    phase: str = "native",
 ) -> ProfileCandidateSnapshot:
     record_env = dict(env or {})
     if manifest_env:
@@ -78,7 +105,7 @@ def build_test_snapshot(
         remediation_id=remediation_id,
         env=record_env,
         verification_payload=verification_payload or sample_verification_payload(),
-        phase="native",
+        phase=phase,
     )
 
 

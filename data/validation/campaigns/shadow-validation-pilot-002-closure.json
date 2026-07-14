@@ -1,0 +1,45 @@
+{
+  "campaign_id": "shadow-validation-pilot-002",
+  "terminal_status": "aborted_non_promotable",
+  "promotion_eligible": false,
+  "abort_reason_code": "SCENARIO_ID_MANIFEST_MISMATCH",
+  "abort_detail": "register-run failed: unknown scenario_id E_prefix_drift; manifest defines E_prefix_drift_windows and E_prefix_drift_component only",
+  "started_at_utc": "2026-07-14T00:57:10Z",
+  "stopped_at_utc": "2026-07-14T01:01:09Z",
+  "freeze_commit_sha": "5aa826eb1334823e9bf4f96088ecdc6b3d6bdeea",
+  "freeze_tree_sha": "918682920aaca5b0704039eceef6d5924ecf0efe",
+  "completed_runs": [1, 2, 3, 4, 5, 6],
+  "registered_runs": [1, 2, 3, 4, 5],
+  "unregistered_completed_run": 6,
+  "not_started_runs": [7, 8, 9, 10, 11, 12],
+  "run_6_registration_failure": {
+    "session_id": "a1a86d01-485e-49b2-99c8-29edd621b899",
+    "attempted_scenario_id": "E_prefix_drift",
+    "bridge_success": true,
+    "evidence_preserved": true,
+    "retroactive_registration": false
+  },
+  "final_db_hash": "0bd2371d634463fbe40e640787a0dd506832189856232c8bd29e54c05a1484ad",
+  "source_snapshot_integrity": {
+    "verified": true,
+    "t2_aggregate_sha256": "ee165aaa13c103d51067457bf5490786cc93a46ffab007c37ffdcf7b72605f00",
+    "t3_aggregate_sha256": "2ef515d4cbf69a008d8358e0923bccef0f4dc9c5130aa2049a15f314b7308252"
+  },
+  "active_reuse_enabled": false,
+  "evidence_paths": [
+    "data/validation/evidence/pilot-002/completion-report.json",
+    "data/validation/evidence/pilot-002/pilot-002-completion-report.md",
+    "data/validation/evidence/pilot-002/campaign-abort.json",
+    "data/validation/evidence/pilot-002/campaign-state.json",
+    "data/validation/evidence/pilot-002/legacy-profile-exclusion-set.json",
+    "data/validation/evidence/pilot-002/run-01",
+    "data/validation/evidence/pilot-002/run-02",
+    "data/validation/evidence/pilot-002/run-03",
+    "data/validation/evidence/pilot-002/run-04",
+    "data/validation/evidence/pilot-002/run-05",
+    "data/validation/evidence/pilot-002/run-06",
+    "data/validation/logs/pilot-002/campaign-execution.log"
+  ],
+  "exclude_from_gate_calculations": true,
+  "successor_campaign_id": "shadow-validation-pilot-003"
+}

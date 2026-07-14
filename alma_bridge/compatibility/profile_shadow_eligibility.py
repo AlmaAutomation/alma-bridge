@@ -3,9 +3,8 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Mapping, Optional
 
-from alma_bridge.compatibility.profile_fingerprints import (
-    build_verification_binding_key,
-    build_verification_binding_payload,
+from alma_bridge.compatibility.expected_verification_contract import (
+    ExpectedVerificationContract,
 )
 from alma_bridge.compatibility.profile_shadow_drift import predict_bridge_drift
 from alma_bridge.compatibility.profile_shadow_models import (
@@ -20,10 +19,10 @@ from alma_bridge.compatibility.profile_shadow_reasons import (
     WINNER_LIFECYCLE_STATES,
     EligibilityReasonCode,
 )
+from alma_bridge.compatibility.verification_binding_compatibility import (
+    evaluate_verification_binding_compatibility,
+)
 
-
-CURRENT_VERIFICATION_POLICY_ID = "bridge_aggregate_v1"
-CURRENT_VERIFICATION_POLICY_VERSION = "1.0.0"
 SUPPORTED_MANIFEST_SCHEMA = "bridge_manifest_v1"
 
 
@@ -64,16 +63,15 @@ def evaluate_candidate_eligibility(
     program_identity_key: str,
     host_compatibility_class_id: str,
     host_payload: Mapping[str, Any],
+    expected_verification: ExpectedVerificationContract,
     required_capabilities: Optional[List[str]] = None,
     active_invalidations: Optional[List[Mapping[str, Any]]] = None,
-    current_verification_binding_key: Optional[str] = None,
     wine_prefix: Optional[str] = None,
 ) -> ShadowCandidateEvaluation:
     profile = profile_bundle["profile"]
     host_fp = profile_bundle.get("host") or {}
     program_fp = profile_bundle.get("program") or {}
     bridge = profile_bundle.get("bridge") or {}
-    verification = profile_bundle.get("verification") or {}
     artifacts = profile_bundle.get("artifacts") or []
 
     profile_id = str(profile["profile_id"])
@@ -125,28 +123,16 @@ def evaluate_candidate_eligibility(
             rejection_codes.append(EligibilityReasonCode.ACTIVE_PROGRAM_INVALIDATION.value)
             scoped_invalidations.append(str(inv.get("invalidation_id") or ""))
 
-    if trust_state in SHADOW_ONLY_TRUST_STATES:
-        pass  # observed in shadow mode; trust_category handles winner exclusion
-
     manifest = json.loads(bridge.get("manifest_json") or "{}")
     if manifest.get("schema") and manifest.get("schema") != SUPPORTED_MANIFEST_SCHEMA:
         rejection_codes.append(EligibilityReasonCode.MANIFEST_SCHEMA_UNSUPPORTED.value)
 
-    stored_binding = str(profile.get("verification_binding_key") or "")
-    binding_compatible = True
-    stored_policy_id = str(verification.get("policy_id") or profile.get("policy_id") or "")
-    stored_policy_version = str(
-        verification.get("policy_version") or profile.get("policy_version") or ""
+    binding_result = evaluate_verification_binding_compatibility(
+        profile_bundle=profile_bundle,
+        expected=expected_verification,
     )
-    if (
-        stored_policy_id != CURRENT_VERIFICATION_POLICY_ID
-        or stored_policy_version != CURRENT_VERIFICATION_POLICY_VERSION
-    ):
-        binding_compatible = False
-        rejection_codes.append(EligibilityReasonCode.VERIFICATION_BINDING_INCOMPATIBLE.value)
-    elif current_verification_binding_key and stored_binding != current_verification_binding_key:
-        binding_compatible = False
-        rejection_codes.append(EligibilityReasonCode.VERIFICATION_BINDING_INCOMPATIBLE.value)
+    binding_compatible = binding_result.compatible
+    rejection_codes.extend(binding_result.reason_codes)
 
     if not str(profile.get("bridge_family_key") or ""):
         rejection_codes.append(EligibilityReasonCode.UNSUPPORTED_BRIDGE_FAMILY.value)
@@ -202,12 +188,3 @@ def evaluate_candidate_eligibility(
             trust_cat, lifecycle_state, blocking, has_active_inv
         ),
     )
-
-
-def build_current_verification_binding_key() -> str:
-    payload = build_verification_binding_payload(
-        policy_id=CURRENT_VERIFICATION_POLICY_ID,
-        policy_version=CURRENT_VERIFICATION_POLICY_VERSION,
-        required_checks=[],
-    )
-    return build_verification_binding_key(payload)

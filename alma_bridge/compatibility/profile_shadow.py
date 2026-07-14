@@ -16,6 +16,9 @@ from alma_bridge.compatibility.profile_metrics import (
     log_profile_event,
 )
 from alma_bridge.compatibility.profile_shadow_comparison import build_shadow_comparison_metrics
+from alma_bridge.compatibility.expected_verification_contract import (
+    expected_verification_contract_for_kind,
+)
 from alma_bridge.compatibility.profile_shadow_eligibility import evaluate_candidate_eligibility
 from alma_bridge.compatibility.profile_shadow_models import (
     ShadowActualInputs,
@@ -86,6 +89,7 @@ class ProfileShadowService:
                 program_needs_gpu=bool(kind.get("needs_gui")),
             )
             host_class_id = build_host_compatibility_class_id(host_payload)
+            expected_verification = expected_verification_contract_for_kind(kind)
 
             bundles = list_profile_bundles_for_executable(inputs.executable_hash)
             profile_bundles = {str(b["profile"]["profile_id"]): b for b in bundles}
@@ -97,8 +101,8 @@ class ProfileShadowService:
                     program_identity_key=program_identity_key,
                     host_compatibility_class_id=host_class_id,
                     host_payload=host_payload,
+                    expected_verification=expected_verification,
                     active_invalidations=bundle.get("invalidations"),
-                    current_verification_binding_key=None,
                     wine_prefix=inputs.wine_prefix,
                 )
                 candidates.append(evaluation)

@@ -1,0 +1,126 @@
+{
+  "campaign_id": "shadow-validation-pilot-003",
+  "matrix_version": "1.0.0",
+  "planned_run_count": 13,
+  "runs": [
+    {
+      "run_number": 1,
+      "scenario_id": "A_stable_repeat_success",
+      "scenario_category": "A_stable_repeat_success",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-01-A-t2"
+    },
+    {
+      "run_number": 2,
+      "scenario_id": "B_relocated_executable",
+      "scenario_category": "B_relocated_executable",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-02-B-t2"
+    },
+    {
+      "run_number": 3,
+      "scenario_id": "C_compatible_host_drift",
+      "scenario_category": "C_compatible_host_drift",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-03-C-t2"
+    },
+    {
+      "run_number": 4,
+      "scenario_id": "D_incompatible_host_drift",
+      "scenario_category": "D_incompatible_host_drift",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-04-D-t2",
+      "notes": "Simulated incompatible host; shadow rejection expected"
+    },
+    {
+      "run_number": 5,
+      "scenario_id": "D_incompatible_host_drift",
+      "scenario_category": "D_incompatible_host_drift",
+      "target_id": "T3_arch_wine_notepad32",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad32",
+      "disposable_env": "runs/run-05-D-notepad32"
+    },
+    {
+      "run_number": 6,
+      "scenario_id": "E_prefix_drift_windows",
+      "scenario_category": "E_prefix_drift",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-06-E-windows-t2"
+    },
+    {
+      "run_number": 7,
+      "scenario_id": "E_prefix_drift_component",
+      "scenario_category": "E_prefix_drift",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-07-E-component-t2"
+    },
+    {
+      "run_number": 8,
+      "scenario_id": "F_clean_prefix_reconstruction",
+      "scenario_category": "F_clean_prefix_reconstruction",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-08-F-t2"
+    },
+    {
+      "run_number": 9,
+      "scenario_id": "G_known_compatibility_failure",
+      "scenario_category": "G_known_compatibility_failure",
+      "target_id": "T3_wine_wordpad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_wordpad64",
+      "disposable_env": "runs/run-09-G-t3"
+    },
+    {
+      "run_number": 10,
+      "scenario_id": "H_unrelated_runtime_failure",
+      "scenario_category": "H_unrelated_runtime_failure",
+      "target_id": "T1_native_success_probe",
+      "program_kind": "native_script",
+      "application_family": "alma_validation_native",
+      "disposable_env": "runs/run-10-H-native"
+    },
+    {
+      "run_number": 11,
+      "scenario_id": "I_trust_state_imported",
+      "scenario_category": "I_trust_state",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-11-I-imported"
+    },
+    {
+      "run_number": 12,
+      "scenario_id": "I_trust_state_invalidated",
+      "scenario_category": "I_trust_state",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-12-I-invalidated"
+    },
+    {
+      "run_number": 13,
+      "scenario_id": "J_multiple_candidate_ranking",
+      "scenario_category": "J_multiple_candidate_ranking",
+      "target_id": "T2_wine_notepad64",
+      "program_kind": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad64",
+      "disposable_env": "runs/run-13-J-t2",
+      "precondition": "blocked_until_two_canonical_candidates"
+    }
+  ]
+}

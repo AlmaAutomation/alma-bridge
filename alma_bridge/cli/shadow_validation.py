@@ -16,6 +16,7 @@ from alma_bridge.compatibility.profile_shadow_validation_store import (
     sync_scenario_manifest,
 )
 from alma_bridge.storage.outcomes import init_outcome_store
+from alma_bridge.validation.campaign_freeze_validator import validate_campaign_matrix
 
 
 def _cmd_report(_args: argparse.Namespace) -> int:
@@ -83,6 +84,42 @@ def _cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_validate_freeze(args: argparse.Namespace) -> int:
+    repo_root = Path(__file__).resolve().parents[2]
+    campaign_path = Path(args.campaign_manifest)
+    if not campaign_path.is_absolute():
+        campaign_path = repo_root / campaign_path
+    matrix_path = Path(args.matrix)
+    if not matrix_path.is_absolute():
+        matrix_path = repo_root / matrix_path
+    scenario_manifest_path = Path(args.scenario_manifest)
+    if not scenario_manifest_path.is_absolute():
+        scenario_manifest_path = repo_root / scenario_manifest_path
+
+    campaign_manifest = json.loads(campaign_path.read_text(encoding="utf-8"))
+    matrix_doc = json.loads(matrix_path.read_text(encoding="utf-8"))
+    runs = matrix_doc.get("runs") or matrix_doc
+    evidence_dir = None
+    if args.evidence_dir:
+        evidence_dir = Path(args.evidence_dir)
+        if not evidence_dir.is_absolute():
+            evidence_dir = repo_root / evidence_dir
+
+    result = validate_campaign_matrix(
+        campaign_manifest=campaign_manifest,
+        matrix_runs=runs,
+        scenario_manifest_path=scenario_manifest_path,
+        repo_root=repo_root,
+        evidence_dir=evidence_dir,
+    )
+    print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+    if not result.passed:
+        print("\nCampaign NOT ready for execution approval.", file=sys.stderr)
+        return 1
+    print("\nCampaign ready for execution approval.", file=sys.stderr)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="alma-bridge-shadow-validation",
@@ -126,6 +163,22 @@ def main(argv: list[str] | None = None) -> int:
     exp.add_argument("--shadow-event-id", default=None)
     exp.add_argument("--session-id", default=None)
     exp.set_defaults(func=_cmd_export)
+
+    vf = sub.add_parser(
+        "validate-freeze",
+        help="Read-only pre-freeze campaign validator (blocks ready_for_execution_approval on mismatch)",
+    )
+    vf.add_argument(
+        "--campaign-manifest",
+        default="data/validation/campaigns/shadow-validation-pilot-003.json",
+    )
+    vf.add_argument("--matrix", default="data/validation/campaigns/pilot-003-matrix.json")
+    vf.add_argument(
+        "--scenario-manifest",
+        default="data/validation/shadow_scenario_manifest_v1.json",
+    )
+    vf.add_argument("--evidence-dir", default="data/validation/evidence/pilot-003")
+    vf.set_defaults(func=_cmd_validate_freeze)
 
     args = parser.parse_args(argv)
     init_outcome_store()
