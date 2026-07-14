@@ -1,7 +1,7 @@
 {
   "campaign_id": "shadow-validation-pilot-002",
   "campaign_type": "pilot",
-  "status": "planned",
+  "status": "freeze_package_pending_approval",
   "promotion_eligible": false,
   "workstream": "A_general_compatibility_profile_validation",
   "ascension_workstream": {
@@ -14,9 +14,10 @@
   "predecessor_campaign_id": "shadow-validation-pilot-001",
   "predecessor_status": "exploratory_non_promotable",
   "predecessor_evidence_policy": "exclude_from_gate_calculations",
-  "git_commit_sha": "982cf76",
+  "git_commit_sha": "0f91cae",
   "git_branch": "master",
-  "working_tree_clean": true,
+  "freeze_package": "data/validation/campaigns/pilot-002-freeze-package.md",
+  "working_tree_clean": false,
   "full_suite_at_prep": {
     "passed": 545,
     "failed": 0,
@@ -24,6 +25,7 @@
   },
   "created_at_utc": "2026-07-13T13:30:00Z",
   "prepared_at_utc": "2026-07-13T19:00:00Z",
+  "freeze_corrected_at_utc": "2026-07-13T20:45:00Z",
   "started_at_utc": null,
   "completed_at_utc": null,
   "operator": null,
@@ -50,82 +52,145 @@
     "ALMA_BRIDGE_OPERATOR_ALLOW_MUTATIONS": false,
     "ALMA_BRIDGE_VALIDATION_CAMPAIGN_MODE": true
   },
+  "wine_environment_at_freeze": {
+    "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)",
+    "prefix_architecture": "win64"
+  },
   "target_programs": [
     {
       "target_id": "T1_native_success_probe",
       "program_class": "native_script",
       "application_family": "alma_validation_native",
       "canonical_path": "scripts/validation/native_success_probe.sh",
-      "canonical_executable_hash": "record_at_freeze",
+      "canonical_executable_hash": "9c9c8180e7ab13b2ca48c2c9750bb16ce32eeeb017afbec31320cc22f4cb2b00",
       "verification_phase": "native",
       "verification_required_checks": ["exit_code_zero"],
       "disposable_strategy": "independent_temp_cwd_no_wine_prefix",
-      "seed_runs": [1, 2]
+      "setup_runs": ["SETUP-T1-A", "SETUP-T1-B"],
+      "setup_status": "passed",
+      "contributes_to_scenario_metrics": true
     },
     {
       "target_id": "T2_wine_notepad64",
-      "program_class": "windows_gui",
+      "program_class": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
       "canonical_path": "{disposable_prefix}/drive_c/windows/system32/notepad.exe",
-      "canonical_executable_hash": "record_at_freeze_from_wineboot_prefix",
+      "canonical_executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
       "verification_phase": "launcher",
       "verification_required_checks": ["process_survives"],
-      "disposable_strategy": "fresh_wine_prefix_per_seed_under_pilot_002_root",
-      "seed_runs": [3, 4, 5, 7, 9, 12]
+      "process_survives_contract": "wine_has_main_launcher_process must match system32/notepad.exe not generic wineserver",
+      "disposable_strategy": "fresh_wine_prefix_per_run_under_pilot_002_root",
+      "setup_runs": ["SETUP-T2-A", "SETUP-T2-B"],
+      "setup_status": "passed",
+      "contributes_to_scenario_metrics": true,
+      "preflight_bridge_runs_completed": 2
     },
     {
-      "target_id": "T3_wine_notepad32",
-      "program_class": "windows_gui_pe32",
-      "application_family": "wine_builtin_notepad32",
-      "canonical_path": "{disposable_prefix}/drive_c/windows/syswow64/notepad.exe",
-      "canonical_executable_hash": "record_at_freeze_from_wineboot_prefix",
+      "target_id": "T3_wine_wordpad64",
+      "program_class": "pe_windows_gui",
+      "application_family": "wine_builtin_wordpad64",
+      "canonical_path": "{disposable_prefix}/drive_c/Program Files/Windows NT/Accessories/wordpad.exe",
+      "canonical_executable_hash": "a2bddbb8d43eb96b750813ab8f30db847d2b60d2838dd5fcb36348a719157266",
+      "architecture": "PE32+ x86-64",
+      "provenance": "Wine wineboot -i builtin accessory; validation-only disposable prefixes",
+      "license_suitability": "Wine-shipped Windows accessory; no proprietary IPC/attestation",
       "verification_phase": "launcher",
       "verification_required_checks": ["process_survives"],
-      "disposable_strategy": "independent_pe32_prefix",
-      "seed_runs": [6, 8, 10]
+      "disposable_strategy": "independent_disposable_prefix_no_shared_state",
+      "setup_runs": ["SETUP-T3-A", "SETUP-T3-B"],
+      "setup_status": "passed",
+      "contributes_to_scenario_metrics": true,
+      "preflight_bridge_runs_required": 2,
+      "preflight_bridge_runs_completed": 2
+    },
+    {
+      "target_id": "T3_arch_wine_notepad32",
+      "program_class": "pe_windows_gui",
+      "application_family": "wine_builtin_notepad32",
+      "role": "architecture_rejection_only_not_primary_t3_seed",
+      "canonical_path": "{disposable_prefix}/drive_c/windows/syswow64/notepad.exe",
+      "canonical_executable_hash": "503665cbf1e3be907387c2b76beb25bcdef7d326738adf6f06ff53b9984a2684",
+      "verification_phase": "launcher",
+      "verification_required_checks": ["process_survives"],
+      "contributes_to_scenario_metrics": true,
+      "scenario_runs_only": [5, 8]
     }
   ],
+  "setup_runs": {
+    "excluded_from_scenario_metrics": true,
+    "runs": [
+      {"setup_id": "SETUP-T1-A", "target_id": "T1_native_success_probe", "status": "passed"},
+      {"setup_id": "SETUP-T1-B", "target_id": "T1_native_success_probe", "status": "passed"},
+      {"setup_id": "SETUP-T2-A", "target_id": "T2_wine_notepad64", "status": "passed"},
+      {"setup_id": "SETUP-T2-B", "target_id": "T2_wine_notepad64", "status": "passed"},
+      {"setup_id": "SETUP-T3-A", "target_id": "T3_wine_wordpad64", "status": "passed"},
+      {"setup_id": "SETUP-T3-B", "target_id": "T3_wine_wordpad64", "status": "passed"}
+    ]
+  },
   "target_paths": {
     "native_success_script": "scripts/validation/native_success_probe.sh",
     "native_failure_script": "scripts/validation/native_timeout_probe.sh",
     "wine_notepad64_relative": "drive_c/windows/system32/notepad.exe",
     "wine_notepad32_relative": "drive_c/windows/syswow64/notepad.exe",
+    "wine_wordpad64_relative": "drive_c/Program Files/Windows NT/Accessories/wordpad.exe",
     "disposable_prefix_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-002",
     "ascension_launcher": null,
     "ascension_installer": null,
     "ascension_primary_prefix": "guard_reference_only_not_execution_target",
     "ascension_source_snapshot": "forbidden_as_run_target"
   },
+  "run_f_semantics": {
+    "scenario_id": "F_clean_prefix_reconstruction",
+    "shadow_only": true,
+    "reuse_enabled": false,
+    "profile_manifest_required": true,
+    "fresh_disposable_prefix": true,
+    "compatibility_profile_data_mutates_prefix": false,
+    "planner_and_orchestrator_independent": true,
+    "actual_outcome_recorded_separately": true,
+    "comparison_evaluates_shadow_prediction": true,
+    "invariant_test": "tests/test_profile_shadow.py::test_run_f_profile_reconstruction_blocked_when_reuse_disabled"
+  },
+  "run_j_precondition": {
+    "scenario_id": "J_multiple_candidate_ranking",
+    "blocked_if_unmet": true,
+    "no_fabrication": true,
+    "setup_runs_not_scenario_evidence": true,
+    "read_only_query_doc": "data/validation/campaigns/pilot-002-freeze-package.md#run-j-precondition-query"
+  },
   "prerequisites": [
-    "Corrective engineering complete (982cf76 lineage)",
-    "Full test suite 545/545 pass at prep freeze",
-    "Three non-Ascension target programs selected and documented",
+    "Corrective engineering complete (0f91cae lineage)",
+    "Freeze package approved before any scenario execution",
+    "SETUP-T2 and SETUP-T3 pairs pass or targets replaced",
+    "T3 distinct application family (WordPad) documented with hashes",
     "Ascension research classification recorded (Workstream B)",
     "New outcomes.db backup at execution freeze",
     "pilot-001 evidence excluded from gate calculations",
-    "Explicit operator approval before first run"
+    "Run F invariant test present and passing",
+    "Explicit operator approval before first scenario run"
   ],
   "campaign_notes": [
-    "DO NOT EXECUTE until explicitly approved.",
+    "DO NOT EXECUTE until freeze package explicitly approved.",
     "Ascension is NOT required for Pilot-002 approval.",
-    "All Bridge runs use disposable prefixes under validation_campaign_disposable_root.",
-    "Primary Ascension prefix and source snapshot are forbidden execution targets when validation_campaign_mode=true.",
-    "Do not promote Ascension profiles until Workstream B conditions are met.",
-    "Do not loosen VerificationEngine or promotion thresholds.",
-    "Active profile reuse remains disabled for entire campaign."
+    "32-bit Notepad is rejection/architecture target only — not primary T3 diversity seed.",
+    "WordPad is the T3 distinct Windows application family.",
+    "SETUP runs excluded from 12 scenario metrics.",
+    "I_trust_state_imported and I_trust_state_invalidated are explicit scenario runs 10-11.",
+    "Run F is shadow-only; active reuse remains disabled.",
+    "Do not loosen VerificationEngine or promotion thresholds."
   ],
   "planned_scenario_ids": [
-    "A_stable_repeat_success",
     "A_stable_repeat_success",
     "B_relocated_executable",
     "C_compatible_host_drift",
     "D_incompatible_host_drift",
     "D_incompatible_host_drift",
-    "E_prefix_drift_windows",
-    "E_prefix_drift_component",
+    "E_prefix_drift",
     "F_clean_prefix_reconstruction",
     "G_known_compatibility_failure",
     "H_unrelated_runtime_failure",
+    "I_trust_state_imported",
+    "I_trust_state_invalidated",
     "J_multiple_candidate_ranking"
   ],
   "planned_run_count": 12,
@@ -138,7 +203,7 @@
     "ascension_relocated_executable"
   ],
   "stop_conditions_extended": [
-    "baseline commit changes after freeze",
+    "baseline commit changes after freeze approval",
     "campaign input hash mismatch",
     "target path resolves outside approved validation scope",
     "source and disposable prefix share inode/path",
@@ -148,6 +213,8 @@
     "illegal lifecycle transition",
     "setup-run evidence mixed into scenario metrics",
     "ascension_target_used_in_workstream_a_run",
-    "compatibility_profile_reuse_enabled_during_campaign"
+    "compatibility_profile_reuse_enabled_during_campaign",
+    "run_j_precondition_not_met",
+    "setup_t2_or_setup_t3_failed_without_target_replacement"
   ]
 }

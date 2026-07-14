@@ -144,11 +144,19 @@ def runtime_family_from_runtime(runtime: str) -> str:
     return "unknown"
 
 
-def protocol_family_from_flags(*, installer: bool, electron: bool, gui_launcher: bool) -> str:
+def protocol_family_from_flags(
+    *,
+    installer: bool,
+    electron: bool,
+    gui_launcher: bool,
+    wine_gui: bool = False,
+) -> str:
     if installer:
         return "installer"
     if electron or gui_launcher:
         return "electron_launcher"
+    if wine_gui:
+        return "wine_gui"
     return "generic"
 
 

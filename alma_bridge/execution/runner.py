@@ -309,7 +309,7 @@ def _run_gui_detach(
                         0,
                         "",
                         output
-                        + "\n[Alma] Launcher detached — process still running after "
+                        + "\n[Alma] GUI detached — process still running after "
                         f"{bootstrap_sec}s bootstrap.",
                     )
 

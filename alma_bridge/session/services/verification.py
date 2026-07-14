@@ -8,6 +8,8 @@ VERIFIER_VERSION = "1.1.0"
 
 DEFAULT_POLICY_ID = "bridge_aggregate_v1"
 DEFAULT_POLICY_VERSION = "1.0.0"
+WINE_GUI_POLICY_ID = "wine_gui_process_v1"
+WINE_GUI_POLICY_VERSION = "1.0.0"
 
 
 @dataclass
@@ -50,11 +52,27 @@ DEFAULT_AGGREGATE_POLICY = AggregateSuccessPolicy(
         "native": ["exit_code_zero"],
         "install": ["installer_not_false_success", "prefix_has_launcher"],
         "launcher": ["process_survives"],
+        "wine_gui": ["process_survives"],
     },
     optional_checks={
         "launcher": ["log_excludes_signature"],
+        "wine_gui": ["target_process_identity"],
         "install": [],
         "native": [],
+    },
+    minimum_confidence=0.5,
+    contradictory_evidence_behavior="fail_closed",
+)
+
+
+WINE_GUI_AGGREGATE_POLICY = AggregateSuccessPolicy(
+    policy_id=WINE_GUI_POLICY_ID,
+    policy_version=WINE_GUI_POLICY_VERSION,
+    required_checks={
+        "wine_gui": ["process_survives"],
+    },
+    optional_checks={
+        "wine_gui": ["target_process_identity"],
     },
     minimum_confidence=0.5,
     contradictory_evidence_behavior="fail_closed",
@@ -73,6 +91,7 @@ class ExecutionEvidence:
     installer: bool = False
     electron: bool = False
     gui_launcher: bool = False
+    wine_gui: bool = False
     wine_prefix: Optional[str] = None
     launcher_path: Optional[str] = None
     before_snapshot: Any = None
@@ -200,6 +219,15 @@ class VerificationEngine(Protocol):
         exclude_pids: Optional[set[int]] = None,
     ) -> VerificationResult: ...
 
+    def verify_wine_gui(
+        self,
+        *,
+        result: Dict[str, object],
+        wine_prefix: str,
+        target_path: str,
+        exclude_pids: Optional[set[int]] = None,
+    ) -> VerificationResult: ...
+
     def verify_process_result(
         self,
         *,
@@ -210,7 +238,16 @@ class VerificationEngine(Protocol):
 
 class DefaultVerificationEngine:
     def verify_execution(self, evidence: ExecutionEvidence) -> VerificationResult:
-        if evidence.phase == "launcher" or (
+        if evidence.phase == "wine_gui":
+            raw = dict(evidence.result)
+            outcome = self.verify_wine_gui(
+                result=raw,
+                wine_prefix=evidence.wine_prefix or "",
+                target_path=evidence.launcher_path or evidence.file_path,
+                exclude_pids=evidence.baseline_pids,
+            )
+            policy = WINE_GUI_AGGREGATE_POLICY
+        elif evidence.phase == "launcher" or (
             evidence.gui_launcher and not evidence.installer
         ):
             raw = dict(evidence.result)
@@ -220,6 +257,7 @@ class DefaultVerificationEngine:
                 launcher_path=evidence.launcher_path or evidence.file_path,
                 exclude_pids=evidence.baseline_pids,
             )
+            policy = DEFAULT_AGGREGATE_POLICY
         elif evidence.installer:
             raw = evidence.result
             outcome = self.verify_installer(
@@ -231,14 +269,16 @@ class DefaultVerificationEngine:
                 duration_ms=int(raw.get("duration_ms", 0)),
                 exit_code=int(raw.get("exit_code", 0) or 0),
             )
+            policy = DEFAULT_AGGREGATE_POLICY
         else:
             outcome = self.verify_process_result(
                 result=evidence.result,
                 gui_launcher=evidence.gui_launcher,
             )
+            policy = DEFAULT_AGGREGATE_POLICY
         passed, confidence = evaluate_aggregate_policy(
             outcome.checks,
-            DEFAULT_AGGREGATE_POLICY,
+            policy,
             evidence.phase,
         )
         return VerificationResult(
@@ -249,7 +289,7 @@ class DefaultVerificationEngine:
             failure_reason=None if passed else outcome.failure_reason,
             retryable=outcome.retryable,
             recommended_next_action=outcome.recommended_next_action,
-            success_policy=DEFAULT_AGGREGATE_POLICY,
+            success_policy=policy,
             error_signature=outcome.error_signature,
         )
 
@@ -377,6 +417,60 @@ class DefaultVerificationEngine:
             retryable=signature not in {"permission_denied"},
             recommended_next_action=recommended[0] if recommended else None,
             success_policy=DEFAULT_AGGREGATE_POLICY,
+            error_signature=signature,
+        )
+
+    def verify_wine_gui(
+        self,
+        *,
+        result: Dict[str, object],
+        wine_prefix: str,
+        target_path: str,
+        exclude_pids: Optional[set[int]] = None,
+    ) -> VerificationResult:
+        from pathlib import Path
+
+        from alma_bridge.execution.wine_gui_handoff import evaluate_wine_gui_launch_result
+
+        updated, signature, verification = evaluate_wine_gui_launch_result(
+            result,
+            wine_prefix=wine_prefix,
+            target_path=target_path,
+            exclude_pids=exclude_pids,
+        )
+        process_passed = bool(updated.get("success")) and bool(verification)
+        target_name = Path(target_path).name
+        identity_passed = any(target_name in line for line in verification)
+        checks = [
+            VerificationCheckResult(
+                verifier_id="wine_gui_handoff",
+                verifier_version=VERIFIER_VERSION,
+                check_kind="process_survives",
+                passed=process_passed,
+                confidence=0.9 if process_passed else 0.2,
+                evidence=verification or ([signature] if signature else []),
+            )
+        ]
+        if verification:
+            checks.append(
+                VerificationCheckResult(
+                    verifier_id="wine_gui_handoff",
+                    verifier_version=VERIFIER_VERSION,
+                    check_kind="target_process_identity",
+                    passed=identity_passed,
+                    confidence=0.85 if identity_passed else 0.2,
+                    evidence=verification,
+                )
+            )
+        return VerificationResult(
+            passed=process_passed,
+            confidence=0.9 if process_passed else 0.2,
+            checks=checks,
+            evidence=verification,
+            failure_reason=signature,
+            retryable=signature not in {"permission_denied"},
+            recommended_next_action=None,
+            success_policy=WINE_GUI_AGGREGATE_POLICY,
             error_signature=signature,
         )
 

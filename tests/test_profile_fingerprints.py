@@ -153,6 +153,25 @@ def test_changed_bridge_family_new_lineage(tmp_path, monkeypatch):
     assert snap_a.profile_lineage_key != snap_b.profile_lineage_key
 
 
+def test_wineprefix_path_does_not_change_manifest_identity(tmp_path, monkeypatch):
+    monkeypatch.setattr("alma_bridge.config.settings.data_dir", tmp_path)
+    monkeypatch.setattr("alma_bridge.config.settings.db_path", tmp_path / "outcomes.db")
+
+    snap_a = build_test_snapshot(
+        strategy_id="wine_default",
+        runtime="wine",
+        env={"WINEPREFIX": "/tmp/prefix-a"},
+    )
+    snap_b = build_test_snapshot(
+        session_id="sess-b",
+        strategy_id="wine_default",
+        runtime="wine",
+        env={"WINEPREFIX": "/tmp/prefix-b"},
+    )
+    assert snap_a.bridge_manifest_hash == snap_b.bridge_manifest_hash
+    assert snap_a.idempotency_key == snap_b.idempotency_key
+
+
 def test_same_manifest_attaches_without_new_revision(tmp_path, monkeypatch):
     monkeypatch.setattr("alma_bridge.config.settings.data_dir", tmp_path)
     monkeypatch.setattr("alma_bridge.config.settings.db_path", tmp_path / "outcomes.db")

@@ -286,6 +286,51 @@ def test_drift_inspection_performs_no_mutation(shadow_env, tmp_path):
     assert "set_wine_windows_version" not in text
 
 
+def test_run_f_profile_reconstruction_blocked_when_reuse_disabled(shadow_env, monkeypatch):
+    """Run F (F_clean_prefix_reconstruction) is shadow-only while reuse is disabled."""
+    import inspect
+
+    from alma_bridge.compatibility.profile_shadow_comparison import build_shadow_comparison_metrics
+    from alma_bridge.config import settings
+    from alma_bridge.learning import orchestrator as orch_mod
+
+    monkeypatch.setattr("alma_bridge.config.settings.compatibility_profile_reuse_enabled", False)
+    assert settings.compatibility_profile_reuse_enabled is False
+
+    orch_source = inspect.getsource(orch_mod)
+    assert "compatibility_profile_reuse_events" not in orch_source
+    assert "if settings.compatibility_profile_reuse_enabled" not in orch_source
+
+    metrics = build_shadow_comparison_metrics(
+        prediction={
+            "selected_profile_id": "profile-1",
+            "predicted_strategy_id": "wine_direct",
+            "predicted_remediation_protocol_json": "[]",
+        },
+        candidates=[{"profile_id": "profile-1", "eligibility_status": "eligible"}],
+        actual={
+            "actual_success": True,
+            "actual_strategy_id": "wine_direct",
+            "actual_remediation_protocol_json": "[]",
+        },
+    )
+    assert metrics["reconstruction_required"] == 1
+
+    comparison_source = inspect.getsource(build_shadow_comparison_metrics)
+    assert "run_prefix_mutation" not in comparison_source
+
+    dimensions, drift_result = predict_bridge_drift(
+        profile_manifest={
+            "schema": "bridge_manifest_v1",
+            "windows_version": "win10",
+            "installed_components": ["corefonts"],
+        },
+        wine_prefix=None,
+    )
+    assert drift_result in {"indeterminate", "drift_detected", "no_drift_detected"}
+    assert any(d.reason_code == "PREFIX_UNAVAILABLE" for d in dimensions)
+
+
 def test_duplicate_prediction_prevented(shadow_env):
     snap = build_test_snapshot()
     _seed_verified_profile()

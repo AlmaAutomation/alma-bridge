@@ -33,7 +33,18 @@ from alma_bridge.execution.runner import file_hash
 
 
 def _stable_env(env: Mapping[str, str]) -> Dict[str, str]:
-    excluded = {"PWD", "OLDPWD", "SHLVL", "_", "TMPDIR", "TEMP", "TMP"}
+    # WINEPREFIX is audit-only (prefix_reference); disposable path must not affect manifest identity.
+    excluded = {
+        "PWD",
+        "OLDPWD",
+        "SHLVL",
+        "_",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "WINEPREFIX",
+        "WINEDEBUG",
+    }
     return {
         str(k): str(v)
         for k, v in sorted(env.items(), key=lambda item: str(item[0]))
@@ -149,6 +160,7 @@ def build_profile_candidate_snapshot(
         installer=bool(kind.get("is_installer")),
         electron=bool(kind.get("is_electron")),
         gui_launcher=phase == "launcher",
+        wine_gui=phase == "wine_gui",
     )
     bridge_family_payload = build_bridge_family_payload(
         strategy_id=strategy_id,

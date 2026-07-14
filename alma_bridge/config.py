@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # killing them at execution_timeout_sec caused false "Execution timed out" failures.
     launcher_detach_after_sec: int = 45
     launcher_bootstrap_timeout_sec: int = 180
+    wine_gui_startup_timeout_sec: float = 15.0
+    wine_gui_survival_sec: float = 3.0
+    wine_gui_bootstrap_timeout_sec: int = 90
     sandbox_image: str = "alma-bridge-sandbox:latest"
     sandbox_enabled: bool = True
     api_host: str = "127.0.0.1"

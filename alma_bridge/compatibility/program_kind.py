@@ -13,6 +13,10 @@ from alma_bridge.learning.installer import (
     is_windows_installer,
 )
 
+# PE optional-header subsystem values (winnt.h)
+IMAGE_SUBSYSTEM_WINDOWS_GUI = 2
+IMAGE_SUBSYSTEM_WINDOWS_CUI = 3
+
 INSTALLER_NAME_RE = re.compile(
     r"(setup|installer|install|bootstrap|update|mediacreationtool)",
     re.IGNORECASE,
@@ -21,6 +25,11 @@ LAUNCHER_NAME_RE = re.compile(
     r"(launcher|client|game|play|run|start)",
     re.IGNORECASE,
 )
+
+
+def read_pe_subsystem(path: Path) -> Optional[int]:
+    """Return PE optional-header subsystem (2=GUI, 3=CUI) or None."""
+    return _read_pe_subsystem(path)
 
 
 def _read_pe_subsystem(path: Path) -> Optional[int]:
@@ -35,12 +44,9 @@ def _read_pe_subsystem(path: Path) -> Optional[int]:
             return None
         optional_offset = pe_offset + 24
         magic = struct.unpack_from("<H", header, optional_offset)[0]
-        if magic == 0x10B:
-            subsystem_offset = optional_offset + 68
-        elif magic == 0x20B:
-            subsystem_offset = optional_offset + 68 + 8
-        else:
+        if magic not in {0x10B, 0x20B}:
             return None
+        subsystem_offset = optional_offset + 68
         if subsystem_offset + 2 > len(header):
             return None
         return struct.unpack_from("<H", header, subsystem_offset)[0]
@@ -74,24 +80,39 @@ def detect_installer(path: Path) -> bool:
     if INSTALLER_NAME_RE.search(name):
         return True
     subsystem = _read_pe_subsystem(path)
-    if subsystem == 2 and _installer_markers_in_file(path):
+    if subsystem == IMAGE_SUBSYSTEM_WINDOWS_GUI and _installer_markers_in_file(path):
         return True
-    if subsystem == 2 and re.search(r"[-_.](setup|installer|update)[-_.]", name):
+    if subsystem == IMAGE_SUBSYSTEM_WINDOWS_GUI and re.search(
+        r"[-_.](setup|installer|update)[-_.]", name
+    ):
         return True
     return False
 
 
 def classify_program_kind(file_path: str, *, host_arch: str = "x86_64") -> Dict[str, Any]:
-    """Classify any program path for Bridge planning and preflight."""
+    """Classify any program path for Bridge planning and preflight.
+
+    Precedence (highest first):
+      installer → Electron launcher → PE GUI → PE console → other PE/native kinds
+    """
     path = Path(file_path).expanduser()
     exists = path.is_file()
     binary_format = classify_binary(str(path), host_arch) if exists else "missing"
     suffix = path.suffix.lower()
     name = path.name.lower()
+    pe_subsystem = _read_pe_subsystem(path) if exists and suffix == ".exe" else None
 
     installer = detect_installer(path) if exists else False
     electron = is_electron_app(str(path)) if exists and suffix == ".exe" else False
     is_launcher = bool(electron and not installer)
+    is_wine_gui = (
+        exists
+        and suffix == ".exe"
+        and binary_format == "pe"
+        and not installer
+        and not electron
+        and pe_subsystem == IMAGE_SUBSYSTEM_WINDOWS_GUI
+    )
 
     if not exists:
         program_kind = "missing"
@@ -105,6 +126,8 @@ def classify_program_kind(file_path: str, *, host_arch: str = "x86_64") -> Dict[
         program_kind = "pe_installer"
     elif is_launcher:
         program_kind = "pe_electron_launcher"
+    elif is_wine_gui:
+        program_kind = "pe_windows_gui"
     elif binary_format == "pe":
         program_kind = "pe_windows"
     else:
@@ -113,20 +136,28 @@ def classify_program_kind(file_path: str, *, host_arch: str = "x86_64") -> Dict[
     needs_wine = program_kind in {
         "pe_installer",
         "pe_electron_launcher",
+        "pe_windows_gui",
         "pe_windows",
     }
-    needs_gui = program_kind in {"pe_installer", "pe_electron_launcher", "pe_windows"}
+    needs_gui = program_kind in {
+        "pe_installer",
+        "pe_electron_launcher",
+        "pe_windows_gui",
+    }
     needs_native = program_kind in {"native_elf", "native_script", "appimage"}
 
     if needs_wine:
         recommended_runtime = "wine"
         recommended_max_attempts = 18 if installer else 10
-        recommended_args: List[str] = (
-            default_installer_args() if installer else electron_software_gl_args()
-        )
-        recommended_remediation_id: Optional[str] = (
-            None if installer else "electron_disable_gpu"
-        )
+        if installer:
+            recommended_args: List[str] = default_installer_args()
+            recommended_remediation_id: Optional[str] = None
+        elif program_kind == "pe_windows_gui":
+            recommended_args = []
+            recommended_remediation_id = None
+        else:
+            recommended_args = electron_software_gl_args()
+            recommended_remediation_id = "electron_disable_gpu"
     elif needs_native:
         recommended_runtime = "native"
         recommended_max_attempts = 8
@@ -141,6 +172,8 @@ def classify_program_kind(file_path: str, *, host_arch: str = "x86_64") -> Dict[
     profile = program_kind
     if program_kind == "pe_electron_launcher":
         profile = "electron_launcher"
+    elif program_kind == "pe_windows_gui" and LAUNCHER_NAME_RE.search(name):
+        profile = "windows_launcher"
     elif program_kind == "pe_windows" and LAUNCHER_NAME_RE.search(name):
         profile = "windows_launcher"
 
@@ -150,9 +183,11 @@ def classify_program_kind(file_path: str, *, host_arch: str = "x86_64") -> Dict[
         "binary_format": binary_format,
         "program_kind": program_kind,
         "profile": profile,
+        "pe_subsystem": pe_subsystem,
         "is_installer": installer,
         "is_electron": electron,
         "is_launcher": is_launcher,
+        "is_wine_gui": is_wine_gui,
         "needs_wine": needs_wine,
         "needs_gui": needs_gui,
         "needs_native": needs_native,

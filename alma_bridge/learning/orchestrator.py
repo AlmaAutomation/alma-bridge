@@ -298,6 +298,7 @@ class BridgeOrchestrator:
         )
         installer = kind["is_installer"]
         electron = kind["is_electron"]
+        wine_gui = bool(kind.get("is_wine_gui"))
         if kind.get("needs_gui") and (request.sandbox or request.use_sudo):
             request.sandbox = False
             request.use_sudo = False
@@ -606,10 +607,19 @@ class BridgeOrchestrator:
                     and not installer
                     and plan["runtime"] in {"wine", "proton"}
                 )
+                wine_gui_launch = (
+                    wine_gui
+                    and not installer
+                    and plan["runtime"] in {"wine", "proton"}
+                )
                 attempt_timeout = (
                     settings.launcher_bootstrap_timeout_sec
                     if gui_launcher
-                    else execution_timeout
+                    else (
+                        settings.wine_gui_bootstrap_timeout_sec
+                        if wine_gui_launch
+                        else execution_timeout
+                    )
                 )
                 try:
                     self._transition(
@@ -622,9 +632,10 @@ class BridgeOrchestrator:
                     pass
 
                 baseline_pids: List[int] = []
-                if gui_launcher:
+                if gui_launcher or wine_gui_launch:
                     prefix = env.get("WINEPREFIX", wine_prefix or "")
-                    baseline_pids = snapshot_wine_pids(prefix) if prefix else []
+                    baseline_pids = list(snapshot_wine_pids(prefix)) if prefix else []
+                detach_gui = gui_launcher or wine_gui_launch
                 result = execute_attempt(
                     command=plan["command"],
                     env=env,
@@ -633,8 +644,12 @@ class BridgeOrchestrator:
                     extra_args=launch_args,
                     use_sudo=use_sudo and not sudo_disabled,
                     timeout_sec=attempt_timeout,
-                    detach_gui=gui_launcher,
-                    detach_after_sec=settings.launcher_detach_after_sec,
+                    detach_gui=detach_gui,
+                    detach_after_sec=(
+                        settings.launcher_detach_after_sec
+                        if gui_launcher
+                        else min(settings.launcher_detach_after_sec, 20)
+                    ),
                 )
 
                 signature = result.get("error_signature")
@@ -664,7 +679,15 @@ class BridgeOrchestrator:
                 if plan["runtime"] == "wine" and bool(result["success"]):
                     display_stderr = format_wine_log_for_display(raw_stderr, success=True)
 
-                phase = "install" if installer else ("launcher" if gui_launcher else "native")
+                phase = (
+                    "install"
+                    if installer
+                    else (
+                        "launcher"
+                        if gui_launcher
+                        else ("wine_gui" if wine_gui_launch else "native")
+                    )
+                )
                 evidence = ExecutionEvidence(
                     session_id=session_id,
                     attempt_number=attempt_number,
@@ -674,7 +697,9 @@ class BridgeOrchestrator:
                     installer=installer,
                     electron=electron,
                     gui_launcher=gui_launcher,
+                    wine_gui=wine_gui_launch,
                     wine_prefix=active_prefix or None,
+                    launcher_path=request.file_path,
                     before_snapshot=prefix_snapshots.get(active_prefix),
                     baseline_pids=set(baseline_pids) if baseline_pids else None,
                 )
@@ -2186,6 +2211,8 @@ def _maybe_apply_immediate_wine_fix(
 
 def _artifact_needs_dotnet_bootstrap(file_path: str, kind: Dict[str, Any]) -> bool:
     if not kind.get("needs_wine"):
+        return False
+    if kind.get("program_kind") == "pe_windows_gui":
         return False
     if kind.get("is_installer") or kind.get("is_electron"):
         return True

@@ -156,6 +156,11 @@ def declare_verified_session_success(
 
 def _eligible_for_verification(evidence: ExecutionEvidence) -> bool:
     raw = evidence.result
-    if evidence.installer or evidence.gui_launcher or evidence.phase == "launcher":
+    if (
+        evidence.installer
+        or evidence.gui_launcher
+        or evidence.wine_gui
+        or evidence.phase in {"launcher", "wine_gui"}
+    ):
         return True
     return bool(raw.get("success"))
