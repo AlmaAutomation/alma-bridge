@@ -47,6 +47,7 @@ def run_setup_target(
     exe_path: Path,
     wine_prefix: Optional[Path] = None,
     data_dir: Optional[Path] = None,
+    env: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     if data_dir is not None:
         settings.data_dir = data_dir
@@ -65,6 +66,7 @@ def run_setup_target(
             max_attempts=3,
             auto_remediate=False,
             wine_prefix=str(wine_prefix) if wine_prefix else None,
+            env=dict(env or {}),
         )
     )
     winning = result.winning_attempt

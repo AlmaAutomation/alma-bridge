@@ -1,0 +1,21 @@
+{
+  "auto_compatibility_budget_expectation": "no_promotion; failure recorded",
+  "disposable_clone": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/dry-run/run-09-known-failure",
+  "dry_run_only": true,
+  "expected_bridge_result": "failure",
+  "expected_failure_signature": "file_not_found_or_launch_error",
+  "expected_terminal_state": "FAILED",
+  "passed": true,
+  "precondition_only": true,
+  "run_number": 9,
+  "scenario_id": "G_known_compatibility_failure",
+  "shadow_eligibility_interpretation": "indeterminate label; no winner selection",
+  "source_snapshot_path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t2-notepad64-20260714T171541Z",
+  "source_snapshot_unchanged": true,
+  "target_absent_confirmed": true,
+  "target_identity_before_removal": {
+    "executable_path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/dry-run/run-09-known-failure/drive_c/windows/system32/notepad.exe",
+    "executable_sha256": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+    "program_identity_key": "671ffcc52c6e9bcdff0c652a188593b4743d90ad798b54015b95b3487672d09d"
+  }
+}

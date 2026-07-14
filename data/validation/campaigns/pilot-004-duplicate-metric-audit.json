@@ -1,0 +1,87 @@
+{
+  "cases": [
+    {
+      "case": "A_same_promoted_profile",
+      "duplicate_predicted_lineage": 0,
+      "metrics": {
+        "actual_verification_success": 1,
+        "drift_prediction_correct": null,
+        "duplicate_predicted_lineage": 0,
+        "false_eligibility": null,
+        "false_rejection": null,
+        "indeterminate": 0,
+        "indeterminate_reason": null,
+        "predicted_bridge_family_agreement": null,
+        "predicted_eligibility_precision": 1,
+        "predicted_manifest_agreement": null,
+        "predicted_profile_selected": 1,
+        "predicted_remediation_overlap": null,
+        "predicted_strategy_agreement": 1,
+        "rank_agreement": null,
+        "reconstruction_required": 1
+      }
+    },
+    {
+      "case": "B_redundant_different_profile",
+      "duplicate_predicted_lineage": 1,
+      "metrics": {
+        "actual_verification_success": 1,
+        "drift_prediction_correct": null,
+        "duplicate_predicted_lineage": 1,
+        "false_eligibility": null,
+        "false_rejection": null,
+        "indeterminate": 0,
+        "indeterminate_reason": null,
+        "predicted_bridge_family_agreement": null,
+        "predicted_eligibility_precision": 1,
+        "predicted_manifest_agreement": null,
+        "predicted_profile_selected": 1,
+        "predicted_remediation_overlap": null,
+        "predicted_strategy_agreement": 1,
+        "rank_agreement": null,
+        "reconstruction_required": 1
+      }
+    },
+    {
+      "case": "D_attachment_no_duplicate",
+      "duplicate_predicted_lineage": 0,
+      "metrics": {
+        "actual_verification_success": 1,
+        "drift_prediction_correct": null,
+        "duplicate_predicted_lineage": 0,
+        "false_eligibility": null,
+        "false_rejection": null,
+        "indeterminate": 0,
+        "indeterminate_reason": null,
+        "predicted_bridge_family_agreement": null,
+        "predicted_eligibility_precision": 1,
+        "predicted_manifest_agreement": null,
+        "predicted_profile_selected": 1,
+        "predicted_remediation_overlap": null,
+        "predicted_strategy_agreement": 1,
+        "rank_agreement": null,
+        "reconstruction_required": 1
+      }
+    }
+  ],
+  "legacy_exclusion_cases": [
+    {
+      "duplicate_predicted_lineage": 0,
+      "profile_id": "425f8664-7ddd-4a99-b984-435051027e8f"
+    },
+    {
+      "duplicate_predicted_lineage": 0,
+      "profile_id": "6aec0dd2-e298-4173-aec3-603e2aae691b"
+    },
+    {
+      "duplicate_predicted_lineage": 0,
+      "profile_id": "9b0cf7ff-aca8-44ee-b354-28505ac3c60d"
+    },
+    {
+      "duplicate_predicted_lineage": 0,
+      "profile_id": "bebf5c5f-6719-4ac2-8e75-29ac6c839bf3"
+    }
+  ],
+  "legacy_exclusion_note": "Excluded legacy profiles are not winner-selectable and do not enter labelable comparison denominators during campaign execution.",
+  "passed": true
+}

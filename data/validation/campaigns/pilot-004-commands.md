@@ -2,15 +2,29 @@
 
 **Campaign:** `shadow-validation-pilot-004`
 
+All Wine runs clone a disposable prefix from an approved source snapshot. Never execute against `snapshots/` paths directly.
+
 ```bash
-export ALMA_BRIDGE_COMPATIBILITY_PROFILE_REUSE_ENABLED=false
+export REPO=/home/joshua/Desktop/Alma/alma-bridge
+export PILOT004_ROOT="$HOME/.local/share/alma-bridge/prefixes/validation/pilot-004"
 export ALMA_BRIDGE_VALIDATION_CAMPAIGN_MODE=true
 export ALMA_BRIDGE_VALIDATION_CAMPAIGN_ID=shadow-validation-pilot-004
+export ALMA_BRIDGE_VALIDATION_CAMPAIGN_DISPOSABLE_ROOT="$PILOT004_ROOT"
+export ALMA_BRIDGE_VALIDATION_CAMPAIGN_SOURCE_SNAPSHOT="$PILOT004_ROOT/snapshots"
+export ALMA_BRIDGE_COMPATIBILITY_PROFILE_REUSE_ENABLED=false
 ```
 
 ## run-01 — A_stable_repeat_success
 
 Clone T2 snapshot → `runs/run-01-A-t2/`. Register `A_stable_repeat_success`. Label: `winner_correct`.
+
+## run-02 — B_relocated_executable
+
+Clone T2 snapshot → `runs/run-02-B-t2/`. Copy `notepad.exe` to relocated path (same hash). Register `B_relocated_executable`.
+
+## run-03 — C_compatible_host_drift
+
+Clone T2 snapshot → `runs/run-03-C-t2/`. Pass `shadow_host_payload_overlay: {"os_family":"ubuntu"}` on BridgeRequest **before** planning. Register `C_compatible_host_drift`.
 
 ## run-04 — D_incompatible_host_drift (T2)
 
@@ -28,9 +42,17 @@ Clone → record baseline winver → `set_wine_windows_version(prefix, "win7")` 
 
 Clone **corefonts snapshot** → record baseline → remove `corefonts` marker files → read back absence → Bridge run. Expect `COMPONENT_MISSING`. Label: `drift_correct`.
 
+## run-08 — F_clean_prefix_reconstruction
+
+Fresh `wineboot -i` at `runs/run-08-F-t2/`. Shadow-only reconstruction prediction; reuse disabled. Register `F_clean_prefix_reconstruction`. Label: `drift_correct`.
+
 ## run-09 — G_known_compatibility_failure
 
 Clone T2 snapshot → **delete** `drive_c/windows/system32/notepad.exe` from disposable clone only → Bridge run. Expect failure. Label: `indeterminate`.
+
+## run-10 — H_unrelated_runtime_failure
+
+Execute `scripts/validation/native_timeout_probe.sh` from temp cwd. Register `H_unrelated_runtime_failure`.
 
 ## run-11 — I_trust_state_imported
 

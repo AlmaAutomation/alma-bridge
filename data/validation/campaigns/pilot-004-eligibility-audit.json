@@ -1,1 +1,70 @@
-{"campaign_id": "shadow-validation-pilot-004", "status": "pending_setup", "note": "Populate after SETUP-T2-B and snapshot capture at freeze"}
+{
+  "campaign_id": "shadow-validation-pilot-004",
+  "candidates": [
+    {
+      "bridge_manifest_hash": "0ae990e9b3bbe238c68bf42b940267c01f3b205f0e98a1a701006588fb95e37d",
+      "eligibility_status": "eligible",
+      "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+      "profile_revision": 3,
+      "ranking_components": {},
+      "rejection_reason_codes": [],
+      "trust_category": "eligible_for_future_active_reuse",
+      "winner_selectable": true
+    },
+    {
+      "bridge_manifest_hash": "22f6da1afcabe13ca4009b004bae454378a1d47f901c35e9863958662d1f2089",
+      "eligibility_status": "eligible",
+      "profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+      "profile_revision": 4,
+      "ranking_components": {},
+      "rejection_reason_codes": [],
+      "trust_category": "eligible_for_future_active_reuse",
+      "winner_selectable": true
+    }
+  ],
+  "distinct_manifest_hashes": 2,
+  "executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+  "meaningful_ranking_difference": true,
+  "predicted_winner_profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+  "predicted_winner_revision": 4,
+  "ranked_eligible": [
+    {
+      "final_rank_score": 0.9996,
+      "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+      "ranking_components": {
+        "bridge_family_match": 1.0,
+        "drift_penalty": 0.0,
+        "environment_match_confidence": 1.0,
+        "failure_penalty": 0.0,
+        "host_class_match": 1.0,
+        "ml_component": 0.1499,
+        "program_identity_match": 1.0,
+        "recency": 0.996,
+        "reuse_success_rate": 0.5,
+        "trust_state_cap": 1.0,
+        "verification_confidence": 0.9
+      },
+      "ranking_status": "ranked"
+    },
+    {
+      "final_rank_score": 0.9999,
+      "profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+      "ranking_components": {
+        "bridge_family_match": 1.0,
+        "drift_penalty": 0.0,
+        "environment_match_confidence": 1.0,
+        "failure_penalty": 0.0,
+        "host_class_match": 1.0,
+        "ml_component": 0.1499,
+        "program_identity_match": 1.0,
+        "recency": 0.9999,
+        "reuse_success_rate": 0.5,
+        "trust_state_cap": 1.0,
+        "verification_confidence": 0.9
+      },
+      "ranking_status": "ranked"
+    }
+  ],
+  "ranking_formula_id": "profile_shadow_rank_v1",
+  "ranking_formula_version": "1.0.0"
+}

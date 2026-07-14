@@ -2,7 +2,7 @@
 
 **Campaign:** `shadow-validation-pilot-004`  
 **Predecessor:** `shadow-validation-pilot-003` (`aborted_non_promotable`)  
-**Status:** Corrective engineering complete; freeze setup pending operator approval.
+**Status:** Freeze complete; `ready_for_execution_approval`. Execution NOT approved.
 
 ## Pilot-003 Closure Summary
 

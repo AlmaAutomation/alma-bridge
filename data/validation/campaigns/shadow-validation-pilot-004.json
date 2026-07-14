@@ -1,119 +1,6 @@
 {
-  "campaign_id": "shadow-validation-pilot-004",
-  "campaign_type": "pilot",
-  "status": "draft_corrective_package",
-  "promotion_eligible": false,
-  "corrective_commit_sha": "PENDING_AT_FREEZE",
-  "workstream": "A_general_compatibility_profile_validation",
-  "predecessor_campaign_id": "shadow-validation-pilot-003",
-  "predecessor_status": "aborted_non_promotable",
-  "predecessor_abort_reason": "INVALID_LABEL_TYPE",
-  "predecessor_evidence_policy": "exclude_from_gate_calculations",
-  "pilot001_evidence_policy": "exclude_from_gate_calculations",
-  "pilot002_evidence_policy": "exclude_from_gate_calculations",
-  "pilot003_evidence_policy": "exclude_from_gate_calculations",
-  "freeze_package": "data/validation/campaigns/pilot-004-freeze-package.md",
-  "execution_commands": "data/validation/campaigns/pilot-004-commands.md",
-  "validation_matrix": "data/validation/campaigns/pilot-004-matrix.json",
-  "eligibility_audit": "data/validation/campaigns/pilot-004-eligibility-audit.json",
-  "source_snapshot_registry": "data/validation/campaigns/pilot-004-source-snapshots.json",
-  "scenario_manifest_version": "1.0.0",
-  "planned_run_count": 13,
-  "feature_flags": {
-    "ALMA_BRIDGE_COMPATIBILITY_PROFILES_ENABLED": true,
-    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_CREATION_ENABLED": true,
-    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_SHADOW_MODE": true,
-    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_REUSE_ENABLED": false,
-    "ALMA_BRIDGE_OPERATOR_ENABLED": false,
-    "ALMA_BRIDGE_OPERATOR_ALLOW_MUTATIONS": false,
-    "ALMA_BRIDGE_VALIDATION_CAMPAIGN_MODE": true
-  },
   "active_reuse_enabled": false,
-  "legacy_profile_exclusion": {
-    "reason_code": "WINEPREFIX_MANIFEST_IDENTITY_LEAK",
-    "excluded_profile_ids": [
-      "425f8664-7ddd-4a99-b984-435051027e8f",
-      "bebf5c5f-6719-4ac2-8e75-29ac6c839bf3",
-      "6aec0dd2-e298-4173-aec3-603e2aae691b",
-      "9b0cf7ff-aca8-44ee-b354-28505ac3c60d"
-    ],
-    "canonical_t2_profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
-    "canonical_t3_profile_id": "281e69a0-e3e8-46cc-8de5-2639facce95f",
-    "canonical_t3_arch_profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80"
-  },
-  "run_f_semantics": {
-    "scenario_id": "F_clean_prefix_reconstruction",
-    "shadow_only": true,
-    "reuse_enabled": false
-  },
-  "run_j_precondition": {
-    "scenario_id": "J_multiple_candidate_ranking",
-    "run_number": 13,
-    "blocked_if_unmet": true,
-    "no_fabrication": true,
-    "candidates": [
-      {
-        "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
-        "setup_id": "SETUP-T2-A-canonical",
-        "bridge_manifest_hash": "0ae990e9b3bbe238c68bf42b940267c01f3b205f0e98a1a701006588fb95e37d",
-        "executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
-        "trust_state": "locally_verified",
-        "lifecycle_state": "VERIFIED"
-      },
-      {
-        "profile_id": "PENDING_SETUP_T2_B",
-        "setup_id": "SETUP-T2-B-alt-manifest",
-        "bridge_manifest_hash": "PENDING_AT_FREEZE",
-        "executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
-        "trust_state": "locally_verified",
-        "lifecycle_state": "VERIFIED",
-        "notes": "Created via documented normal Bridge setup before freeze; not from drift repair"
-      }
-    ]
-  },
-  "target_programs": [
-    {
-      "target_id": "T1_native_timeout_probe",
-      "program_class": "native_script",
-      "application_family": "alma_validation_native",
-      "canonical_path": "scripts/validation/native_timeout_probe.sh"
-    },
-    {
-      "target_id": "T2_wine_notepad64",
-      "program_class": "pe_windows_gui",
-      "application_family": "wine_builtin_notepad64",
-      "canonical_executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
-      "verification_policy_id": "wine_gui_process_v1"
-    },
-    {
-      "target_id": "T3_arch_wine_notepad32",
-      "program_class": "pe_windows_gui",
-      "application_family": "wine_builtin_notepad32",
-      "canonical_executable_hash": "503665cbf1e3be907387c2b76beb25bcdef7d326738adf6f06ff53b9984a2684",
-      "verification_policy_id": "wine_gui_process_v1",
-      "canonical_arch_profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80"
-    }
-  ],
-  "source_snapshots": {
-    "t2_notepad64": {
-      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t2-notepad64-PENDING",
-      "aggregate_sha256": "PENDING_AT_FREEZE"
-    },
-    "t2_notepad64_corefonts": {
-      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t2-notepad64-corefonts-PENDING",
-      "aggregate_sha256": "PENDING_AT_FREEZE",
-      "installed_components": ["corefonts"]
-    },
-    "t3_notepad32": {
-      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t3-notepad32-PENDING",
-      "aggregate_sha256": "PENDING_AT_FREEZE"
-    }
-  },
-  "target_paths": {
-    "disposable_prefix_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-004",
-    "source_snapshot_guard_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots",
-    "ascension_primary_prefix": "guard_reference_only_not_execution_target"
-  },
+  "campaign_id": "shadow-validation-pilot-004",
   "campaign_notes": [
     "NOT APPROVED FOR EXECUTION.",
     "Pilot-001/002/003 evidence excluded from promotion gates.",
@@ -121,5 +8,119 @@
     "Run 11 label must be rejected_correct on imported fixture, never shadow_observation_only.",
     "Run 9 removes target executable; must not succeed.",
     "SETUP-T2-B required before freeze for Run J."
-  ]
+  ],
+  "campaign_type": "pilot",
+  "corrective_commit_sha": "68ef1381cff491edd1b743f2b1624845d79bb7f7",
+  "eligibility_audit": "data/validation/campaigns/pilot-004-eligibility-audit.json",
+  "execution_commands": "data/validation/campaigns/pilot-004-commands.md",
+  "feature_flags": {
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILES_ENABLED": true,
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_CREATION_ENABLED": true,
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_REUSE_ENABLED": false,
+    "ALMA_BRIDGE_COMPATIBILITY_PROFILE_SHADOW_MODE": true,
+    "ALMA_BRIDGE_OPERATOR_ALLOW_MUTATIONS": false,
+    "ALMA_BRIDGE_OPERATOR_ENABLED": false,
+    "ALMA_BRIDGE_VALIDATION_CAMPAIGN_MODE": true
+  },
+  "freeze_package": "data/validation/campaigns/pilot-004-freeze-package.md",
+  "legacy_profile_exclusion": {
+    "canonical_t2_profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+    "canonical_t3_arch_profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80",
+    "canonical_t3_profile_id": "281e69a0-e3e8-46cc-8de5-2639facce95f",
+    "excluded_profile_ids": [
+      "425f8664-7ddd-4a99-b984-435051027e8f",
+      "bebf5c5f-6719-4ac2-8e75-29ac6c839bf3",
+      "6aec0dd2-e298-4173-aec3-603e2aae691b",
+      "9b0cf7ff-aca8-44ee-b354-28505ac3c60d"
+    ],
+    "reason_code": "WINEPREFIX_MANIFEST_IDENTITY_LEAK"
+  },
+  "pilot001_evidence_policy": "exclude_from_gate_calculations",
+  "pilot002_evidence_policy": "exclude_from_gate_calculations",
+  "pilot003_evidence_policy": "exclude_from_gate_calculations",
+  "planned_run_count": 13,
+  "predecessor_abort_reason": "INVALID_LABEL_TYPE",
+  "predecessor_campaign_id": "shadow-validation-pilot-003",
+  "predecessor_evidence_policy": "exclude_from_gate_calculations",
+  "predecessor_status": "aborted_non_promotable",
+  "promotion_eligible": false,
+  "run_f_semantics": {
+    "reuse_enabled": false,
+    "scenario_id": "F_clean_prefix_reconstruction",
+    "shadow_only": true
+  },
+  "run_j_precondition": {
+    "blocked_if_unmet": true,
+    "candidates": [
+      {
+        "bridge_manifest_hash": "0ae990e9b3bbe238c68bf42b940267c01f3b205f0e98a1a701006588fb95e37d",
+        "executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+        "lifecycle_state": "VERIFIED",
+        "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+        "setup_id": "SETUP-T2-A-canonical",
+        "trust_state": "locally_verified"
+      },
+      {
+        "bridge_manifest_hash": "22f6da1afcabe13ca4009b004bae454378a1d47f901c35e9863958662d1f2089",
+        "executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+        "lifecycle_state": "VERIFIED",
+        "profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+        "setup_id": "SETUP-T2-B-alt-manifest",
+        "trust_state": "locally_verified"
+      }
+    ],
+    "no_fabrication": true,
+    "run_number": 13,
+    "scenario_id": "J_multiple_candidate_ranking"
+  },
+  "scenario_manifest_version": "1.0.0",
+  "source_snapshot_registry": "data/validation/campaigns/pilot-004-source-snapshots.json",
+  "source_snapshots": {
+    "t2_notepad64": {
+      "aggregate_sha256": "0cbbe4a348ae907f0f1cce8c9c1d1d73079c725e79569a6355e323e3a7ff6c8e",
+      "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t2-notepad64-20260714T171541Z"
+    },
+    "t2_notepad64_corefonts": {
+      "aggregate_sha256": "6ee0586d01eab9f45fa8716362552b80588239142b521955b56b463e87491d95",
+      "installed_components": [
+        "corefonts"
+      ],
+      "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t2-notepad64-corefonts-20260714T171541Z"
+    },
+    "t3_notepad32": {
+      "aggregate_sha256": "874d2d41c96867efc302222fe2212048ccb83e498bdd0db72555d4cc79e6eed2",
+      "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t3-notepad32-20260714T171541Z"
+    }
+  },
+  "status": "ready_for_execution_approval",
+  "target_paths": {
+    "ascension_primary_prefix": "guard_reference_only_not_execution_target",
+    "disposable_prefix_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-004",
+    "source_snapshot_guard_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots"
+  },
+  "target_programs": [
+    {
+      "application_family": "alma_validation_native",
+      "canonical_path": "scripts/validation/native_timeout_probe.sh",
+      "program_class": "native_script",
+      "target_id": "T1_native_timeout_probe"
+    },
+    {
+      "application_family": "wine_builtin_notepad64",
+      "canonical_executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+      "program_class": "pe_windows_gui",
+      "target_id": "T2_wine_notepad64",
+      "verification_policy_id": "wine_gui_process_v1"
+    },
+    {
+      "application_family": "wine_builtin_notepad32",
+      "canonical_arch_profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80",
+      "canonical_executable_hash": "503665cbf1e3be907387c2b76beb25bcdef7d326738adf6f06ff53b9984a2684",
+      "program_class": "pe_windows_gui",
+      "target_id": "T3_arch_wine_notepad32",
+      "verification_policy_id": "wine_gui_process_v1"
+    }
+  ],
+  "validation_matrix": "data/validation/campaigns/pilot-004-matrix.json",
+  "workstream": "A_general_compatibility_profile_validation"
 }

@@ -1,0 +1,92 @@
+{
+  "candidate1": {
+    "bridge_family_key": "77ae04f2f7eb12a50564ee0b3f90417d1c7c828714f303950e66f4fbcf86d842",
+    "bridge_manifest_hash": "0ae990e9b3bbe238c68bf42b940267c01f3b205f0e98a1a701006588fb95e37d",
+    "executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+    "host_compatibility_class_id": "9f439bf536c9f9ff803e144869cb9be62ef86b298dfa338ef0f0e5530ff5f19d",
+    "manifest": {
+      "base_runtime": {
+        "kind": "wine",
+        "version_family": null
+      },
+      "config_file_hashes": {},
+      "dll_overrides": {},
+      "environment": {},
+      "external_artifacts": [],
+      "installed_components": [],
+      "launcher_file_hash": null,
+      "prefix_architecture": "win64",
+      "remediation_protocol": [],
+      "schema": "bridge_manifest_v1",
+      "windows_version": "win10",
+      "wrapper_versions": {}
+    },
+    "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+    "profile_lineage_key": "585c2bdf136dbb74e0e7438b9a3dff0d7d44c420c042f61c5c391ebe40f59a5e",
+    "profile_revision": 3,
+    "program_identity_key": "671ffcc52c6e9bcdff0c652a188593b4743d90ad798b54015b95b3487672d09d",
+    "source_session_id": "946b3255-ea00-4948-a9d5-5ef8dffb7517",
+    "trust_state": "locally_verified",
+    "verification_binding_key": "2a6c58d46c868fc0124704a5664838f04c125b42d036f5c2a6a4d2297c907f59"
+  },
+  "candidate2": {
+    "bridge_family_key": "77ae04f2f7eb12a50564ee0b3f90417d1c7c828714f303950e66f4fbcf86d842",
+    "bridge_manifest_hash": "22f6da1afcabe13ca4009b004bae454378a1d47f901c35e9863958662d1f2089",
+    "executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+    "host_compatibility_class_id": "9f439bf536c9f9ff803e144869cb9be62ef86b298dfa338ef0f0e5530ff5f19d",
+    "manifest": {
+      "base_runtime": {
+        "kind": "wine",
+        "version_family": null
+      },
+      "config_file_hashes": {},
+      "dll_overrides": {},
+      "environment": {
+        "WINEDLLOVERRIDES": "winemenubuilder.exe=d"
+      },
+      "external_artifacts": [],
+      "installed_components": [],
+      "launcher_file_hash": null,
+      "prefix_architecture": "win64",
+      "remediation_protocol": [],
+      "schema": "bridge_manifest_v1",
+      "windows_version": "win10",
+      "wrapper_versions": {}
+    },
+    "profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+    "profile_lineage_key": "585c2bdf136dbb74e0e7438b9a3dff0d7d44c420c042f61c5c391ebe40f59a5e",
+    "profile_revision": 4,
+    "program_identity_key": "671ffcc52c6e9bcdff0c652a188593b4743d90ad798b54015b95b3487672d09d",
+    "source_session_id": "ac43d474-1186-4f56-906b-97e4aca0bd7b",
+    "trust_state": "locally_verified",
+    "verification_binding_key": "2a6c58d46c868fc0124704a5664838f04c125b42d036f5c2a6a4d2297c907f59"
+  },
+  "manifest_delta": {
+    "environment": {
+      "candidate1": {},
+      "candidate2": {
+        "WINEDLLOVERRIDES": "winemenubuilder.exe=d"
+      }
+    }
+  },
+  "material_difference_justification": "WINEDLLOVERRIDES winemenubuilder.exe=d is a stable Wine DLL load-order compatibility configuration captured in bridge manifest environment. It is not WINEPREFIX, path, hostname, or session ephemeral state.",
+  "payload": {
+    "candidate_id": "fff25b6c-4fb6-420e-9918-a496d76db9bc",
+    "checks": [
+      "process_survives",
+      "target_process_identity"
+    ],
+    "exe_path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/setup/t2-notepad64-b-alt/drive_c/windows/system32/notepad.exe",
+    "phase": "wine_gui",
+    "profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+    "program_kind": "pe_windows_gui",
+    "session_id": "ac43d474-1186-4f56-906b-97e4aca0bd7b",
+    "setup_id": "SETUP-T2-B-alt-manifest",
+    "success": true,
+    "verification_passed": true,
+    "verification_policy": "wine_gui_process_v1",
+    "wine_prefix": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/setup/t2-notepad64-b-alt"
+  },
+  "setup_id": "SETUP-T2-B-alt-manifest",
+  "setup_session_id": "ac43d474-1186-4f56-906b-97e4aca0bd7b"
+}

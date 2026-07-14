@@ -1,0 +1,132 @@
+{
+  "baseline_windows_version": "win10",
+  "disposable_clone": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/dry-run/run-06-windows-drift",
+  "drift_reason_codes": [
+    "WINDOWS_VERSION_DRIFT"
+  ],
+  "dry_run_only": true,
+  "expected_windows_version": "win10",
+  "observed_windows_version": "win7",
+  "passed": true,
+  "run_number": 6,
+  "scenario_id": "E_prefix_drift_windows",
+  "shadow_prediction": {
+    "candidates": [
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win7",
+            "reason_code": "WINDOWS_VERSION_DRIFT",
+            "severity": 0.6,
+            "status": "drift"
+          }
+        ],
+        "drift_prediction_result": "drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+        "rejection_reason_codes": []
+      },
+      {
+        "drift_dimensions": [],
+        "drift_prediction_result": "no_manifest_signals",
+        "eligibility_status": "rejected",
+        "profile_id": "d9b24d83-a6ef-4e3e-9ab4-33b4aca28032",
+        "rejection_reason_codes": [
+          "HOST_ARCH_MISMATCH",
+          "OS_FAMILY_MISMATCH",
+          "PROGRAM_IDENTITY_MISMATCH"
+        ]
+      },
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win7",
+            "reason_code": "WINDOWS_VERSION_DRIFT",
+            "severity": 0.6,
+            "status": "drift"
+          }
+        ],
+        "drift_prediction_result": "drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+        "rejection_reason_codes": []
+      },
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win7",
+            "reason_code": "WINDOWS_VERSION_DRIFT",
+            "severity": 0.6,
+            "status": "drift"
+          }
+        ],
+        "drift_prediction_result": "drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "bebf5c5f-6719-4ac2-8e75-29ac6c839bf3",
+        "rejection_reason_codes": []
+      },
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win7",
+            "reason_code": "WINDOWS_VERSION_DRIFT",
+            "severity": 0.6,
+            "status": "drift"
+          }
+        ],
+        "drift_prediction_result": "drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "425f8664-7ddd-4a99-b984-435051027e8f",
+        "rejection_reason_codes": []
+      }
+    ],
+    "effective_host_payload": {
+      "capability_set": [
+        "docker",
+        "multiarch",
+        "podman",
+        "proton",
+        "wine",
+        "winetricks"
+      ],
+      "gpu_class": "intel:nvidia",
+      "host_arch": "x86_64",
+      "os_family": "unknown",
+      "proton_family": null,
+      "schema": "host_class_v1",
+      "wine_major": null
+    },
+    "overlay_payload": null,
+    "real_host_payload": {
+      "capability_set": [
+        "docker",
+        "multiarch",
+        "podman",
+        "proton",
+        "wine",
+        "winetricks"
+      ],
+      "gpu_class": "intel:nvidia",
+      "host_arch": "x86_64",
+      "os_family": "unknown",
+      "proton_family": null,
+      "schema": "host_class_v1",
+      "wine_major": null
+    },
+    "selected_profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+    "session_id": "pilot004-dry-run-06-fe4b8230-5c7e-4fb6-8aec-ffd7344e60a0",
+    "shadow_event_id": "eecea508-1840-42b2-a20a-c4235777fe8a"
+  },
+  "source_snapshot_hash_after": "0cbbe4a348ae907f0f1cce8c9c1d1d73079c725e79569a6355e323e3a7ff6c8e",
+  "source_snapshot_hash_before": "0cbbe4a348ae907f0f1cce8c9c1d1d73079c725e79569a6355e323e3a7ff6c8e",
+  "source_snapshot_path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t2-notepad64-20260714T171541Z",
+  "source_snapshot_unchanged": true
+}

@@ -1,0 +1,94 @@
+{
+  "passed": true,
+  "pre_plan_overlay": true,
+  "runs": [
+    {
+      "canonical_rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH"
+      ],
+      "effective_host_payload": {
+        "capability_set": [
+          "docker",
+          "multiarch",
+          "podman",
+          "proton",
+          "wine",
+          "winetricks"
+        ],
+        "gpu_class": "intel:nvidia",
+        "host_arch": "aarch64",
+        "os_family": "unknown",
+        "proton_family": null,
+        "schema": "host_class_v1",
+        "wine_major": null
+      },
+      "host_arch_mismatch_present": true,
+      "normal_execution_host_unchanged": true,
+      "overlay_payload": {
+        "host_arch": "aarch64"
+      },
+      "real_host_payload": {
+        "capability_set": [
+          "docker",
+          "multiarch",
+          "podman",
+          "proton",
+          "wine",
+          "winetricks"
+        ],
+        "gpu_class": "intel:nvidia",
+        "host_arch": "x86_64",
+        "os_family": "unknown",
+        "proton_family": null,
+        "schema": "host_class_v1",
+        "wine_major": null
+      },
+      "run_number": 4,
+      "selected_profile_id": null
+    },
+    {
+      "canonical_rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH"
+      ],
+      "effective_host_payload": {
+        "capability_set": [
+          "docker",
+          "multiarch",
+          "podman",
+          "proton",
+          "wine",
+          "winetricks"
+        ],
+        "gpu_class": "intel:nvidia",
+        "host_arch": "aarch64",
+        "os_family": "unknown",
+        "proton_family": null,
+        "schema": "host_class_v1",
+        "wine_major": null
+      },
+      "host_arch_mismatch_present": true,
+      "normal_execution_host_unchanged": true,
+      "overlay_payload": {
+        "host_arch": "aarch64"
+      },
+      "real_host_payload": {
+        "capability_set": [
+          "docker",
+          "multiarch",
+          "podman",
+          "proton",
+          "wine",
+          "winetricks"
+        ],
+        "gpu_class": "intel:nvidia",
+        "host_arch": "x86_64",
+        "os_family": "unknown",
+        "proton_family": null,
+        "schema": "host_class_v1",
+        "wine_major": null
+      },
+      "run_number": 5,
+      "selected_profile_id": null
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "baseline_components": [
+    "corefonts"
+  ],
+  "disposable_clone": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/dry-run/run-07-component-drift",
+  "drift_engine": {
+    "dimensions": [
+      {
+        "dimension": "windows_version",
+        "expected": "win10",
+        "observed": "win10",
+        "reason_code": "WINDOWS_VERSION_MATCH",
+        "status": "match"
+      },
+      {
+        "dimension": "installed_components",
+        "expected": [
+          "corefonts"
+        ],
+        "observed": [],
+        "reason_code": "COMPONENT_MISSING",
+        "status": "drift"
+      }
+    ],
+    "drift_result": "drift_detected",
+    "reason_codes": [
+      "WINDOWS_VERSION_MATCH",
+      "COMPONENT_MISSING"
+    ]
+  },
+  "dry_run_only": true,
+  "effective_manifest_for_run7": {
+    "base_runtime": {
+      "kind": "wine",
+      "version_family": null
+    },
+    "config_file_hashes": {},
+    "dll_overrides": {},
+    "environment": {},
+    "external_artifacts": [],
+    "installed_components": [
+      "corefonts"
+    ],
+    "launcher_file_hash": null,
+    "prefix_architecture": "win64",
+    "remediation_protocol": [],
+    "schema": "bridge_manifest_v1",
+    "windows_version": "win10",
+    "wrapper_versions": {}
+  },
+  "expected_components": [
+    "corefonts"
+  ],
+  "observed_components_after_removal": [],
+  "passed": true,
+  "run_number": 7,
+  "scenario_id": "E_prefix_drift_component",
+  "shadow_prediction": {
+    "candidates": [
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win10",
+            "reason_code": "WINDOWS_VERSION_MATCH",
+            "severity": 0.0,
+            "status": "match"
+          }
+        ],
+        "drift_prediction_result": "no_drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+        "rejection_reason_codes": []
+      },
+      {
+        "drift_dimensions": [],
+        "drift_prediction_result": "no_manifest_signals",
+        "eligibility_status": "rejected",
+        "profile_id": "d9b24d83-a6ef-4e3e-9ab4-33b4aca28032",
+        "rejection_reason_codes": [
+          "HOST_ARCH_MISMATCH",
+          "OS_FAMILY_MISMATCH",
+          "PROGRAM_IDENTITY_MISMATCH"
+        ]
+      },
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win10",
+            "reason_code": "WINDOWS_VERSION_MATCH",
+            "severity": 0.0,
+            "status": "match"
+          }
+        ],
+        "drift_prediction_result": "no_drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+        "rejection_reason_codes": []
+      },
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win10",
+            "reason_code": "WINDOWS_VERSION_MATCH",
+            "severity": 0.0,
+            "status": "match"
+          }
+        ],
+        "drift_prediction_result": "no_drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "bebf5c5f-6719-4ac2-8e75-29ac6c839bf3",
+        "rejection_reason_codes": []
+      },
+      {
+        "drift_dimensions": [
+          {
+            "dimension": "windows_version",
+            "expected": "win10",
+            "observed": "win10",
+            "reason_code": "WINDOWS_VERSION_MATCH",
+            "severity": 0.0,
+            "status": "match"
+          }
+        ],
+        "drift_prediction_result": "no_drift_detected",
+        "eligibility_status": "eligible",
+        "profile_id": "425f8664-7ddd-4a99-b984-435051027e8f",
+        "rejection_reason_codes": []
+      }
+    ],
+    "effective_host_payload": {
+      "capability_set": [
+        "docker",
+        "multiarch",
+        "podman",
+        "proton",
+        "wine",
+        "winetricks"
+      ],
+      "gpu_class": "intel:nvidia",
+      "host_arch": "x86_64",
+      "os_family": "unknown",
+      "proton_family": null,
+      "schema": "host_class_v1",
+      "wine_major": null
+    },
+    "overlay_payload": null,
+    "real_host_payload": {
+      "capability_set": [
+        "docker",
+        "multiarch",
+        "podman",
+        "proton",
+        "wine",
+        "winetricks"
+      ],
+      "gpu_class": "intel:nvidia",
+      "host_arch": "x86_64",
+      "os_family": "unknown",
+      "proton_family": null,
+      "schema": "host_class_v1",
+      "wine_major": null
+    },
+    "selected_profile_id": "b2a24a3b-c93c-47f1-826e-cd8d967528cd",
+    "session_id": "pilot004-dry-run-07-60697457-6318-48ac-92a5-1b2bc15e5d6d",
+    "shadow_event_id": "8fa9b9fc-8ce8-40e6-8deb-34ad82691adc"
+  },
+  "source_snapshot_hash_after": "6ee0586d01eab9f45fa8716362552b80588239142b521955b56b463e87491d95",
+  "source_snapshot_hash_before": "6ee0586d01eab9f45fa8716362552b80588239142b521955b56b463e87491d95",
+  "source_snapshot_path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-004/snapshots/source-t2-notepad64-corefonts-20260714T171541Z",
+  "source_snapshot_unchanged": true
+}
