@@ -182,6 +182,37 @@ def validate_campaign_matrix(
             "Run J precondition unmet; matrix must mark run 13 blocked",
             severity="warning",
         )
+    elif run_j.get("blocked_if_unmet"):
+        run_13 = next((r for r in matrix_runs if int(r.get("run_number", 0)) == 13), None)
+        if not run_13 or not run_13.get("precondition"):
+            issue("RUN_J_PRECONDITION_MISSING", "Run 13 must declare precondition gate")
+
+    run_f = next((r for r in matrix_runs if str(r.get("scenario_id")) == "F_clean_prefix_reconstruction"), None)
+    if run_f and not run_f.get("shadow_only_prefix_mutation") and not (campaign_manifest.get("run_f_semantics") or {}).get("shadow_only"):
+        issue("RUN_F_NOT_SHADOW_ONLY", "Run F must be marked shadow-only")
+
+    for run in matrix_runs:
+        if str(run.get("scenario_id")) == "D_incompatible_host_drift":
+            shadow_inputs = run.get("shadow_scenario_inputs") or {}
+            if not shadow_inputs.get("expected_rejection_reasons"):
+                issue(
+                    "RUN_D_MISSING_EXPECTED_REJECTION",
+                    f"Run {run.get('run_number')}: D_incompatible_host_drift requires expected_rejection_reasons",
+                )
+            if shadow_inputs.get("candidate_must_exist") and not shadow_inputs.get("host_payload_overlay"):
+                issue(
+                    "RUN_D_MISSING_HOST_OVERLAY",
+                    f"Run {run.get('run_number')}: host_payload_overlay required for deterministic rejection",
+                )
+
+    if not campaign_manifest.get("execution_commands"):
+        issue("COMMANDS_DOC_NOT_CONFIGURED", "execution_commands path required in campaign manifest")
+
+    eligibility_audit = campaign_manifest.get("eligibility_audit")
+    if eligibility_audit:
+        audit_path = repo_root / str(eligibility_audit)
+        if not audit_path.exists():
+            issue("ELIGIBILITY_AUDIT_MISSING", f"Eligibility audit missing: {eligibility_audit}")
 
     return result
 

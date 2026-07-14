@@ -1,0 +1,139 @@
+{
+  "all_passed": true,
+  "audit_at_utc": "20260714T041109Z",
+  "campaign_id": "shadow-validation-pilot-003",
+  "cases": [
+    {
+      "case": "T2_profile_on_T2_wine_gui_target",
+      "eligibility_status": "eligible",
+      "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+      "rejection_reason_codes": [],
+      "verification_binding_compatible": true,
+      "winner_selectable": true
+    },
+    {
+      "case": "T3_profile_on_T3_wine_gui_target",
+      "eligibility_status": "eligible",
+      "profile_id": "281e69a0-e3e8-46cc-8de5-2639facce95f",
+      "rejection_reason_codes": [],
+      "verification_binding_compatible": true,
+      "winner_selectable": true
+    },
+    {
+      "case": "T2_profile_on_T3_executable",
+      "eligibility_status": "rejected",
+      "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+      "rejection_reason_codes": [
+        "PROGRAM_IDENTITY_MISMATCH"
+      ],
+      "verification_binding_compatible": true,
+      "winner_selectable": false
+    },
+    {
+      "case": "native_profile_on_wine_gui_target",
+      "eligibility_status": "rejected",
+      "profile_id": "4a5aafde-60ae-4280-87c4-eb9d5df9c9e9",
+      "rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH",
+        "OS_FAMILY_MISMATCH",
+        "REQUIRED_CHECKS_MISMATCH",
+        "VERIFICATION_BINDING_INCOMPATIBLE",
+        "VERIFICATION_POLICY_ID_MISMATCH"
+      ],
+      "verification_binding_compatible": false,
+      "winner_selectable": false
+    },
+    {
+      "case": "electron_profile_on_ordinary_wine_gui_target",
+      "eligibility_status": "rejected",
+      "profile_id": "3503976d-75fd-4857-af96-7e3e946cbb71",
+      "rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH",
+        "OS_FAMILY_MISMATCH",
+        "PROGRAM_IDENTITY_MISMATCH",
+        "REQUIRED_CHECKS_MISMATCH",
+        "VERIFICATION_BINDING_INCOMPATIBLE",
+        "VERIFICATION_PHASE_MISMATCH",
+        "VERIFICATION_POLICY_ID_MISMATCH"
+      ],
+      "verification_binding_compatible": false,
+      "winner_selectable": false
+    },
+    {
+      "case": "run4_T2_candidate_host_arch_mismatch",
+      "eligibility_status": "rejected",
+      "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+      "rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH"
+      ],
+      "verification_binding_compatible": true,
+      "winner_selectable": false
+    },
+    {
+      "case": "run4_required_capability_missing",
+      "eligibility_status": "rejected",
+      "profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
+      "rejection_reason_codes": [
+        "REQUIRED_CAPABILITY_MISSING"
+      ],
+      "verification_binding_compatible": true,
+      "winner_selectable": false
+    },
+    {
+      "case": "run5_arch_profile_present",
+      "eligibility_status": "eligible",
+      "profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80",
+      "rejection_reason_codes": [],
+      "verification_binding_compatible": true,
+      "winner_selectable": true
+    },
+    {
+      "case": "run5_arch_profile_host_arch_mismatch",
+      "eligibility_status": "rejected",
+      "profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80",
+      "rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH"
+      ],
+      "verification_binding_compatible": true,
+      "winner_selectable": false
+    },
+    {
+      "case": "compatible_policy_version_eligible",
+      "eligibility_status": "rejected",
+      "profile_id": "d9b24d83-a6ef-4e3e-9ab4-33b4aca28032",
+      "rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH",
+        "OS_FAMILY_MISMATCH"
+      ],
+      "verification_binding_compatible": true,
+      "winner_selectable": false
+    },
+    {
+      "case": "incompatible_verifier_binding_rejected",
+      "eligibility_status": "rejected",
+      "profile_id": "d9b24d83-a6ef-4e3e-9ab4-33b4aca28032",
+      "rejection_reason_codes": [
+        "HOST_ARCH_MISMATCH",
+        "OS_FAMILY_MISMATCH",
+        "VERIFICATION_BINDING_INCOMPATIBLE",
+        "VERIFIER_VERSION_INCOMPATIBLE"
+      ],
+      "verification_binding_compatible": false,
+      "winner_selectable": false
+    },
+    {
+      "case": "missing_required_check_rejected",
+      "eligibility_status": "rejected",
+      "profile_id": "d9b24d83-a6ef-4e3e-9ab4-33b4aca28032",
+      "rejection_reason_codes": [
+        "REQUIRED_CHECKS_MISMATCH",
+        "VERIFICATION_BINDING_INCOMPATIBLE"
+      ],
+      "verification_binding_compatible": false,
+      "winner_selectable": false
+    }
+  ],
+  "corrective_commit": "6bf06ca14e760a4f976279f1ee9fd201dffa2080",
+  "run4_expected_reason": "HOST_ARCH_MISMATCH",
+  "run5_expected_reason": "HOST_ARCH_MISMATCH"
+}

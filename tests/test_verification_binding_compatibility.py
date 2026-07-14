@@ -106,18 +106,13 @@ def test_pilot003_matrix_passes_scenario_id_validation():
     matrix_doc = json.loads(
         (repo / "data/validation/campaigns/pilot-003-matrix.json").read_text(encoding="utf-8")
     )
+    campaign_manifest = json.loads(
+        (repo / "data/validation/campaigns/shadow-validation-pilot-003.json").read_text(encoding="utf-8")
+    )
     from alma_bridge.validation.campaign_freeze_validator import validate_campaign_matrix
 
     result = validate_campaign_matrix(
-        campaign_manifest={
-            "campaign_id": "shadow-validation-pilot-003",
-            "feature_flags": {
-                "ALMA_BRIDGE_COMPATIBILITY_PROFILE_REUSE_ENABLED": False,
-                "ALMA_BRIDGE_VALIDATION_CAMPAIGN_MODE": True,
-            },
-            "legacy_profile_exclusion": {"excluded_profile_ids": ["425f8664"]},
-            "target_paths": {"ascension_primary_prefix": "guard_reference_only_not_execution_target"},
-        },
+        campaign_manifest=campaign_manifest,
         matrix_runs=matrix_doc["runs"],
         scenario_manifest_path=repo / "data/validation/shadow_scenario_manifest_v1.json",
         repo_root=repo,

@@ -1,0 +1,48 @@
+{
+  "campaign_id": "shadow-validation-pilot-003",
+  "created_at_utc": "20260714T040638Z",
+  "snapshots": [
+    {
+      "aggregate_sha256": "0cbbe4a348ae907f0f1cce8c9c1d1d73079c725e79569a6355e323e3a7ff6c8e",
+      "created_at_utc": "20260714T040638Z",
+      "immutable": true,
+      "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t2-notepad64-20260714T040638Z",
+      "prefix_architecture": "win64",
+      "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t2-notepad64-20260714T040638Z",
+      "snapshot_key": "t2_notepad64",
+      "source_provenance": "pilot-002 verified snapshot clone",
+      "target_executable_path": "drive_c/windows/system32/notepad.exe",
+      "target_executable_sha256": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
+      "windows_version": "win10",
+      "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)"
+    },
+    {
+      "aggregate_sha256": "2e482c17aaacdf5d2f55153174c0494d2ae8904ff339f0c63a2a5c5eda4a8607",
+      "created_at_utc": "20260714T040638Z",
+      "immutable": true,
+      "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-wordpad64-20260714T040638Z",
+      "prefix_architecture": "win64",
+      "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-wordpad64-20260714T040638Z",
+      "snapshot_key": "t3_wordpad64",
+      "source_provenance": "pilot-002 verified snapshot clone",
+      "target_executable_path": "drive_c/Program Files/Windows NT/Accessories/wordpad.exe",
+      "target_executable_sha256": "a2bddbb8d43eb96b750813ab8f30db847d2b60d2838dd5fcb36348a719157266",
+      "windows_version": "win10",
+      "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)"
+    },
+    {
+      "aggregate_sha256": "874d2d41c96867efc302222fe2212048ccb83e498bdd0db72555d4cc79e6eed2",
+      "created_at_utc": "20260714T040638Z",
+      "immutable": true,
+      "path": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-notepad32-20260714T040638Z",
+      "prefix_architecture": "win32",
+      "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-notepad32-20260714T040638Z",
+      "snapshot_key": "t3_notepad32",
+      "source_provenance": "fresh wineboot -i disposable prefix",
+      "target_executable_path": "drive_c/windows/syswow64/notepad.exe",
+      "target_executable_sha256": "503665cbf1e3be907387c2b76beb25bcdef7d326738adf6f06ff53b9984a2684",
+      "windows_version": "win10",
+      "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)"
+    }
+  ]
+}

@@ -10,7 +10,8 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-01-A-t2"
+      "disposable_env": "runs/run-01-A-t2",
+      "source_snapshot": "t2_notepad64"
     },
     {
       "run_number": 2,
@@ -19,7 +20,8 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-02-B-t2"
+      "disposable_env": "runs/run-02-B-t2",
+      "source_snapshot": "t2_notepad64"
     },
     {
       "run_number": 3,
@@ -28,7 +30,12 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-03-C-t2"
+      "disposable_env": "runs/run-03-C-t2",
+      "source_snapshot": "t2_notepad64",
+      "shadow_scenario_inputs": {
+        "host_payload_overlay": {"os_family": "ubuntu"},
+        "notes": "Patch-level host metadata drift only; physical host unchanged"
+      }
     },
     {
       "run_number": 4,
@@ -38,7 +45,14 @@
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
       "disposable_env": "runs/run-04-D-t2",
-      "notes": "Simulated incompatible host; shadow rejection expected"
+      "source_snapshot": "t2_notepad64",
+      "shadow_scenario_inputs": {
+        "host_payload_overlay": {"host_arch": "aarch64"},
+        "expected_rejection_reasons": ["HOST_ARCH_MISMATCH"],
+        "candidate_must_exist": true,
+        "evaluation_mode": "shadow_read_only_host_class_mismatch",
+        "induced_mismatch": "Stored profile host_arch=x86_64; scenario shadow host class uses host_arch=aarch64 without mutating physical host"
+      }
     },
     {
       "run_number": 5,
@@ -47,7 +61,15 @@
       "target_id": "T3_arch_wine_notepad32",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad32",
-      "disposable_env": "runs/run-05-D-notepad32"
+      "disposable_env": "runs/run-05-D-notepad32",
+      "source_snapshot": "t3_notepad32",
+      "canonical_arch_profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80",
+      "shadow_scenario_inputs": {
+        "host_payload_overlay": {"host_arch": "aarch64"},
+        "expected_rejection_reasons": ["HOST_ARCH_MISMATCH"],
+        "scenario_objective": "architecture_host_class_mismatch_with_existing_candidate",
+        "induced_mismatch": "Verified PE32 notepad32 profile exists; scenario shadow host class uses host_arch=aarch64 while profile stores x86_64"
+      }
     },
     {
       "run_number": 6,
@@ -56,7 +78,9 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-06-E-windows-t2"
+      "disposable_env": "runs/run-06-E-windows-t2",
+      "source_snapshot": "t2_notepad64",
+      "run_j_candidate_role": "candidate_2_source"
     },
     {
       "run_number": 7,
@@ -65,7 +89,8 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-07-E-component-t2"
+      "disposable_env": "runs/run-07-E-component-t2",
+      "source_snapshot": "t2_notepad64"
     },
     {
       "run_number": 8,
@@ -74,7 +99,9 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-08-F-t2"
+      "disposable_env": "runs/run-08-F-t2",
+      "shadow_only_prefix_mutation": true,
+      "notes": "Fresh wineboot prefix; active reuse disabled; shadow predicts reconstruction_required"
     },
     {
       "run_number": 9,
@@ -83,7 +110,8 @@
       "target_id": "T3_wine_wordpad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_wordpad64",
-      "disposable_env": "runs/run-09-G-t3"
+      "disposable_env": "runs/run-09-G-t3",
+      "source_snapshot": "t3_wordpad64"
     },
     {
       "run_number": 10,
@@ -101,7 +129,8 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-11-I-imported"
+      "disposable_env": "runs/run-11-I-imported",
+      "source_snapshot": "t2_notepad64"
     },
     {
       "run_number": 12,
@@ -110,7 +139,8 @@
       "target_id": "T2_wine_notepad64",
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
-      "disposable_env": "runs/run-12-I-invalidated"
+      "disposable_env": "runs/run-12-I-invalidated",
+      "source_snapshot": "t2_notepad64"
     },
     {
       "run_number": 13,
@@ -120,6 +150,7 @@
       "program_kind": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
       "disposable_env": "runs/run-13-J-t2",
+      "source_snapshot": "t2_notepad64",
       "precondition": "blocked_until_two_canonical_candidates"
     }
   ]

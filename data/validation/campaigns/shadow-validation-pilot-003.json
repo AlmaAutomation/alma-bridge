@@ -1,32 +1,22 @@
 {
   "campaign_id": "shadow-validation-pilot-003",
   "campaign_type": "pilot",
-  "status": "corrective_package_pending_approval",
+  "status": "ready_for_execution_approval",
   "promotion_eligible": false,
+  "corrective_commit_sha": "6bf06ca14e760a4f976279f1ee9fd201dffa2080",
   "workstream": "A_general_compatibility_profile_validation",
   "predecessor_campaign_id": "shadow-validation-pilot-002",
   "predecessor_status": "aborted_non_promotable",
   "predecessor_abort_reason": "SCENARIO_ID_MANIFEST_MISMATCH",
   "predecessor_evidence_policy": "exclude_from_gate_calculations",
-  "corrective_package": "data/validation/campaigns/pilot-003-approval-package.md",
+  "pilot001_evidence_policy": "exclude_from_gate_calculations",
+  "freeze_package": "data/validation/campaigns/pilot-003-freeze-package.md",
+  "execution_commands": "data/validation/campaigns/pilot-003-commands.md",
   "validation_matrix": "data/validation/campaigns/pilot-003-matrix.json",
+  "eligibility_audit": "data/validation/campaigns/pilot-003-eligibility-audit.json",
+  "source_snapshot_registry": "data/validation/campaigns/pilot-003-source-snapshots.json",
   "scenario_manifest_version": "1.0.0",
   "planned_run_count": 13,
-  "planned_scenario_ids": [
-    "A_stable_repeat_success",
-    "B_relocated_executable",
-    "C_compatible_host_drift",
-    "D_incompatible_host_drift",
-    "D_incompatible_host_drift",
-    "E_prefix_drift_windows",
-    "E_prefix_drift_component",
-    "F_clean_prefix_reconstruction",
-    "G_known_compatibility_failure",
-    "H_unrelated_runtime_failure",
-    "I_trust_state_imported",
-    "I_trust_state_invalidated",
-    "J_multiple_candidate_ranking"
-  ],
   "feature_flags": {
     "ALMA_BRIDGE_COMPATIBILITY_PROFILES_ENABLED": true,
     "ALMA_BRIDGE_COMPATIBILITY_PROFILE_CREATION_ENABLED": true,
@@ -46,7 +36,21 @@
       "9b0cf7ff-aca8-44ee-b354-28505ac3c60d"
     ],
     "canonical_t2_profile_id": "a5576257-65b5-485f-a966-8273bccd8146",
-    "canonical_t3_profile_id": "281e69a0-e3e8-46cc-8de5-2639facce95f"
+    "canonical_t3_profile_id": "281e69a0-e3e8-46cc-8de5-2639facce95f",
+    "canonical_t3_arch_profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80"
+  },
+  "run_f_semantics": {
+    "scenario_id": "F_clean_prefix_reconstruction",
+    "shadow_only": true,
+    "reuse_enabled": false
+  },
+  "run_j_precondition": {
+    "scenario_id": "J_multiple_candidate_ranking",
+    "run_number": 13,
+    "blocked_if_unmet": true,
+    "no_fabrication": true,
+    "second_candidate_source_run": 6,
+    "second_candidate_scenario_id": "E_prefix_drift_windows"
   },
   "target_programs": [
     {
@@ -54,74 +58,71 @@
       "program_class": "native_script",
       "application_family": "alma_validation_native",
       "canonical_path": "scripts/validation/native_success_probe.sh",
-      "canonical_executable_hash": "9c9c8180e7ab13b2ca48c2c9750bb16ce32eeeb017afbec31320cc22f4cb2b00",
-      "verification_phase": "native",
-      "verification_required_checks": ["exit_code_zero"]
+      "canonical_executable_hash": "9c9c8180e7ab13b2ca48c2c9750bb16ce32eeeb017afbec31320cc22f4cb2b00"
     },
     {
       "target_id": "T2_wine_notepad64",
       "program_class": "pe_windows_gui",
       "application_family": "wine_builtin_notepad64",
       "canonical_executable_hash": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69",
-      "verification_phase": "wine_gui",
-      "verification_policy_id": "wine_gui_process_v1",
-      "verification_required_checks": ["process_survives", "target_process_identity"]
+      "verification_policy_id": "wine_gui_process_v1"
     },
     {
       "target_id": "T3_wine_wordpad64",
       "program_class": "pe_windows_gui",
       "application_family": "wine_builtin_wordpad64",
       "canonical_executable_hash": "a2bddbb8d43eb96b750813ab8f30db847d2b60d2838dd5fcb36348a719157266",
-      "verification_phase": "wine_gui",
-      "verification_policy_id": "wine_gui_process_v1",
-      "verification_required_checks": ["process_survives", "target_process_identity"]
+      "verification_policy_id": "wine_gui_process_v1"
     },
     {
       "target_id": "T3_arch_wine_notepad32",
       "program_class": "pe_windows_gui",
       "application_family": "wine_builtin_notepad32",
       "canonical_executable_hash": "503665cbf1e3be907387c2b76beb25bcdef7d326738adf6f06ff53b9984a2684",
-      "verification_phase": "wine_gui",
       "verification_policy_id": "wine_gui_process_v1",
-      "verification_required_checks": ["process_survives", "target_process_identity"]
+      "canonical_arch_profile_id": "9c96be17-46eb-46d7-ba0b-9c404f97bf80"
     }
   ],
   "source_snapshots": {
     "t2_notepad64": {
-      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t2-notepad64",
-      "aggregate_sha256": null,
-      "status": "pending_pilot003_freeze",
-      "pilot002_reference_hash": "ee165aaa13c103d51067457bf5490786cc93a46ffab007c37ffdcf7b72605f00"
+      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t2-notepad64-20260714T040638Z",
+      "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t2-notepad64-20260714T040638Z",
+      "aggregate_sha256": "0cbbe4a348ae907f0f1cce8c9c1d1d73079c725e79569a6355e323e3a7ff6c8e",
+      "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)",
+      "prefix_architecture": "win64",
+      "windows_version": "win10",
+      "target_executable_sha256": "108168df2b9679c5ef4004a5fa63990c99b189661ee3cac4bb8f9dd467ad6d69"
     },
     "t3_wordpad64": {
-      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-wordpad64",
-      "aggregate_sha256": null,
-      "status": "pending_pilot003_freeze",
-      "pilot002_reference_hash": "2ef515d4cbf69a008d8358e0923bccef0f4dc9c5130aa2049a15f314b7308252"
+      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-wordpad64-20260714T040638Z",
+      "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-wordpad64-20260714T040638Z",
+      "aggregate_sha256": "2e482c17aaacdf5d2f55153174c0494d2ae8904ff339f0c63a2a5c5eda4a8607",
+      "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)",
+      "prefix_architecture": "win64",
+      "windows_version": "win10",
+      "target_executable_sha256": "a2bddbb8d43eb96b750813ab8f30db847d2b60d2838dd5fcb36348a719157266"
+    },
+    "t3_notepad32": {
+      "path": "~/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-notepad32-20260714T040638Z",
+      "realpath": "/home/joshua/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots/source-t3-notepad32-20260714T040638Z",
+      "aggregate_sha256": "874d2d41c96867efc302222fe2212048ccb83e498bdd0db72555d4cc79e6eed2",
+      "wine_version": "wine-9.0 (Ubuntu 9.0~repack-4build3)",
+      "prefix_architecture": "win32",
+      "windows_version": "win10",
+      "target_executable_sha256": "503665cbf1e3be907387c2b76beb25bcdef7d326738adf6f06ff53b9984a2684"
     }
   },
   "target_paths": {
     "disposable_prefix_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-003",
+    "source_snapshot_guard_root": "~/.local/share/alma-bridge/prefixes/validation/pilot-003/snapshots",
     "ascension_primary_prefix": "guard_reference_only_not_execution_target"
   },
-  "run_j_precondition": {
-    "scenario_id": "J_multiple_candidate_ranking",
-    "run_number": 13,
-    "blocked_if_unmet": true,
-    "no_fabrication": true
-  },
-  "prerequisites": [
-    "Pilot-002 formally closed as aborted_non_promotable",
-    "Scenario ID manifest alignment verified by validate-freeze",
-    "Shadow verification-binding fix committed and tested",
-    "New DB backup at Pilot-003 freeze",
-    "Explicit operator approval before first scenario run"
-  ],
   "campaign_notes": [
-    "DO NOT EXECUTE until this corrective package is explicitly approved.",
-    "Pilot-002 evidence excluded from promotion gate calculations.",
+    "Scenario execution NOT APPROVED until operator explicitly approves after this freeze.",
+    "Pilot-001 and Pilot-002 evidence excluded from promotion gate calculations.",
+    "Ascension remains research-only (Workstream B).",
     "Active reuse remains disabled.",
-    "Run 6 and Run 7 split E_prefix_drift into E_prefix_drift_windows and E_prefix_drift_component.",
-    "13 runs accepted to avoid combining distinct scenario IDs."
+    "Run 4/5 use shadow host_payload_overlay for deterministic HOST_ARCH_MISMATCH.",
+    "Run 13 blocked until Run J precondition query passes."
   ]
 }
