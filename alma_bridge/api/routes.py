@@ -140,10 +140,12 @@ from alma_bridge.schemas.models import (
     Web3PostureResponse,
 )
 from alma_bridge.execution.shim_pack import build_shim_pack, run_shim_pack, sandbox_status
+from alma_bridge.api.intelligence_routes import router as intelligence_router
 from alma_bridge.config import settings
 from alma_bridge.storage import outcomes
 
 router = APIRouter()
+router.include_router(intelligence_router)
 orchestrator = BridgeOrchestrator()
 import_service = ImportService()
 tls_modernizer = TlsModernizer(ca_file=settings.compliance_ca_file)

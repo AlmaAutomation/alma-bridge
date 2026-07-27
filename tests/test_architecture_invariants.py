@@ -230,3 +230,17 @@ class TestBehavioralInvariants:
         assert decision.allowed is False
         assert result is None
         assert called["ran"] is False
+
+
+class TestCompatibilityIntelligenceBoundaries:
+    INTELLIGENCE = ALMA_BRIDGE / "intelligence"
+
+    def test_intelligence_does_not_import_orchestrator(self):
+        offenders = [str(p) for p in _py_files_under(self.INTELLIGENCE) if _imports_orchestrator(p)]
+        assert offenders == []
+
+    def test_intelligence_does_not_finalize_success(self):
+        offenders: list[str] = []
+        for path in _py_files_under(self.INTELLIGENCE):
+            offenders.extend(_calls_finalize_success_true(path))
+        assert offenders == []
