@@ -27,4 +27,10 @@ def _isolate_bridge_data_paths(tmp_path, monkeypatch):
     monkeypatch.setattr("alma_bridge.config.settings.data_dir", data_dir)
     monkeypatch.setattr("alma_bridge.config.settings.db_path", db_path)
     outcomes.init_outcome_store()
+    try:
+        from alma_bridge.learning.remediation_learning import init_remediation_store
+
+        init_remediation_store()
+    except ImportError:
+        pass
     yield
