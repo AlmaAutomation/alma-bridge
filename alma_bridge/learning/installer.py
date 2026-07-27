@@ -128,8 +128,10 @@ def electron_resources_dir(file_path: str) -> Path | None:
 
 
 def fresh_prefix_path(session_id: str) -> str:
-    """Wine refuses some /tmp prefixes — keep prefixes under the user home."""
-    base = Path.home() / ".local/share/alma-bridge/prefixes"
+    """Session-scoped Wine prefix under the configured bridge data directory."""
+    from alma_bridge.config import settings
+
+    base = settings.data_dir / "prefixes"
     path = base / session_id[:12]
     path.mkdir(parents=True, exist_ok=True)
     return str(path)

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+from alma_bridge.learning.installer import fresh_prefix_path
 from alma_bridge.main import create_app
 from alma_bridge.storage.outcomes import init_outcome_store
 
@@ -54,3 +56,18 @@ def test_bridge_run_unaffected_when_runtime_env_has_campaign_mode(tmp_path, clie
                 )
 
     assert response.status_code == 200, response.text
+
+
+def test_fresh_prefix_path_stays_under_test_data_dir(tmp_path, monkeypatch):
+    from alma_bridge.config import settings
+
+    data_dir = tmp_path / "bridge-data"
+    data_dir.mkdir()
+    monkeypatch.setattr("alma_bridge.config.settings.data_dir", data_dir)
+
+    prefix = Path(fresh_prefix_path("session-isolation-test"))
+    home_prefix_root = Path.home() / ".local/share/alma-bridge/prefixes"
+
+    assert prefix.is_dir()
+    assert str(prefix).startswith(str(data_dir.resolve()))
+    assert not str(prefix.resolve()).startswith(str(home_prefix_root.resolve()))

@@ -6,10 +6,17 @@ from alma_bridge.hardware.proton_env import build_proton_env, resolve_steam_root
 from alma_bridge.learning.installer import fresh_prefix_path
 
 
-def test_fresh_prefix_under_home():
+def test_fresh_prefix_under_data_dir(tmp_path, monkeypatch):
+    from alma_bridge.config import settings
+
+    data_dir = tmp_path / "bridge-data"
+    data_dir.mkdir()
+    monkeypatch.setattr("alma_bridge.config.settings.data_dir", data_dir)
+
     path = fresh_prefix_path("session-abc-123")
-    assert path.startswith(str(Path.home()))
-    assert "alma-bridge/prefixes" in path
+    assert path.startswith(str(data_dir))
+    assert "prefixes" in path
+    assert not path.startswith(str(Path.home() / ".local/share/alma-bridge"))
 
 
 def test_build_proton_env_sets_compat_paths():
