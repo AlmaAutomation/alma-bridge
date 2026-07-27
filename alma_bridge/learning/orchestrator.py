@@ -20,6 +20,7 @@ from alma_bridge.compatibility.profile_shadow_models import (
 from alma_bridge.config import settings
 from alma_bridge.execution.container_checks import sandbox_ready
 from alma_bridge.execution.errors import (
+    NON_RETRYABLE_SIGNATURES,
     RECOMMENDED_ACTIONS,
     RetryScope,
     detect_error_signature,
@@ -292,6 +293,16 @@ class BridgeOrchestrator:
                 request, session_id, started_at, digest, hardware, []
             )
 
+        if short := self._return_if_session_succeeded(
+            lifecycle=lifecycle,
+            session_id=session_id,
+            request=request,
+            started_at=started_at,
+            digest=digest,
+            hardware=hardware,
+        ):
+            return short
+
         if not resume_after_escalation:
             _report_progress(session_id, "Bridge adaptive run started…")
         kind = classify_program_kind(
@@ -342,7 +353,7 @@ class BridgeOrchestrator:
                 _report_progress(session_id, f"Wine Windows version not set: {win_msg}")
             _ensure_prefix_runtimes(session_id, wine_prefix, request.file_path, kind)
 
-        if installer and request.launch_after_install:
+        if installer and request.launch_after_install and not resume_after_escalation:
             cached = load_prefix_profile(wine_prefix)
             existing_launcher: Optional[str] = None
             if profile_allows_fast_launch(cached, wine_prefix):
@@ -480,6 +491,16 @@ class BridgeOrchestrator:
             tried_remediation_ids: set[Optional[str]] = set()
 
             while attempt_number < max_attempts:
+                if short := self._return_if_session_succeeded(
+                    lifecycle=lifecycle,
+                    session_id=session_id,
+                    request=request,
+                    started_at=started_at,
+                    digest=digest,
+                    hardware=hardware,
+                    attempt_records=attempt_records,
+                ):
+                    return short
                 self._prepare_retry_attempt(lifecycle, attempt_number)
                 use_prior_remediation = (
                     plan_signature is None
@@ -982,6 +1003,16 @@ class BridgeOrchestrator:
                 budget=session_budget,
                 detail=exhausted,
             )
+        if short := self._return_if_session_succeeded(
+            lifecycle=lifecycle,
+            session_id=session_id,
+            request=request,
+            started_at=started_at,
+            digest=digest,
+            hardware=hardware,
+            attempt_records=attempt_records,
+        ):
+            return short
         if request.auto_remediate is not None:
             enabled = request.auto_remediate
         else:
@@ -1044,6 +1075,16 @@ class BridgeOrchestrator:
         route_attempt_number = len(attempt_records)
 
         for route in routes:
+            if short := self._return_if_session_succeeded(
+                lifecycle=lifecycle,
+                session_id=session_id,
+                request=request,
+                started_at=started_at,
+                digest=digest,
+                hardware=hardware,
+                attempt_records=attempt_records,
+            ):
+                return short
             if exhausted := session_budget.record_route():
                 return self._budget_exhausted_result(
                     request=request,
@@ -1188,6 +1229,17 @@ class BridgeOrchestrator:
         budget: Optional[AutoCompatibilityBudget] = None,
     ) -> BridgeSessionResult:
         """Run the installed app launcher instead of (or after) the installer."""
+        if short := self._return_if_session_succeeded(
+            lifecycle=lifecycle,
+            session_id=session_id,
+            request=request,
+            started_at=started_at,
+            digest=digest,
+            hardware=hardware,
+            attempt_records=prior_attempts,
+        ):
+            return short
+
         session_budget = budget or AutoCompatibilityBudget.from_settings(settings)
         launcher_kind = classify_program_kind(
             launcher_path,
@@ -1262,6 +1314,16 @@ class BridgeOrchestrator:
         early_compat_attempted = False
 
         while attempt_number < max_launcher_attempts:
+            if short := self._return_if_session_succeeded(
+                lifecycle=lifecycle,
+                session_id=session_id,
+                request=request,
+                started_at=started_at,
+                digest=digest,
+                hardware=hardware,
+                attempt_records=attempt_records,
+            ):
+                return short
             self._prepare_retry_attempt(lifecycle, attempt_number)
             if plan_signature is None and attempt_number == len(prior_attempts):
                 remediation = (
@@ -1735,6 +1797,54 @@ class BridgeOrchestrator:
                     )
             except InvalidSessionTransition:
                 pass
+
+    def _return_if_session_succeeded(
+        self,
+        *,
+        lifecycle: SessionLifecycleManager,
+        session_id: str,
+        request: BridgeRequest,
+        started_at: datetime,
+        digest: Optional[str],
+        hardware: Dict[str, Any],
+        attempt_records: Optional[List[AttemptRecord]] = None,
+    ) -> Optional[BridgeSessionResult]:
+        """Stop-on-success invariant: never start work after a verified SUCCEEDED session."""
+        if lifecycle is not None and lifecycle.state == SessionState.SUCCEEDED:
+            pass
+        elif outcomes.get_session_state(session_id) != SessionState.SUCCEEDED.value:
+            return None
+        persisted = outcomes.get_session(session_id)
+        if not persisted or not persisted.get("success"):
+            return None
+
+        attempts = list(attempt_records or [])
+        if not attempts and persisted.get("attempts"):
+            for row in persisted["attempts"]:
+                attempts.append(AttemptRecord.model_validate(row))
+
+        winning = next((record for record in reversed(attempts) if record.success), None)
+        if winning is None and persisted.get("winning_attempt"):
+            winning = AttemptRecord.model_validate(persisted["winning_attempt"])
+
+        finished_at = persisted.get("finished_at")
+        if isinstance(finished_at, str):
+            finished_at = datetime.fromisoformat(finished_at)
+        elif not isinstance(finished_at, datetime):
+            finished_at = datetime.now(timezone.utc)
+
+        return BridgeSessionResult(
+            session_id=session_id,
+            file_path=request.file_path,
+            file_hash=digest or persisted.get("file_hash"),
+            started_at=started_at,
+            finished_at=finished_at,
+            success=True,
+            winning_attempt=winning,
+            attempts=attempts,
+            hardware_profile=hardware or persisted.get("hardware_profile") or {},
+            summary=str(persisted.get("summary") or "Session already succeeded."),
+        )
 
     def _confirm_verified_attempt(
         self,
