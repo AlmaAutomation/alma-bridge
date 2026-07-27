@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import sys
+
 import pytest
 
+import alma_bridge.api.routes as api_routes
+import alma_bridge.learning.orchestrator as orchestrator_module
+from alma_bridge.learning.orchestrator import BridgeOrchestrator
 from alma_bridge.storage import outcomes
+
+_ORCHESTRATOR_MODULE = orchestrator_module
 
 
 @pytest.fixture(autouse=True)
@@ -35,3 +42,12 @@ def _isolate_bridge_data_paths(tmp_path, monkeypatch):
     except ImportError:
         pass
     yield
+
+
+@pytest.fixture(autouse=True)
+def _stabilize_orchestrator_bindings():
+    """Keep sys.modules and api.routes.orchestrator on the collected orchestrator module."""
+    sys.modules["alma_bridge.learning.orchestrator"] = _ORCHESTRATOR_MODULE
+    yield
+    sys.modules["alma_bridge.learning.orchestrator"] = _ORCHESTRATOR_MODULE
+    api_routes.orchestrator = BridgeOrchestrator()

@@ -95,13 +95,22 @@ class TestIntelligenceArchitectureBoundaries:
         assert calls == []
 
     def test_import_intelligence_routes_does_not_load_orchestrator(self):
-        for mod in (
+        modules = (
             "alma_bridge.api.intelligence_routes",
             "alma_bridge.learning.orchestrator",
-        ):
-            sys.modules.pop(mod, None)
-        importlib.import_module("alma_bridge.api.intelligence_routes")
-        assert "alma_bridge.learning.orchestrator" not in sys.modules
+        )
+        saved = {mod: sys.modules.get(mod) for mod in modules}
+        try:
+            for mod in modules:
+                sys.modules.pop(mod, None)
+            importlib.import_module("alma_bridge.api.intelligence_routes")
+            assert "alma_bridge.learning.orchestrator" not in sys.modules
+        finally:
+            for mod, previous in saved.items():
+                if previous is None:
+                    sys.modules.pop(mod, None)
+                else:
+                    sys.modules[mod] = previous
 
     def test_repository_read_does_not_mutate_schema(self, tmp_path, monkeypatch):
         db_path = tmp_path / "outcomes.db"
