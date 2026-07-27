@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import pytest
+
 from alma_bridge.execution.installer_verify import (
     ascension_main_launcher_path,
     discover_installed_launcher,
@@ -10,6 +12,67 @@ from alma_bridge.execution.installer_verify import (
 )
 from alma_bridge.execution.preflight import read_wine_windows_version
 from alma_bridge.learning.remediation import remediations_for_signature
+from alma_bridge.learning.remediation_learning import (
+    init_remediation_store,
+    record_remediation_outcome,
+    remediation_scores,
+)
+from alma_bridge.storage.outcomes import init_outcome_store
+
+
+@pytest.fixture()
+def isolated_remediation_store(tmp_path, monkeypatch):
+    db_path = tmp_path / "outcomes.db"
+    monkeypatch.setattr("alma_bridge.config.settings.data_dir", tmp_path)
+    monkeypatch.setattr("alma_bridge.config.settings.db_path", db_path)
+    init_outcome_store()
+    init_remediation_store()
+    return tmp_path
+
+
+def test_installer_not_verified_default_remediation_order(isolated_remediation_store):
+    chain = remediations_for_signature("installer_not_verified", installer=True)
+    ids = [action["id"] for action in chain]
+    assert ids[0] == "installer_bootstrap_win10_vcrun_ncrc"
+    assert "installer_silent_nsis_bootstrap" in ids
+    assert "installer_fresh_prefix_silent" in ids
+
+
+def test_installer_not_verified_learned_remediation_order(isolated_remediation_store):
+    record_remediation_outcome("installer_not_verified", "installer_fresh_prefix_silent", True)
+    record_remediation_outcome("installer_not_verified", "installer_fresh_prefix_silent", True)
+    record_remediation_outcome("installer_not_verified", "installer_bootstrap_win10_vcrun_ncrc", False)
+
+    chain = remediations_for_signature("installer_not_verified", installer=True)
+    ids = [action["id"] for action in chain]
+    assert ids[0] == "installer_fresh_prefix_silent"
+
+
+def test_installer_not_verified_tie_breaks_by_priority(isolated_remediation_store):
+    record_remediation_outcome("installer_not_verified", "installer_bootstrap_win10_vcrun_ncrc", True)
+    record_remediation_outcome("installer_not_verified", "installer_bootstrap_full_ncrc", True)
+
+    chain = remediations_for_signature("installer_not_verified", installer=True)
+    ids = [action["id"] for action in chain]
+    bootstrap_idx = ids.index("installer_bootstrap_win10_vcrun_ncrc")
+    full_idx = ids.index("installer_bootstrap_full_ncrc")
+    assert bootstrap_idx < full_idx
+
+
+def test_remediation_scores_use_isolated_store_not_user_home(isolated_remediation_store, monkeypatch):
+    from alma_bridge.config import settings
+
+    assert str(settings.db_path).startswith(str(isolated_remediation_store))
+    assert ".local/share/alma-bridge" not in str(settings.db_path)
+    assert remediation_scores("installer_not_verified") == {}
+
+
+def test_installer_not_verified_remediation_chain_order(isolated_remediation_store):
+    chain = remediations_for_signature("installer_not_verified", installer=True)
+    ids = [action["id"] for action in chain]
+    assert ids[0] == "installer_bootstrap_win10_vcrun_ncrc"
+    assert "installer_silent_nsis_bootstrap" in ids
+    assert "installer_fresh_prefix_silent" in ids
 
 
 def test_snapshot_detects_uninstall_keys(tmp_path):
@@ -185,11 +248,3 @@ def test_launcher_ready_for_handoff_nested_launcher(tmp_path):
             "/home/joshua/Documents/ascension-setup-1.0.97.exe",
         )
     assert found == str(launcher)
-
-
-def test_installer_not_verified_remediation_chain_order():
-    chain = remediations_for_signature("installer_not_verified", installer=True)
-    ids = [action["id"] for action in chain]
-    assert ids[0] == "installer_bootstrap_win10_vcrun_ncrc"
-    assert "installer_silent_nsis_bootstrap" in ids
-    assert "installer_fresh_prefix_silent" in ids
