@@ -38,7 +38,7 @@ def test_hardware_profile(client):
 
 def test_error_signature_detection():
     signature = detect_error_signature("failed to load dll msvcp140.dll", "")
-    assert signature == "missing_dll"
+    assert signature == "missing_visual_c_runtime"
 
 
 def test_sudo_password_error_detection():

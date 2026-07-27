@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from enum import Enum
 from typing import List, Optional, Tuple
 
@@ -54,6 +55,13 @@ SIGNATURE_PATTERNS = {
         "bad option:",
         "unknown option",
         "unrecognized option",
+    ],
+    "single_instance_detected": [
+        "another instance has been detected",
+        "another instance is already running",
+        "only one instance of",
+        "single-instance mutex",
+        "single instance mutex",
     ],
     "execution_timeout": [
         "execution timed out",
@@ -288,6 +296,11 @@ RECOMMENDED_ACTIONS = {
         "The launcher wrapper rejected Chromium-style flags (--disable-gpu, etc.).",
         "Bridge retries with no extra CLI flags — GPU/sidecar fixes apply via Wine env and shims instead.",
     ],
+    "single_instance_detected": [
+        "The application refused to start because another copy is already running.",
+        "Close the existing window or end the running process, then retry once.",
+        "If the app is already usable on the desktop, no relaunch is required.",
+    ],
     "execution_timeout": [
         "The launcher was still running when the old watchdog killed it — Bridge now detaches once the process survives bootstrap.",
         "Check your desktop for the Ascension window; if it is open, the run actually succeeded.",
@@ -317,8 +330,7 @@ HARD_FAIL_SIGNATURES = frozenset(
     }
 )
 
-# Retry termination scope per error signature. Signatures omitted from this map
-# continue with the next remediation attempt (ATTEMPT scope).
+# Failures where additional launch attempts cannot help without user action.
 class RetryScope(str, Enum):
     ATTEMPT = "attempt"
     STRATEGY = "strategy"
@@ -360,6 +372,52 @@ OLD_WINE_WINDOWS_VERSIONS = frozenset(
     {"win98", "winme", "winxp", "win2003", "winvista", "win2008"}
 )
 
+_VC_RUNTIME_FAILURE_CONTEXT = re.compile(
+    r"(?:"
+    r"vcruntime\d*\.dll|msvcp\d+\.dll|api-ms-win-crt|"
+    r"(?:could not|cannot|can't|failed to|unable to).{0,48}(?:find|load|locate|start)|"
+    r"(?:dll|module).{0,24}not found|"
+    r"side.by.side|application error|"
+    r"the (?:program|application) can't start|"
+    r"entry point.*not found|status:?\s*0xc000007b"
+    r")",
+    re.IGNORECASE,
+)
+
+_COMPILER_INVENTORY_CONTEXT = re.compile(
+    r"(?:"
+    r"added compiler|compiler detection|compiler registry|"
+    r"master path of compiler|final \w+ master path|"
+    r"loading compiler|registered compiler|compiler id:|"
+    r"microsoft visual c\+\+\s+\d{4}|microsoft visual c\+\+\s+toolkit"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _line_has_compiler_inventory_context(line: str) -> bool:
+    return bool(_COMPILER_INVENTORY_CONTEXT.search(line))
+
+
+def _missing_visual_c_runtime_signal(combined: str) -> bool:
+    """Require failure context; ignore benign compiler inventory lines."""
+    if not combined.strip():
+        return False
+
+    if _VC_RUNTIME_FAILURE_CONTEXT.search(combined):
+        return True
+
+    for line in combined.splitlines():
+        line_lower = line.lower()
+        if _line_has_compiler_inventory_context(line):
+            continue
+        if any(token in line_lower for token in ("vcruntime", "msvcp140", "msvcp")):
+            if ".dll" in line_lower or _VC_RUNTIME_FAILURE_CONTEXT.search(line):
+                return True
+        if "visual c++" in line_lower and _VC_RUNTIME_FAILURE_CONTEXT.search(line):
+            return True
+    return False
+
 
 def detect_installer_false_success(
     stderr: str,
@@ -387,6 +445,15 @@ def detect_installer_false_success(
     return None
 
 
+def is_single_instance_message(stderr: str, stdout: str = "") -> bool:
+    """True when runtime logs show a single-instance guard blocked the launch."""
+    combined = f"{stderr or ''}\n{stdout or ''}".lower()
+    return any(
+        pattern in combined
+        for pattern in SIGNATURE_PATTERNS["single_instance_detected"]
+    )
+
+
 def launch_failure_in_log(stderr: str, stdout: str = "") -> Optional[str]:
     """Return a failure signature when launch logs show a hard error dialog."""
     combined = f"{stderr or ''}\n{stdout or ''}"
@@ -402,6 +469,7 @@ def launch_failure_in_log(stderr: str, stdout: str = "") -> Optional[str]:
         "electron_crashpad_failure",
         "windows_version_required",
         "wine_int3_crash",
+        "single_instance_detected",
     }:
         return sig
     if ": int3" in lower or " int3" in lower:
@@ -410,8 +478,13 @@ def launch_failure_in_log(stderr: str, stdout: str = "") -> Optional[str]:
 
 
 def detect_error_signature(stderr: str, stdout: str) -> str:
-    combined = f"{stderr or ''}\n{stdout or ''}".lower()
+    combined_text = f"{stderr or ''}\n{stdout or ''}"
+    combined = combined_text.lower()
+    if _missing_visual_c_runtime_signal(combined_text):
+        return "missing_visual_c_runtime"
     for signature, patterns in SIGNATURE_PATTERNS.items():
+        if signature == "missing_visual_c_runtime":
+            continue
         if any(pattern in combined for pattern in patterns):
             return signature
     return "unknown_error"

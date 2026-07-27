@@ -5,6 +5,7 @@ import struct
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from alma_bridge.compatibility.framework_detection import detect_gui_framework
 from alma_bridge.compatibility.strategies import classify_binary
 from alma_bridge.learning.installer import (
     default_installer_args,
@@ -177,6 +178,13 @@ def classify_program_kind(file_path: str, *, host_arch: str = "x86_64") -> Dict[
     elif program_kind == "pe_windows" and LAUNCHER_NAME_RE.search(name):
         profile = "windows_launcher"
 
+    framework_detection = None
+    if exists and suffix == ".exe" and program_kind in {
+        "pe_windows_gui",
+        "pe_electron_launcher",
+    }:
+        framework_detection = detect_gui_framework(path)
+
     return {
         "file_path": str(path),
         "exists": exists,
@@ -195,4 +203,19 @@ def classify_program_kind(file_path: str, *, host_arch: str = "x86_64") -> Dict[
         "recommended_max_attempts": recommended_max_attempts,
         "recommended_args": recommended_args,
         "recommended_remediation_id": recommended_remediation_id,
+        "framework": (
+            framework_detection.framework if framework_detection else "unknown"
+        ),
+        "framework_confidence": (
+            framework_detection.confidence if framework_detection else 0.0
+        ),
+        "framework_version": (
+            framework_detection.version if framework_detection else None
+        ),
+        "framework_linkage": (
+            framework_detection.linkage if framework_detection else "unknown"
+        ),
+        "framework_evidence": (
+            list(framework_detection.evidence) if framework_detection else []
+        ),
     }
