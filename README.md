@@ -154,6 +154,9 @@ source .venv/bin/activate
 python -m pytest -q
 ```
 
+See [`docs/testing.md`](docs/testing.md) for isolation conventions (including
+restoring any `sys.modules` manipulation before a test exits).
+
 ## Importing legacy Alma data
 
 Pull execution history and recovery audits into the unified outcome store:
