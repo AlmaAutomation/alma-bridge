@@ -137,3 +137,4 @@ class TestIntelligenceArchitectureBoundaries:
         assert '@router.post("/bridge/run"' in routes_source or "@router.post('/bridge/run'" in routes_source
         assert "BridgeOrchestrator()" in routes_source
         assert "intelligence_router" in routes_source
+        assert "graph_router" in routes_source

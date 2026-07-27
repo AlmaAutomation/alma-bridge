@@ -44,6 +44,10 @@ def _isolate_bridge_data_paths(tmp_path, monkeypatch):
     yield
 
 
+# Import-boundary tests may pop orchestrator from sys.modules without restoring it,
+# leaving api.routes.orchestrator and collection-time imports on a stale module while
+# later monkeypatch calls bind to a new sys.modules entry. Pin the canonical module
+# and refresh the routes singleton after every test so full-suite runs stay aligned.
 @pytest.fixture(autouse=True)
 def _stabilize_orchestrator_bindings():
     """Keep sys.modules and api.routes.orchestrator on the collected orchestrator module."""
