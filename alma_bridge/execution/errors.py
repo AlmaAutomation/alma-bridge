@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Tuple
+from enum import Enum
+from typing import List, Optional, Tuple
 
 
 # NOTE: detect_error_signature returns the FIRST matching signature, so the more
@@ -314,6 +315,33 @@ HARD_FAIL_SIGNATURES = frozenset(
         "architecture_mismatch",
         "permission_denied",
     }
+)
+
+# Retry termination scope per error signature. Signatures omitted from this map
+# continue with the next remediation attempt (ATTEMPT scope).
+class RetryScope(str, Enum):
+    ATTEMPT = "attempt"
+    STRATEGY = "strategy"
+    SESSION = "session"
+
+
+ERROR_RETRY_POLICIES: dict[str, RetryScope] = {
+    "single_instance_detected": RetryScope.SESSION,
+    "architecture_mismatch": RetryScope.SESSION,
+    "invalid_launch_args": RetryScope.SESSION,
+}
+
+
+def retry_scope_for_signature(signature: Optional[str]) -> Optional[RetryScope]:
+    if not signature:
+        return None
+    return ERROR_RETRY_POLICIES.get(signature)
+
+
+NON_RETRYABLE_SIGNATURES = frozenset(
+    signature
+    for signature, scope in ERROR_RETRY_POLICIES.items()
+    if scope == RetryScope.SESSION
 )
 
 INSTALLER_PROGRESS_MARKERS = (

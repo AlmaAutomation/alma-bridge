@@ -21,8 +21,10 @@ from alma_bridge.config import settings
 from alma_bridge.execution.container_checks import sandbox_ready
 from alma_bridge.execution.errors import (
     RECOMMENDED_ACTIONS,
+    RetryScope,
     detect_error_signature,
     format_wine_log_for_display,
+    retry_scope_for_signature,
 )
 from alma_bridge.bridge.prefix_profile import (
     PrefixReadinessProfile,
@@ -745,6 +747,15 @@ class BridgeOrchestrator:
                 attempt_records.append(record)
 
                 if not record.success:
+                    retry_scope = retry_scope_for_signature(record.error_signature)
+                    plan_signature = record.error_signature
+                    last_signature = plan_signature
+                    last_recommended = recommended or last_recommended
+                    if retry_scope == RetryScope.SESSION:
+                        remaining_plans.clear()
+                        break
+                    if retry_scope == RetryScope.STRATEGY:
+                        break
                     session_budget.record_failure_signature(signature)
                     active_prefix = env.get("WINEPREFIX", wine_prefix or "")
                     _maybe_apply_immediate_wine_fix(
@@ -1406,6 +1417,9 @@ class BridgeOrchestrator:
             attempt_records.append(record)
 
             if not record.success:
+                retry_scope = retry_scope_for_signature(record.error_signature)
+                if retry_scope in {RetryScope.SESSION, RetryScope.STRATEGY}:
+                    break
                 program_identity = digest or file_hash(launcher_path)
                 fp = remediation_fingerprint(
                     strategy_id=record.strategy_id,

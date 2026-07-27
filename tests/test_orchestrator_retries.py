@@ -6,6 +6,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from alma_bridge.learning.remediation import remediations_for_signature
+from alma_bridge.execution.errors import (
+    ERROR_RETRY_POLICIES,
+    NON_RETRYABLE_SIGNATURES,
+    RetryScope,
+    retry_scope_for_signature,
+)
 from alma_bridge.main import create_app
 from alma_bridge.storage.outcomes import init_outcome_store
 
@@ -22,6 +28,23 @@ def test_permission_denied_has_remediations():
     ids = {action["id"] for action in remediations_for_signature("permission_denied")}
     assert "permission_fresh_prefix" in ids
     assert "baseline_retry" not in ids
+
+
+def test_permission_denied_is_attempt_scoped_not_session():
+    assert retry_scope_for_signature("permission_denied") is None
+    assert "permission_denied" not in NON_RETRYABLE_SIGNATURES
+    assert "permission_denied" not in ERROR_RETRY_POLICIES
+
+
+def test_session_scoped_errors_stop_entire_session():
+    for signature in ("single_instance_detected", "architecture_mismatch", "invalid_launch_args"):
+        assert retry_scope_for_signature(signature) == RetryScope.SESSION
+        assert signature in NON_RETRYABLE_SIGNATURES
+
+
+def test_unknown_signature_has_no_retry_scope():
+    assert retry_scope_for_signature("totally_made_up_error") is None
+    assert retry_scope_for_signature(None) is None
 
 
 def test_unknown_signature_falls_back_to_wildcards():
@@ -119,7 +142,7 @@ def test_orchestrator_reranks_remaining_strategies(tmp_path, client, monkeypatch
 
     response = client.post(
         "/bridge/run",
-        json={"file_path": str(exe), "sandbox": False, "max_attempts": 4},
+        json={"file_path": str(exe), "sandbox": False, "max_attempts": 4, "auto_remediate": False},
     )
     assert response.status_code == 200
     body = response.json()
