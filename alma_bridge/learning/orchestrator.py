@@ -1810,9 +1810,10 @@ class BridgeOrchestrator:
         attempt_records: Optional[List[AttemptRecord]] = None,
     ) -> Optional[BridgeSessionResult]:
         """Stop-on-success invariant: never start work after a verified SUCCEEDED session."""
-        if lifecycle is not None and lifecycle.state == SessionState.SUCCEEDED:
-            pass
-        elif outcomes.get_session_state(session_id) != SessionState.SUCCEEDED.value:
+        state_ok = (
+            lifecycle is not None and lifecycle.state == SessionState.SUCCEEDED
+        ) or outcomes.get_session_state(session_id) == SessionState.SUCCEEDED.value
+        if not state_ok:
             return None
         persisted = outcomes.get_session(session_id)
         if not persisted or not persisted.get("success"):
@@ -1826,6 +1827,9 @@ class BridgeOrchestrator:
         winning = next((record for record in reversed(attempts) if record.success), None)
         if winning is None and persisted.get("winning_attempt"):
             winning = AttemptRecord.model_validate(persisted["winning_attempt"])
+
+        if not self._winning_attempt_has_authoritative_verification(winning, persisted):
+            return None
 
         finished_at = persisted.get("finished_at")
         if isinstance(finished_at, str):
@@ -1845,6 +1849,25 @@ class BridgeOrchestrator:
             hardware_profile=hardware or persisted.get("hardware_profile") or {},
             summary=str(persisted.get("summary") or "Session already succeeded."),
         )
+
+    @staticmethod
+    def _winning_attempt_has_authoritative_verification(
+        winning: Optional[AttemptRecord],
+        persisted: Dict[str, Any],
+    ) -> bool:
+        """Require persisted aggregate verification before stop-on-success."""
+        candidates: List[AttemptRecord] = []
+        if winning is not None:
+            candidates.append(winning)
+        raw = persisted.get("winning_attempt")
+        if raw and winning is None:
+            candidates.append(AttemptRecord.model_validate(raw))
+        for record in candidates:
+            payload = record.model_dump()
+            verification = payload.get("verification")
+            if isinstance(verification, dict) and verification.get("passed") is True:
+                return True
+        return False
 
     def _confirm_verified_attempt(
         self,

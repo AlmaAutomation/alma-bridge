@@ -15,6 +15,7 @@ def _reset_validation_campaign_settings(monkeypatch):
     monkeypatch.setattr("alma_bridge.config.settings.validation_campaign_disposable_root", None)
     monkeypatch.setattr("alma_bridge.config.settings.validation_campaign_primary_prefix", None)
     monkeypatch.setattr("alma_bridge.config.settings.validation_campaign_source_snapshot", None)
+    monkeypatch.setattr("alma_bridge.config.settings.bridge_auto_remediate", True)
 
 
 @pytest.fixture(autouse=True)
