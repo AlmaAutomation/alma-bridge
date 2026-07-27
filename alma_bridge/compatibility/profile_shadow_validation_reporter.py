@@ -6,6 +6,12 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Mapping, Optional, Tuple
 
 from alma_bridge.compatibility.profile_shadow_validation_models import PromotionGateThresholds
+from alma_bridge.compatibility.profile_shadow_validation_scope import (
+    ValidationEvidenceScope,
+    build_pilot004_evidence_scope,
+    comparison_in_scope,
+    label_in_scope,
+)
 from alma_bridge.compatibility.profile_shadow_validation_store import (
     ensure_validation_tables,
     list_failure_analyses,
@@ -31,6 +37,72 @@ def _rate(numerator: int, denominator: int) -> Optional[float]:
     if denominator <= 0:
         return None
     return round(numerator / denominator, 4)
+
+
+def build_evidence_scope(campaign_id: str) -> ValidationEvidenceScope:
+    if campaign_id == "shadow-validation-pilot-004":
+        return build_pilot004_evidence_scope()
+    raise ValueError(f"unknown campaign_id for evidence scope: {campaign_id}")
+
+
+def _filter_rows_by_scope(
+    rows: Dict[str, List[Dict[str, Any]]],
+    scope: ValidationEvidenceScope,
+) -> Dict[str, List[Dict[str, Any]]]:
+    run_by_event = _run_by_event(rows["validation_runs"])
+    candidates_by_event: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for candidate in rows["candidates"]:
+        candidates_by_event[str(candidate["shadow_event_id"])].append(candidate)
+
+    scoped_comparisons: List[Dict[str, Any]] = []
+    for comparison in rows["comparisons"]:
+        event_id = str(comparison["shadow_event_id"])
+        run = run_by_event.get(event_id)
+        if not comparison_in_scope(
+            comparison=comparison,
+            scope=scope,
+            validation_run=run,
+            candidates=candidates_by_event.get(event_id),
+        ):
+            continue
+        scoped_comparisons.append(comparison)
+
+    scoped_events = {
+        str(c["shadow_event_id"])
+        for c in scoped_comparisons
+    }
+    scoped_sessions = {
+        str(run_by_event[e]["session_id"])
+        for e in scoped_events
+        if e in run_by_event and run_by_event[e].get("session_id")
+    }
+    if scope.campaign_id:
+        scoped_sessions &= scope.included_session_id_set
+
+    return {
+        "predictions": [
+            p for p in rows["predictions"]
+            if str(p["shadow_event_id"]) in scoped_events
+        ],
+        "comparisons": scoped_comparisons,
+        "actuals": [
+            a for a in rows["actuals"]
+            if str(a["shadow_event_id"]) in scoped_events
+        ],
+        "validation_runs": [
+            r for r in rows["validation_runs"]
+            if str(r.get("session_id") or "") in scoped_sessions
+            or str(r.get("shadow_event_id") or "") in scoped_events
+        ],
+        "events": [
+            e for e in rows["events"]
+            if str(e.get("shadow_event_id") or "") in scoped_events
+        ],
+        "candidates": [
+            c for c in rows["candidates"]
+            if str(c["shadow_event_id"]) in scoped_events
+        ],
+    }
 
 
 def _load_validation_rows() -> Dict[str, List[Dict[str, Any]]]:
@@ -179,8 +251,28 @@ class ShadowValidationReporter:
     """Read-only shadow validation reporting."""
 
     @staticmethod
-    def generate_report() -> Dict[str, Any]:
+    def generate_report(
+        *,
+        scope: Optional[ValidationEvidenceScope] = None,
+    ) -> Dict[str, Any]:
         rows = _load_validation_rows()
+        if scope is not None:
+            rows = _filter_rows_by_scope(rows, scope)
+        return ShadowValidationReporter._generate_report_from_rows(rows, scope=scope)
+
+    @staticmethod
+    def generate_scoped_report(campaign_id: str) -> Dict[str, Any]:
+        scope = build_evidence_scope(campaign_id)
+        report = ShadowValidationReporter.generate_report(scope=scope)
+        report["evidence_scope"] = scope.to_dict()
+        return report
+
+    @staticmethod
+    def _generate_report_from_rows(
+        rows: Dict[str, List[Dict[str, Any]]],
+        *,
+        scope: Optional[ValidationEvidenceScope] = None,
+    ) -> Dict[str, Any]:
         predictions = rows["predictions"]
         comparisons = rows["comparisons"]
         actuals = rows["actuals"]
@@ -193,6 +285,8 @@ class ShadowValidationReporter:
         actual_by_event = _actual_by_event(actuals)
         run_by_event = _run_by_event(validation_runs)
         labels = list_labels()
+        if scope is not None:
+            labels = [label for label in labels if label_in_scope(label, scope)]
 
         candidates_by_event: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
         for candidate in candidates:
@@ -293,17 +387,20 @@ class ShadowValidationReporter:
 
         label_eligible_den = eligible_label_correct + eligible_label_incorrect
         label_rejected_den = rejected_label_correct + rejected_label_incorrect
+        rank_agreement_den = len([c for c in labelable if c.get("rank_agreement") is not None])
+        precision_numerator = (
+            eligible_label_correct
+            if label_eligible_den
+            else sum(1 for c in labelable if int(c.get("predicted_eligibility_precision") or 0) == 1)
+        )
+        precision_denominator = (
+            label_eligible_den
+            if label_eligible_den
+            else len([c for c in labelable if c.get("predicted_eligibility_precision") is not None])
+        )
 
         metrics = {
-            "eligibility_precision": _rate(
-                eligible_label_correct,
-                label_eligible_den,
-            )
-            if label_eligible_den
-            else _rate(
-                sum(1 for c in labelable if int(c.get("predicted_eligibility_precision") or 0) == 1),
-                len([c for c in labelable if c.get("predicted_eligibility_precision") is not None]),
-            ),
+            "eligibility_precision": _rate(precision_numerator, precision_denominator),
             "eligibility_recall": _rate(
                 eligible_label_correct,
                 eligible_label_correct + rejected_label_incorrect,
@@ -328,6 +425,15 @@ class ShadowValidationReporter:
                 len(winner_comparisons),
             ),
             "profile_creation_duplicate_rate": _rate(duplicate_lineage, len(labelable)),
+            "profile_creation_duplicate_count": duplicate_lineage,
+            "eligibility_precision_numerator": precision_numerator,
+            "eligibility_precision_denominator": precision_denominator,
+            "strategy_agreement_count": strategy_agreement,
+            "bridge_family_agreement_count": family_agreement,
+            "rank_agreement_count": rank_agreement,
+            "rank_agreement_denominator": rank_agreement_den,
+            "drift_false_positive_count": drift_incorrect,
+            "drift_labelable_count": len(drift_labelable),
             "insufficient_evidence_rate": _rate(indeterminate_count, len(comparisons)),
             "confidence_intervals": {
                 "eligibility_precision": wilson_ci(
@@ -445,12 +551,23 @@ class ShadowValidationReporter:
                 for r in validation_runs
                 if str(r.get("scenario_category") or "").startswith("E_")
             ),
+            "drift_scenario_run_ids": [
+                str(r["validation_run_id"])
+                for r in validation_runs
+                if str(r.get("scenario_category") or "").startswith("E_")
+            ],
             "rejection_scenarios": sum(
                 1
                 for r in validation_runs
                 if str(r.get("scenario_category") or "")
                 in {"D_incompatible_host_drift", "I_trust_state"}
             ),
+            "rejection_scenario_run_ids": [
+                str(r["validation_run_id"])
+                for r in validation_runs
+                if str(r.get("scenario_category") or "")
+                in {"D_incompatible_host_drift", "I_trust_state"}
+            ],
         }
 
         promotion = evaluate_promotion_gates(
@@ -458,11 +575,17 @@ class ShadowValidationReporter:
             metrics=metrics,
             diversity=diversity,
             breakdowns=breakdowns,
+            labelable_comparison_ids=[
+                str(c["shadow_event_id"]) for c in labelable
+            ],
+            scoped_validation_run_ids=[
+                str(r["validation_run_id"]) for r in validation_runs
+            ],
         )
 
         failures = list_failure_analyses()
 
-        return {
+        result: Dict[str, Any] = {
             "counts": counts,
             "metrics": metrics,
             "diversity": diversity,
@@ -476,6 +599,9 @@ class ShadowValidationReporter:
                 "rejected_incorrect": rejected_label_incorrect,
             },
         }
+        if scope is not None:
+            result["evidence_scope"] = scope.to_dict()
+        return result
 
 
 def evaluate_promotion_gates(
@@ -485,41 +611,74 @@ def evaluate_promotion_gates(
     diversity: Mapping[str, Any],
     breakdowns: Mapping[str, Mapping[str, Any]],
     thresholds: Optional[PromotionGateThresholds] = None,
+    labelable_comparison_ids: Optional[List[str]] = None,
+    scoped_validation_run_ids: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     gates = thresholds or PromotionGateThresholds()
     labelable_comparisons = counts.get("comparisons_completed", 0) - counts.get(
         "indeterminate_comparisons", 0
     )
+    duplicate_numerator = sum(
+        1
+        for _ in range(int(metrics.get("profile_creation_duplicate_count") or 0))
+    ) if metrics.get("profile_creation_duplicate_count") is not None else None
+    if duplicate_numerator is None:
+        duplicate_numerator = round(
+            (metrics.get("profile_creation_duplicate_rate") or 0) * labelable_comparisons
+        ) if labelable_comparisons else 0
+
+    audit_ids = {
+        "labelable_comparison_ids": labelable_comparison_ids or [],
+        "scoped_validation_run_ids": scoped_validation_run_ids or [],
+    }
 
     checks: Dict[str, Dict[str, Any]] = {
         "min_comparisons": {
             "required": gates.min_comparisons,
             "actual": labelable_comparisons,
+            "numerator": labelable_comparisons,
+            "denominator": labelable_comparisons,
+            "included_ids": audit_ids["labelable_comparison_ids"],
             "passed": labelable_comparisons >= gates.min_comparisons,
         },
         "min_scenario_categories": {
             "required": gates.min_scenario_categories,
             "actual": diversity.get("scenario_category_count", 0),
+            "numerator": diversity.get("scenario_category_count", 0),
+            "denominator": diversity.get("scenario_category_count", 0),
+            "included_ids": diversity.get("scenario_categories", []),
             "passed": diversity.get("scenario_category_count", 0) >= gates.min_scenario_categories,
         },
         "min_program_kinds": {
             "required": gates.min_program_kinds,
             "actual": diversity.get("program_kind_count", 0),
+            "numerator": diversity.get("program_kind_count", 0),
+            "denominator": diversity.get("program_kind_count", 0),
+            "included_ids": diversity.get("program_kinds", []),
             "passed": diversity.get("program_kind_count", 0) >= gates.min_program_kinds,
         },
         "min_drift_scenarios": {
             "required": gates.min_drift_scenarios,
             "actual": diversity.get("drift_scenarios", 0),
+            "numerator": diversity.get("drift_scenarios", 0),
+            "denominator": diversity.get("drift_scenarios", 0),
+            "included_ids": diversity.get("drift_scenario_run_ids", []),
             "passed": diversity.get("drift_scenarios", 0) >= gates.min_drift_scenarios,
         },
         "min_rejection_scenarios": {
             "required": gates.min_rejection_scenarios,
             "actual": diversity.get("rejection_scenarios", 0),
+            "numerator": diversity.get("rejection_scenarios", 0),
+            "denominator": diversity.get("rejection_scenarios", 0),
+            "included_ids": diversity.get("rejection_scenario_run_ids", []),
             "passed": diversity.get("rejection_scenarios", 0) >= gates.min_rejection_scenarios,
         },
         "eligibility_precision": {
             "required": gates.eligibility_precision_min,
             "actual": metrics.get("eligibility_precision"),
+            "numerator": metrics.get("eligibility_precision_numerator"),
+            "denominator": metrics.get("eligibility_precision_denominator"),
+            "included_ids": audit_ids["labelable_comparison_ids"],
             "passed": (
                 metrics.get("eligibility_precision") is not None
                 and metrics["eligibility_precision"] >= gates.eligibility_precision_min
@@ -528,6 +687,9 @@ def evaluate_promotion_gates(
         "false_eligibility_rate": {
             "required_max": gates.false_eligibility_rate_max,
             "actual": metrics.get("false_eligibility_rate"),
+            "numerator": metrics.get("false_eligibility_count"),
+            "denominator": labelable_comparisons,
+            "included_ids": audit_ids["labelable_comparison_ids"],
             "passed": (
                 metrics.get("false_eligibility_rate") is not None
                 and metrics["false_eligibility_rate"] <= gates.false_eligibility_rate_max
@@ -536,6 +698,9 @@ def evaluate_promotion_gates(
         "drift_false_positive_rate": {
             "required_max": gates.drift_false_positive_rate_max,
             "actual": metrics.get("drift_false_positive_rate"),
+            "numerator": metrics.get("drift_false_positive_count"),
+            "denominator": metrics.get("drift_labelable_count"),
+            "included_ids": audit_ids["labelable_comparison_ids"],
             "passed": (
                 metrics.get("drift_false_positive_rate") is not None
                 and metrics["drift_false_positive_rate"] <= gates.drift_false_positive_rate_max
@@ -547,6 +712,12 @@ def evaluate_promotion_gates(
                 metrics.get("strategy_agreement_rate") or 0,
                 metrics.get("bridge_family_agreement_rate") or 0,
             ),
+            "numerator": max(
+                metrics.get("strategy_agreement_count") or 0,
+                metrics.get("bridge_family_agreement_count") or 0,
+            ),
+            "denominator": labelable_comparisons,
+            "included_ids": audit_ids["labelable_comparison_ids"],
             "passed": (
                 max(
                     metrics.get("strategy_agreement_rate") or 0,
@@ -558,6 +729,9 @@ def evaluate_promotion_gates(
         "rank_agreement_multi_candidate": {
             "required": gates.rank_agreement_min,
             "actual": metrics.get("rank_agreement_rate"),
+            "numerator": metrics.get("rank_agreement_count"),
+            "denominator": metrics.get("rank_agreement_denominator"),
+            "included_ids": audit_ids["labelable_comparison_ids"],
             "passed": (
                 metrics.get("rank_agreement_rate") is not None
                 and metrics["rank_agreement_rate"] >= gates.rank_agreement_min
@@ -566,6 +740,9 @@ def evaluate_promotion_gates(
         "no_duplicate_profile_defects": {
             "required": 0,
             "actual": metrics.get("profile_creation_duplicate_rate"),
+            "numerator": int(metrics.get("profile_creation_duplicate_count") or duplicate_numerator or 0),
+            "denominator": labelable_comparisons,
+            "included_ids": audit_ids["labelable_comparison_ids"],
             "passed": (metrics.get("profile_creation_duplicate_rate") or 0) == 0,
         },
     }

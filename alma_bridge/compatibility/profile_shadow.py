@@ -32,6 +32,7 @@ from alma_bridge.compatibility.profile_shadow_ranking import (
     rank_eligible_candidates,
     select_predicted_winner,
 )
+from alma_bridge.compatibility.profile_shadow_ranking_explanation import explain_ranking_selection
 from alma_bridge.compatibility.profile_shadow_store import (
     init_shadow_store,
     load_shadow_candidates,
@@ -173,6 +174,15 @@ class ProfileShadowService:
             if inputs.host_payload_overlay:
                 feature_flags["shadow_host_payload_overlay"] = dict(inputs.host_payload_overlay)
                 feature_flags["effective_host_compatibility_class_payload"] = dict(host_payload)
+
+            ranking_explanation = explain_ranking_selection(
+                ranked_candidates=candidates,
+                profile_bundles=profile_bundles,
+                winner_profile_id=winner_id,
+                winner_revision=winner_revision,
+            )
+            if ranking_explanation:
+                feature_flags["ranking_explanation"] = ranking_explanation.to_dict()
 
             persist_shadow_prediction(
                 shadow_event_id=shadow_event_id,

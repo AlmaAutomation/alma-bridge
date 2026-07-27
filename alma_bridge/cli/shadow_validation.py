@@ -19,14 +19,20 @@ from alma_bridge.storage.outcomes import init_outcome_store
 from alma_bridge.validation.campaign_freeze_validator import validate_campaign_matrix
 
 
-def _cmd_report(_args: argparse.Namespace) -> int:
-    report = ShadowValidationReporter.generate_report()
+def _cmd_report(args: argparse.Namespace) -> int:
+    if args.campaign_id:
+        report = ShadowValidationReporter.generate_scoped_report(args.campaign_id)
+    else:
+        report = ShadowValidationReporter.generate_report()
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
 
 
-def _cmd_gates(_args: argparse.Namespace) -> int:
-    report = ShadowValidationReporter.generate_report()
+def _cmd_gates(args: argparse.Namespace) -> int:
+    if args.campaign_id:
+        report = ShadowValidationReporter.generate_scoped_report(args.campaign_id)
+    else:
+        report = ShadowValidationReporter.generate_report()
     gates = report.get("promotion_gates", {})
     print(json.dumps(gates, indent=2, sort_keys=True))
     ready = gates.get("promotion_ready", False)
@@ -127,12 +133,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("report", help="Full shadow validation report (read-only)").set_defaults(
-        func=_cmd_report
-    )
-    sub.add_parser("gates", help="Promotion gate status only (read-only)").set_defaults(
-        func=_cmd_gates
-    )
+    report = sub.add_parser("report", help="Full shadow validation report (read-only)")
+    report.add_argument("--campaign-id", default=None, help="Scope metrics to a campaign")
+    report.set_defaults(func=_cmd_report)
+    gates = sub.add_parser("gates", help="Promotion gate status only (read-only)")
+    gates.add_argument("--campaign-id", default=None, help="Scope metrics to a campaign")
+    gates.set_defaults(func=_cmd_gates)
     sub.add_parser("sync-manifest", help="Sync scenario manifest into SQLite").set_defaults(
         func=_cmd_sync_manifest
     )

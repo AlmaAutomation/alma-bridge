@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from alma_bridge.compatibility.profile_candidate import build_profile_candidate_snapshot
 from alma_bridge.compatibility.profile_lineage import promote_candidate_snapshot
+from alma_bridge.compatibility.profile_manifest_capture import capture_verified_manifest_context
 from alma_bridge.compatibility.profile_metrics import (
     increment_profile_counter,
     log_profile_event,
@@ -60,7 +61,18 @@ class ProfileCandidateService:
 
     @staticmethod
     def build_snapshot(inputs: VerifiedAttemptInputs) -> ProfileCandidateSnapshot:
-        _, windows_version = _prefix_context(inputs.record)
+        captured = capture_verified_manifest_context(
+            record=inputs.record,
+            wine_version=inputs.wine_version,
+        )
+        winetricks_components = inputs.winetricks_components
+        if winetricks_components is None:
+            winetricks_components = captured.winetricks_components
+        windows_version = inputs.windows_version
+        if windows_version is None:
+            _, prefix_windows = _prefix_context(inputs.record)
+            windows_version = prefix_windows or captured.windows_version
+        prefix_architecture = inputs.prefix_architecture or captured.prefix_architecture
         return build_profile_candidate_snapshot(
             session_id=inputs.session_id,
             attempt_number=inputs.record.attempt_number,
@@ -75,14 +87,17 @@ class ProfileCandidateService:
             phase=inputs.record.phase,
             applied_remediation_ids=inputs.applied_remediation_ids,
             wine_version=inputs.wine_version,
-            windows_version=inputs.windows_version or windows_version,
-            prefix_architecture=inputs.prefix_architecture,
-            winetricks_components=inputs.winetricks_components,
-            wrapper_versions=inputs.wrapper_versions,
-            config_hashes=inputs.config_hashes,
+            windows_version=windows_version,
+            prefix_architecture=prefix_architecture,
+            winetricks_components=winetricks_components,
+            wrapper_versions=inputs.wrapper_versions or captured.wrapper_versions,
+            config_hashes=inputs.config_hashes or captured.config_hashes,
             launcher_file_hash=inputs.launcher_file_hash,
             external_artifacts=inputs.external_artifacts,
             path_alias=inputs.file_path,
+            manifest_capture_version=captured.manifest_capture_version,
+            component_capture_complete=captured.component_capture_complete,
+            dll_overrides=captured.dll_overrides,
         )
 
     @staticmethod

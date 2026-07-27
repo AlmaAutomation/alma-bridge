@@ -7,6 +7,7 @@ from alma_bridge.compatibility.expected_verification_contract import (
     ExpectedVerificationContract,
 )
 from alma_bridge.compatibility.profile_shadow_drift import predict_bridge_drift
+from alma_bridge.compatibility.profile_manifest_capture import manifest_reconstruction_eligible
 from alma_bridge.compatibility.profile_shadow_models import (
     DriftDimension,
     ShadowCandidateEvaluation,
@@ -126,6 +127,9 @@ def evaluate_candidate_eligibility(
     manifest = json.loads(bridge.get("manifest_json") or "{}")
     if manifest.get("schema") and manifest.get("schema") != SUPPORTED_MANIFEST_SCHEMA:
         rejection_codes.append(EligibilityReasonCode.MANIFEST_SCHEMA_UNSUPPORTED.value)
+    reconstruction_ok, reconstruction_reason = manifest_reconstruction_eligible(manifest)
+    if not reconstruction_ok:
+        rejection_codes.append(EligibilityReasonCode.MANIFEST_CAPTURE_INCOMPLETE.value)
 
     binding_result = evaluate_verification_binding_compatibility(
         profile_bundle=profile_bundle,

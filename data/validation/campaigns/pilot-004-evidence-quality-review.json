@@ -1,0 +1,135 @@
+{
+  "campaign_id": "shadow-validation-pilot-004",
+  "classification": "COMPLETED_NOT_PROMOTION_READY",
+  "review_version": "pilot-004-evidence-quality-v1",
+  "generated_at_utc": "2026-07-14T20:18:00+00:00",
+  "immutable": true,
+  "reviewer": "Joshua/pilot-004-closure",
+  "notes": [
+    "Raw records were not rewritten.",
+    "Run 9 preserved as exploratory_only due to direct BridgeOrchestrator bypass.",
+    "Run 10 eligible after DB reconstruction contained required immutable records.",
+    "Controlled duplicate fixture B excluded from campaign duplicate-rate calculations."
+  ],
+  "runs": [
+    {
+      "run_number": 1,
+      "scenario_id": "A_stable_repeat_success",
+      "session_id": "4bd166cf-7b9d-498a-b371-eda23d8c54f8",
+      "shadow_event_id": "0ad9d3b1-d023-4279-a84a-46c1885c0794",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Frozen semantics complete; registered scenario with immutable prediction and comparison."
+    },
+    {
+      "run_number": 2,
+      "scenario_id": "B_relocated_executable",
+      "session_id": "4585e6ec-cf5b-44db-b097-faa3de9781ce",
+      "shadow_event_id": "ddada732-c5bb-4288-b8ae-f48499f46608",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Frozen semantics complete; relocated executable identity preserved."
+    },
+    {
+      "run_number": 3,
+      "scenario_id": "C_compatible_host_drift",
+      "session_id": "03387d36-f745-4057-809b-35a8e187ce18",
+      "shadow_event_id": "2e2db06e-3f74-40d0-b238-6195898de81b",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Pre-plan compatible host overlay with complete immutable records."
+    },
+    {
+      "run_number": 4,
+      "scenario_id": "D_incompatible_host_drift",
+      "session_id": "9ce5bbb3-6ab9-45c0-8862-4ef62451b2e2",
+      "shadow_event_id": "f00d8592-a8ee-4dbf-bda7-f86689987043",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Pre-plan HOST_ARCH_MISMATCH in immutable prediction; rejected_correct label."
+    },
+    {
+      "run_number": 5,
+      "scenario_id": "D_incompatible_host_drift",
+      "session_id": "f9da422a-e217-403d-8ee3-05019ee2cd20",
+      "shadow_event_id": "3320b1c9-2226-4d6b-afce-d537899c24b1",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "T32 incompatible host overlay with immutable rejection evidence."
+    },
+    {
+      "run_number": 6,
+      "scenario_id": "E_prefix_drift_windows",
+      "session_id": "54a2a22d-8829-4009-90da-777abbef9406",
+      "shadow_event_id": "70b63fa2-ef75-41e3-8130-f9399c9d6114",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "WINDOWS_VERSION_DRIFT persisted before execution; drift_correct label."
+    },
+    {
+      "run_number": 7,
+      "scenario_id": "E_prefix_drift_component",
+      "session_id": "16b52143-02be-4432-9d9f-5e1f1ada9d30",
+      "shadow_event_id": "6cc7be40-6e0a-445e-8f9a-0bf27aba3ee1",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Component drift sequence complete; drift_correct label. Manifest capture gap noted for corrective engineering."
+    },
+    {
+      "run_number": 8,
+      "scenario_id": "F_clean_prefix_reconstruction",
+      "session_id": "3a7be2bd-5c22-452b-841f-e52d45356235",
+      "shadow_event_id": "493e054c-6af9-4583-bd4f-c377cd29856a",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Shadow-only reconstruction proof with reuse disabled."
+    },
+    {
+      "run_number": 9,
+      "scenario_id": "G_known_compatibility_failure",
+      "session_id": "c9b1b0c1-8e64-4910-bf68-6aae71cdeaba",
+      "shadow_event_id": "9cd8a95c-853b-41e2-aa46-119236c02ef7",
+      "classification": "exploratory_only",
+      "rationale": "Execution bypassed frozen /bridge/run API entry point; invoked BridgeOrchestrator directly after API 404 on missing file. Invalid for gate calculation."
+    },
+    {
+      "run_number": 10,
+      "scenario_id": "H_unrelated_runtime_failure",
+      "session_id": "f696b987-16a2-49cc-9b89-e46446ced9d2",
+      "shadow_event_id": "a22f0bd5-e54c-4b1d-809e-cb942616252d",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "DB reconstruction contains shadow prediction, actual outcome, comparison, validation registration, and exported evidence after EVIDENCE_PERSISTENCE_INCOMPLETE recovery."
+    },
+    {
+      "run_number": 11,
+      "scenario_id": "I_trust_state_imported",
+      "session_id": "81299847-6c92-463d-95c7-b11bffec84d2",
+      "shadow_event_id": "53e65d20-9c56-405b-b7cd-5ce568a3a050",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Imported trust excluded with rejected_correct label; fixture restored."
+    },
+    {
+      "run_number": 12,
+      "scenario_id": "I_trust_state_invalidated",
+      "session_id": "50fd478d-f18a-4fc3-802a-7ae2f9b2e191",
+      "shadow_event_id": "0b0e5ae4-6411-4d15-993c-56347a7d9439",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "INVALIDATED_PROFILE_DIAGNOSTIC_ONLY rejection with rejected_correct label."
+    },
+    {
+      "run_number": 13,
+      "scenario_id": "J_multiple_candidate_ranking",
+      "session_id": "9dc70e4c-0a6b-46ac-990f-567fcb3672e3",
+      "shadow_event_id": "82512cc8-6be0-4cab-87f3-790f4a341ff1",
+      "classification": "promotion_eligible_evidence",
+      "rationale": "Precondition passed for both canonical candidates; deterministic ranking evidence recorded."
+    }
+  ],
+  "gate_exclusions": {
+    "exploratory_only_runs": [9],
+    "excluded_campaign_ids": [
+      "shadow-validation-pilot-001",
+      "shadow-validation-pilot-002",
+      "shadow-validation-pilot-003"
+    ],
+    "excluded_setup_fixture_ids": ["B_redundant_different_profile"],
+    "excluded_legacy_profile_ids": [
+      "425f8664-7ddd-4a99-b984-435051027e8f",
+      "bebf5c5f-6719-4ac2-8e75-29ac6c839bf3",
+      "6aec0dd2-e298-4173-aec3-603e2aae691b",
+      "9b0cf7ff-aca8-44ee-b354-28505ac3c60d"
+    ]
+  }
+}

@@ -83,8 +83,10 @@ def build_bridge_manifest(
     launcher_file_hash: Optional[str] = None,
     external_artifacts: Optional[List[Dict[str, Any]]] = None,
     base_runtime_version_family: Optional[str] = None,
+    manifest_capture_version: Optional[str] = None,
+    component_capture_complete: bool = False,
 ) -> Dict[str, Any]:
-    return {
+    manifest: Dict[str, Any] = {
         "schema": BRIDGE_MANIFEST_SCHEMA,
         "base_runtime": {
             "kind": runtime_family_from_runtime(runtime),
@@ -104,6 +106,10 @@ def build_bridge_manifest(
         "launcher_file_hash": launcher_file_hash,
         "external_artifacts": list(external_artifacts or []),
     }
+    if manifest_capture_version:
+        manifest["manifest_capture_version"] = manifest_capture_version
+        manifest["component_capture_complete"] = component_capture_complete
+    return manifest
 
 
 def build_profile_candidate_snapshot(
@@ -129,6 +135,9 @@ def build_profile_candidate_snapshot(
     launcher_file_hash: Optional[str] = None,
     external_artifacts: Optional[List[Dict[str, Any]]] = None,
     path_alias: Optional[str] = None,
+    manifest_capture_version: Optional[str] = None,
+    component_capture_complete: bool = False,
+    dll_overrides: Optional[Mapping[str, str]] = None,
 ) -> ProfileCandidateSnapshot:
     kind = classify_program_kind(
         file_path,
@@ -187,11 +196,14 @@ def build_profile_candidate_snapshot(
         remediation_protocol=remediation_protocol,
         env=env,
         winetricks_components=winetricks_components,
+        dll_overrides=dll_overrides,
         wrapper_versions=wrapper_versions,
         config_hashes=config_hashes,
         launcher_file_hash=launcher_file_hash,
         external_artifacts=external_artifacts,
         base_runtime_version_family=wine_version,
+        manifest_capture_version=manifest_capture_version,
+        component_capture_complete=component_capture_complete,
     )
     manifest_hash = build_bridge_manifest_hash(manifest)
 
