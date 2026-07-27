@@ -116,6 +116,9 @@ from alma_bridge.session.services.verification import (
     VerificationResult,
 )
 from alma_bridge.session.state import SessionState
+from alma_bridge.session.stop_on_success_verification import (
+    persisted_session_has_authoritative_verification,
+)
 from alma_bridge.session.verification_gateway import (
     VerificationBoundaryResult,
     VerificationGateway,
@@ -1828,7 +1831,7 @@ class BridgeOrchestrator:
         if winning is None and persisted.get("winning_attempt"):
             winning = AttemptRecord.model_validate(persisted["winning_attempt"])
 
-        if not self._winning_attempt_has_authoritative_verification(winning, persisted):
+        if not persisted_session_has_authoritative_verification(winning, persisted):
             return None
 
         finished_at = persisted.get("finished_at")
@@ -1849,25 +1852,6 @@ class BridgeOrchestrator:
             hardware_profile=hardware or persisted.get("hardware_profile") or {},
             summary=str(persisted.get("summary") or "Session already succeeded."),
         )
-
-    @staticmethod
-    def _winning_attempt_has_authoritative_verification(
-        winning: Optional[AttemptRecord],
-        persisted: Dict[str, Any],
-    ) -> bool:
-        """Require persisted aggregate verification before stop-on-success."""
-        candidates: List[AttemptRecord] = []
-        if winning is not None:
-            candidates.append(winning)
-        raw = persisted.get("winning_attempt")
-        if raw and winning is None:
-            candidates.append(AttemptRecord.model_validate(raw))
-        for record in candidates:
-            payload = record.model_dump()
-            verification = payload.get("verification")
-            if isinstance(verification, dict) and verification.get("passed") is True:
-                return True
-        return False
 
     def _confirm_verified_attempt(
         self,
