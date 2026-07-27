@@ -1089,14 +1089,14 @@ class BridgeOrchestrator:
             )
             if result.requires_bridge_retry:
                 winning_route = result.route_id
+                retry_updates: Dict[str, Any] = {"file_path": target}
+                if wine_prefix:
+                    retry_updates["wine_prefix"] = wine_prefix
                 if result.preferred_strategy_id:
-                    bridge_retry_request = request.model_copy(
-                        update={
-                            "preferred_strategy_id": result.preferred_strategy_id,
-                            "preferred_remediation_id": result.preferred_remediation_id,
-                            "file_path": target,
-                        }
-                    )
+                    retry_updates["preferred_strategy_id"] = result.preferred_strategy_id
+                if result.preferred_remediation_id:
+                    retry_updates["preferred_remediation_id"] = result.preferred_remediation_id
+                bridge_retry_request = request.model_copy(update=retry_updates)
                 if exhausted := session_budget.record_bridge_retry():
                     return self._budget_exhausted_result(
                         request=request,
@@ -1189,6 +1189,13 @@ class BridgeOrchestrator:
     ) -> BridgeSessionResult:
         """Run the installed app launcher instead of (or after) the installer."""
         session_budget = budget or AutoCompatibilityBudget.from_settings(settings)
+        launcher_kind = classify_program_kind(
+            launcher_path,
+            host_arch=hardware.get("architecture", "x86_64"),
+        )
+        use_electron_handoff = bool(launcher_kind.get("is_electron"))
+        handoff_framework = str(launcher_kind.get("framework") or "unknown")
+        handoff_phase = "launcher" if use_electron_handoff else "wine_gui"
         win_ok, win_msg = require_wine_windows_version(wine_prefix)
         if not win_ok:
             _report_progress(session_id, f"Launcher blocked: Wine still reports XP — {win_msg}")
@@ -1196,9 +1203,11 @@ class BridgeOrchestrator:
             session_id,
             wine_prefix,
             launcher_path,
-            classify_program_kind(launcher_path, host_arch=hardware.get("architecture", "x86_64")),
+            launcher_kind,
         )
-        electron_prep = prepare_electron_wine(launcher_path)
+        electron_prep = (
+            prepare_electron_wine(launcher_path) if use_electron_handoff else None
+        )
         self._create_shadow_prediction_before_plan(
             session_id=session_id,
             correlation_id=lifecycle.correlation_id,
@@ -1255,11 +1264,19 @@ class BridgeOrchestrator:
         while attempt_number < max_launcher_attempts:
             self._prepare_retry_attempt(lifecycle, attempt_number)
             if plan_signature is None and attempt_number == len(prior_attempts):
-                remediation = _baseline_launcher_remediation()
+                remediation = (
+                    _baseline_launcher_remediation()
+                    if use_electron_handoff
+                    else _baseline_wine_gui_remediation()
+                )
             else:
-                remediation = next_launcher_remediation(
-                    plan_signature,
-                    tried_remediation_ids,
+                remediation = (
+                    next_launcher_remediation(plan_signature, tried_remediation_ids)
+                    if use_electron_handoff
+                    else _next_wine_gui_launcher_remediation(
+                        plan_signature,
+                        tried_remediation_ids,
+                    )
                 )
             if remediation is None:
                 break
@@ -1301,21 +1318,27 @@ class BridgeOrchestrator:
             env, launch_args = dict(plan["env"]), list(plan_args)
             for step in applied_remediations:
                 env, launch_args = apply_remediation(env, step, launch_args)
-            shim_prep = apply_electron_remediation_shims(
-                remediation,
-                env,
-                app_file=launcher_path,
-            )
-            electron_prep = shim_prep or prepare_electron_wine(launcher_path)
-            env.update(electron_launch_env())
+            if use_electron_handoff:
+                shim_prep = apply_electron_remediation_shims(
+                    remediation,
+                    env,
+                    app_file=launcher_path,
+                )
+                electron_prep = shim_prep or prepare_electron_wine(launcher_path)
+                env.update(electron_launch_env())
+                if electron_prep and electron_prep.get("launcher_exe_name"):
+                    env.setdefault(
+                        "ALMA_LAUNCHER_EXE_NAME",
+                        str(electron_prep["launcher_exe_name"]),
+                    )
+                electron_args = env.pop("ALMA_ELECTRON_ARGS", None)
+                if electron_args:
+                    for arg in electron_args.split():
+                        if arg not in launch_args:
+                            launch_args.append(arg)
+                apply_electron_launch_overrides(env, launch_args)
             env.setdefault("WINEPREFIX", wine_prefix)
             env.setdefault("WINEDEBUG", "-all")
-
-            if electron_prep and electron_prep.get("launcher_exe_name"):
-                env.setdefault(
-                    "ALMA_LAUNCHER_EXE_NAME",
-                    str(electron_prep["launcher_exe_name"]),
-                )
 
             winetricks_hint = _winetricks_packages_for_attempt(remediation, env)
             if winetricks_hint:
@@ -1331,12 +1354,6 @@ class BridgeOrchestrator:
                     f"Launcher attempt {attempt_number}: winetricks finished, launching…",
                 )
 
-            electron_args = env.pop("ALMA_ELECTRON_ARGS", None)
-            if electron_args:
-                for arg in electron_args.split():
-                    if arg not in launch_args:
-                        launch_args.append(arg)
-            apply_electron_launch_overrides(env, launch_args)
 
             baseline_pids = snapshot_wine_pids(wine_prefix)
             win_ok, win_msg = require_wine_windows_version(wine_prefix)
@@ -1369,12 +1386,14 @@ class BridgeOrchestrator:
             evidence = ExecutionEvidence(
                 session_id=session_id,
                 attempt_number=attempt_number,
-                phase="launcher",
+                phase=handoff_phase,
                 result=dict(result),
                 file_path=launcher_path,
                 installer=False,
-                electron=True,
-                gui_launcher=True,
+                electron=use_electron_handoff,
+                gui_launcher=use_electron_handoff,
+                wine_gui=not use_electron_handoff,
+                framework=handoff_framework,
                 wine_prefix=wine_prefix,
                 launcher_path=launcher_path,
                 baseline_pids=set(baseline_pids),
@@ -1397,7 +1416,7 @@ class BridgeOrchestrator:
                 stdout=str(result.get("stdout", ""))[:8000],
                 stderr=str(result.get("stderr", ""))[:8000],
                 duration_ms=int(result.get("duration_ms", 0)),
-                phase="launcher",
+                phase=handoff_phase,
             )
 
             boundary = self._verification_gateway.run(
@@ -1426,7 +1445,7 @@ class BridgeOrchestrator:
                     remediation_id=record.remediation_id,
                     env=record.env,
                     launch_args=launch_args,
-                    phase="launcher",
+                    phase=handoff_phase,
                 )
                 verify_conf = float(
                     (verification_dict.get("confidence") or 0.0)
@@ -1501,7 +1520,8 @@ class BridgeOrchestrator:
                 verify_evidence = verification_dict.get("evidence") or []
                 if verify_evidence:
                     summary += f" {verify_evidence[0]}"
-                summary += _electron_prep_note(electron_prep)
+                if use_electron_handoff:
+                    summary += _electron_prep_note(electron_prep)
                 candidate_id = self._persist_profile_candidate_before_success(
                     session_id=session_id,
                     file_path=request.file_path,
@@ -1683,6 +1703,8 @@ class BridgeOrchestrator:
         attempt_number: int,
     ) -> None:
         """Return lifecycle to POLICY_CHECK before the next execution attempt."""
+        if lifecycle.state == SessionState.SUCCEEDED:
+            return
         state = lifecycle.state
         if state in {
             SessionState.CLASSIFYING,
@@ -2177,6 +2199,42 @@ _AUTO_FIX_SIGNATURES = frozenset({
     "sidecar_silent_crash",
     "electron_crashpad_failure",
 })
+
+
+def _baseline_wine_gui_remediation() -> Dict[str, Any]:
+    return {
+        "id": None,
+        "signature": "*",
+        "description": "Baseline ordinary Wine GUI launch (no Electron shims).",
+        "env": {"WINEDEBUG": "-all"},
+        "shims": [],
+        "args": [],
+    }
+
+
+def _next_wine_gui_launcher_remediation(
+    plan_signature: Optional[str],
+    tried_ids: set[Optional[str]],
+) -> Optional[Dict[str, Any]]:
+    signatures = [plan_signature] if plan_signature else []
+    signatures.append("*")
+    for signature in signatures:
+        for action in remediations_for_signature(
+            signature,
+            installer=False,
+            electron=False,
+        ):
+            remediation_id = action.get("id")
+            if remediation_id in tried_ids:
+                continue
+            resolved = get_remediation_by_id(
+                str(remediation_id),
+                installer=False,
+                electron=False,
+            )
+            if resolved:
+                return resolved
+    return None
 
 
 def _baseline_launcher_remediation() -> Dict[str, Any]:
