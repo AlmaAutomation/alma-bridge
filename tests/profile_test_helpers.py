@@ -55,21 +55,22 @@ def sample_wine_gui_verification_payload() -> Dict[str, Any]:
     return {
         "success_policy": {
             "policy_id": "wine_gui_process_v1",
-            "policy_version": "1.0.0",
-            "required_checks": {"wine_gui": ["process_survives", "target_process_identity"]},
+            "policy_version": "1.1.0",
+            "required_checks": {"wine_gui": ["process_survives"]},
+            "optional_checks": {"wine_gui": ["target_process_identity"]},
         },
         "checks": [
             {
                 "check_kind": "process_survives",
                 "passed": True,
-                "verifier_id": "wine_gui_process",
-                "verifier_version": "1",
+                "verifier_id": "wine_gui_handoff",
+                "verifier_version": "1.1.0",
             },
             {
                 "check_kind": "target_process_identity",
                 "passed": True,
-                "verifier_id": "wine_gui_process",
-                "verifier_version": "1",
+                "verifier_id": "wine_gui_handoff",
+                "verifier_version": "1.1.0",
             },
         ],
         "confidence": 0.95,

@@ -9,7 +9,7 @@ VERIFIER_VERSION = "1.1.0"
 DEFAULT_POLICY_ID = "bridge_aggregate_v1"
 DEFAULT_POLICY_VERSION = "1.0.0"
 WINE_GUI_POLICY_ID = "wine_gui_process_v1"
-WINE_GUI_POLICY_VERSION = "1.0.0"
+WINE_GUI_POLICY_VERSION = "1.1.0"
 
 
 @dataclass
@@ -92,6 +92,7 @@ class ExecutionEvidence:
     electron: bool = False
     gui_launcher: bool = False
     wine_gui: bool = False
+    framework: Optional[str] = None
     wine_prefix: Optional[str] = None
     launcher_path: Optional[str] = None
     before_snapshot: Any = None
@@ -245,6 +246,7 @@ class DefaultVerificationEngine:
                 wine_prefix=evidence.wine_prefix or "",
                 target_path=evidence.launcher_path or evidence.file_path,
                 exclude_pids=evidence.baseline_pids,
+                framework=evidence.framework,
             )
             policy = WINE_GUI_AGGREGATE_POLICY
         elif evidence.phase == "launcher" or (
@@ -414,7 +416,8 @@ class DefaultVerificationEngine:
             checks=checks,
             evidence=launch_verification,
             failure_reason=signature,
-            retryable=signature not in {"permission_denied"},
+            retryable=signature
+            not in {"permission_denied", "single_instance_detected"},
             recommended_next_action=recommended[0] if recommended else None,
             success_policy=DEFAULT_AGGREGATE_POLICY,
             error_signature=signature,
@@ -427,6 +430,7 @@ class DefaultVerificationEngine:
         wine_prefix: str,
         target_path: str,
         exclude_pids: Optional[set[int]] = None,
+        framework: Optional[str] = None,
     ) -> VerificationResult:
         from pathlib import Path
 
@@ -437,6 +441,7 @@ class DefaultVerificationEngine:
             wine_prefix=wine_prefix,
             target_path=target_path,
             exclude_pids=exclude_pids,
+            framework=framework,
         )
         process_passed = bool(updated.get("success")) and bool(verification)
         target_name = Path(target_path).name
@@ -468,7 +473,8 @@ class DefaultVerificationEngine:
             checks=checks,
             evidence=verification,
             failure_reason=signature,
-            retryable=signature not in {"permission_denied"},
+            retryable=signature
+            not in {"permission_denied", "single_instance_detected"},
             recommended_next_action=None,
             success_policy=WINE_GUI_AGGREGATE_POLICY,
             error_signature=signature,
