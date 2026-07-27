@@ -57,6 +57,7 @@ def create_app() -> FastAPI:
             {"name": "Hardware", "description": "Host hardware profiling and shim recommendations."},
             {"name": "Bridge", "description": "Adaptive binary execution and session history."},
             {"name": "Intelligence", "description": "Read-only compatibility intelligence assessments."},
+            {"name": "Graph", "description": "Read-only compatibility graph knowledge representation."},
             {"name": "Learning", "description": "Outcome statistics and strategy learning."},
             {"name": "Import", "description": "Import legacy scan and resolve datasets."},
             {"name": "Training", "description": "Ranker training and dataset export."},
