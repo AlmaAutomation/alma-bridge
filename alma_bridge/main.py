@@ -58,6 +58,7 @@ def create_app() -> FastAPI:
             {"name": "Bridge", "description": "Adaptive binary execution and session history."},
             {"name": "Intelligence", "description": "Read-only compatibility intelligence assessments."},
             {"name": "Graph", "description": "Read-only compatibility graph knowledge representation."},
+            {"name": "Knowledge", "description": "Read-only compatibility knowledge aggregation."},
             {"name": "Learning", "description": "Outcome statistics and strategy learning."},
             {"name": "Import", "description": "Import legacy scan and resolve datasets."},
             {"name": "Training", "description": "Ranker training and dataset export."},

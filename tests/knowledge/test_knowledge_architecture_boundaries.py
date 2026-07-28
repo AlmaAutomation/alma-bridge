@@ -1,4 +1,4 @@
-"""Architecture boundary tests for Compatibility Intelligence."""
+"""Architecture boundary tests for Compatibility Knowledge."""
 
 from __future__ import annotations
 
@@ -9,11 +9,8 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[2]
-INTELLIGENCE = ROOT / "alma_bridge" / "intelligence"
-
+KNOWLEDGE = ROOT / "alma_bridge" / "knowledge"
 
 FORBIDDEN_IMPORT_FRAGMENTS = (
     "orchestrator",
@@ -44,26 +41,21 @@ def _forbidden_imports(path: Path) -> list[str]:
     return hits
 
 
-class TestIntelligenceArchitectureBoundaries:
-    def test_intelligence_package_has_no_forbidden_imports(self):
+class TestKnowledgeArchitectureBoundaries:
+    def test_knowledge_package_has_no_forbidden_imports(self):
         offenders: list[str] = []
-        for path in _py_files(INTELLIGENCE):
+        for path in _py_files(KNOWLEDGE):
             offenders.extend(_forbidden_imports(path))
         assert offenders == []
 
-    def test_assessment_engine_has_no_sql(self):
-        source = (INTELLIGENCE / "assessment.py").read_text(encoding="utf-8")
-        assert "sqlite" not in source.lower()
-        assert "execute(" not in source
-
-    def test_evidence_builder_has_no_subprocess_or_writes(self):
-        source = (INTELLIGENCE / "evidence.py").read_text(encoding="utf-8")
+    def test_aggregation_has_no_subprocess_or_execution_writes(self):
+        source = (KNOWLEDGE / "aggregation.py").read_text(encoding="utf-8")
         assert "import subprocess" not in source
         assert "record_attempt" not in source
         assert "finalize_session" not in source
 
-    def test_intelligence_api_routes_are_get_only(self):
-        routes_path = ROOT / "alma_bridge" / "api" / "intelligence_routes.py"
+    def test_knowledge_api_routes_are_get_only(self):
+        routes_path = ROOT / "alma_bridge" / "api" / "knowledge_routes.py"
         tree = ast.parse(routes_path.read_text(encoding="utf-8"))
         http_methods: list[str] = []
         for node in ast.walk(tree):
@@ -77,7 +69,25 @@ class TestIntelligenceArchitectureBoundaries:
         assert http_methods
         assert all(method == "GET" for method in http_methods)
 
-    def test_import_intelligence_package_has_no_db_side_effects(self):
+    def test_import_knowledge_routes_does_not_load_orchestrator(self):
+        modules = (
+            "alma_bridge.api.knowledge_routes",
+            "alma_bridge.learning.orchestrator",
+        )
+        saved = {mod: sys.modules.get(mod) for mod in modules}
+        try:
+            for mod in modules:
+                sys.modules.pop(mod, None)
+            importlib.import_module("alma_bridge.api.knowledge_routes")
+            assert "alma_bridge.learning.orchestrator" not in sys.modules
+        finally:
+            for mod, previous in saved.items():
+                if previous is None:
+                    sys.modules.pop(mod, None)
+                else:
+                    sys.modules[mod] = previous
+
+    def test_import_knowledge_package_has_no_db_side_effects(self):
         calls: list[str] = []
 
         def _track(name: str):
@@ -91,36 +101,18 @@ class TestIntelligenceArchitectureBoundaries:
                 "alma_bridge.compatibility.profile_store.ensure_profile_tables",
                 _track("ensure_profile_tables"),
             ):
-                importlib.import_module("alma_bridge.intelligence")
+                importlib.import_module("alma_bridge.knowledge")
         assert calls == []
 
-    def test_import_intelligence_routes_does_not_load_orchestrator(self):
-        modules = (
-            "alma_bridge.api.intelligence_routes",
-            "alma_bridge.learning.orchestrator",
-        )
-        saved = {mod: sys.modules.get(mod) for mod in modules}
-        try:
-            for mod in modules:
-                sys.modules.pop(mod, None)
-            importlib.import_module("alma_bridge.api.intelligence_routes")
-            assert "alma_bridge.learning.orchestrator" not in sys.modules
-        finally:
-            for mod, previous in saved.items():
-                if previous is None:
-                    sys.modules.pop(mod, None)
-                else:
-                    sys.modules[mod] = previous
-
-    def test_repository_read_does_not_mutate_schema(self, tmp_path, monkeypatch):
+    def test_knowledge_repository_reads_do_not_mutate_execution_stores(self, tmp_path, monkeypatch):
         db_path = tmp_path / "outcomes.db"
         monkeypatch.setattr("alma_bridge.config.settings.data_dir", tmp_path)
         monkeypatch.setattr("alma_bridge.config.settings.db_path", db_path)
         sqlite3.connect(db_path).close()
 
-        from alma_bridge.intelligence.repository import OutcomesStoreAdapter
+        from alma_bridge.knowledge.repository import ReadOnlyKnowledgeEvidenceAdapter
 
-        adapter = OutcomesStoreAdapter()
+        adapter = ReadOnlyKnowledgeEvidenceAdapter()
         adapter.get_shadow_comparison("missing-session")
 
         with sqlite3.connect(db_path) as conn:
@@ -132,10 +124,19 @@ class TestIntelligenceArchitectureBoundaries:
             }
         assert "compatibility_profile_shadow_comparisons" not in tables
 
-    def test_bridge_run_route_dependencies_unchanged(self):
+    def test_knowledge_service_source_has_no_action_intent(self):
+        offenders: list[str] = []
+        for path in _py_files(KNOWLEDGE):
+            if "ActionIntent" in path.read_text(encoding="utf-8"):
+                offenders.append(str(path.relative_to(ROOT)))
+        assert offenders == []
+
+    def test_knowledge_service_does_not_import_graph_ingestion(self):
+        source = (KNOWLEDGE / "service.py").read_text(encoding="utf-8")
+        assert "GraphIngestionEngine" not in source
+        assert "ingest_application" not in source
+        assert "ingest_session" not in source
+
+    def test_bridge_routes_include_knowledge_router(self):
         routes_source = (ROOT / "alma_bridge" / "api" / "routes.py").read_text(encoding="utf-8")
-        assert '@router.post("/bridge/run"' in routes_source or "@router.post('/bridge/run'" in routes_source
-        assert "BridgeOrchestrator()" in routes_source
-        assert "intelligence_router" in routes_source
-        assert "graph_router" in routes_source
         assert "knowledge_router" in routes_source

@@ -249,15 +249,22 @@ class EvidenceBundleBuilder:
             }
 
         stderr = (attempt.get("stderr") or "").lower()
-        if "wxwidgets" in stderr or "wxwidgets" in (attempt.get("stdout") or "").lower():
-            return {
-                "framework": "wxwidgets",
-                "confidence": 0.75,
-                "source": "runtime_log",
-                "session_id": session_id,
-                "attempt_number": attempt_number,
-                "evidence": ["runtime_log:wxwidgets"],
-            }
+        stdout = (attempt.get("stdout") or "").lower()
+        log_text = f"{stderr}\n{stdout}"
+        framework_patterns = (
+            ("wxwidgets", "wxwidgets"),
+            ("qt", "qt"),
+        )
+        for pattern, framework_name in framework_patterns:
+            if pattern in log_text:
+                return {
+                    "framework": framework_name,
+                    "confidence": 0.75,
+                    "source": "runtime_log",
+                    "session_id": session_id,
+                    "attempt_number": attempt_number,
+                    "evidence": [f"runtime_log:{framework_name}"],
+                }
 
         verification = attempt.get("verification") or {}
         for item in verification.get("evidence") or []:
