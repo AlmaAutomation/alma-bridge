@@ -145,6 +145,7 @@ from alma_bridge.api.intelligence_routes import router as intelligence_router
 from alma_bridge.api.graph_routes import router as graph_router
 from alma_bridge.api.knowledge_routes import router as knowledge_router
 from alma_bridge.api.regression_routes import router as regression_router
+from alma_bridge.api.advisor_routes import router as advisor_router
 from alma_bridge.bridge.recent_sessions import build_recent_sessions_response
 from alma_bridge.config import settings
 from alma_bridge.storage import outcomes
@@ -154,6 +155,7 @@ router.include_router(intelligence_router)
 router.include_router(graph_router)
 router.include_router(knowledge_router)
 router.include_router(regression_router)
+router.include_router(advisor_router)
 orchestrator = BridgeOrchestrator()
 import_service = ImportService()
 tls_modernizer = TlsModernizer(ca_file=settings.compliance_ca_file)
