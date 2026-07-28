@@ -35,3 +35,4 @@ include = ["alma_bridge*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]

@@ -18,6 +18,7 @@ from alma_bridge.graph.models import (
 from alma_bridge.graph.queries import (
     build_edge_id,
     build_node_id,
+    environment_identity,
     manifest_runtime_identity,
     provenance_fingerprint,
 )
@@ -239,6 +240,17 @@ class GraphIngestionEngine:
                 )
             )
 
+        environment_key = f"run_environment:{primary_session_id}"
+        environment = bundle.artifacts.get(environment_key)
+        if environment:
+            self._ingest_environment_edge(
+                edges=edges,
+                node_index=node_index,
+                session_node=session_node,
+                session_id=primary_session_id,
+                environment=environment,
+            )
+
         nodes = list(node_index.values())
         return nodes, edges
 
@@ -405,6 +417,73 @@ class GraphIngestionEngine:
                     provenance=provenance,
                 )
             )
+
+    def _ingest_environment_edge(
+        self,
+        *,
+        edges: List[GraphEdge],
+        node_index: Dict[str, GraphNode],
+        session_node: GraphNode,
+        session_id: str,
+        environment: Dict[str, Any],
+    ) -> None:
+        identity = environment_identity(environment)
+        environment_node = self._make_node(
+            node_index,
+            GraphNodeType.ENVIRONMENT,
+            identity,
+            {
+                "environment_identity": identity,
+                "summary": self._environment_summary(environment),
+                **{
+                    key: environment.get(key)
+                    for key in (
+                        "alma_bridge_version",
+                        "host_os",
+                        "kernel_version",
+                        "host_architecture",
+                        "wine_version",
+                        "wine_architecture",
+                        "prefix_id",
+                    )
+                    if environment.get(key) is not None
+                },
+            },
+        )
+        provenance = [
+            GraphProvenance(
+                source_type="run_environment",
+                source_id=session_id,
+                session_id=session_id,
+            )
+        ]
+        edges.append(
+            self._make_edge(
+                GraphEdgeType.SESSION_USED_ENVIRONMENT,
+                session_node.node_id,
+                environment_node.node_id,
+                scope=session_id,
+                confidence=1.0,
+                provenance=provenance,
+            )
+        )
+
+    @staticmethod
+    def _environment_summary(environment: Dict[str, Any]) -> str:
+        parts: List[str] = []
+        wine_version = environment.get("wine_version")
+        if wine_version:
+            parts.append(str(wine_version))
+        host_os = environment.get("host_os")
+        host_arch = environment.get("host_architecture")
+        if host_os and host_arch:
+            parts.append(f"{host_os}/{host_arch}")
+        elif host_os:
+            parts.append(str(host_os))
+        prefix_id = environment.get("prefix_id")
+        if prefix_id:
+            parts.append(f"prefix:{str(prefix_id)[:12]}")
+        return " | ".join(parts) if parts else "environment observed"
 
     def _make_node(
         self,

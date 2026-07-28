@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from alma_bridge.graph.queries import manifest_runtime_identity
+from alma_bridge.graph.queries import environment_identity, manifest_runtime_identity
 from alma_bridge.intelligence.models import EvidenceBundle, EvidenceReference, EvidenceSourceType
 from alma_bridge.knowledge.models import (
     AGGREGATION_ENGINE_VERSION,
@@ -14,6 +14,7 @@ from alma_bridge.knowledge.models import (
     KnowledgeConflict,
     KnowledgeEvidenceReference,
     MalformedKnowledgeEvidenceError,
+    ObservedEnvironment,
     ObservedFramework,
     ObservedLaunchStrategy,
     ObservedRuntime,
@@ -44,6 +45,7 @@ class KnowledgeAggregationEngine:
         strategy_stats = self._aggregate_strategies(bundle, session_outcomes)
         contract_stats = self._aggregate_verification_contracts(bundle)
         runtime_stats = self._aggregate_runtimes(bundle, session_outcomes)
+        environment_stats = self._aggregate_environments(bundle, session_outcomes)
         conflicts = self._detect_conflicts(framework_stats)
 
         verified_successes = sum(
@@ -74,6 +76,7 @@ class KnowledgeAggregationEngine:
             observed_launch_strategies=strategy_stats,
             verification_contracts=contract_stats,
             observed_runtimes=runtime_stats,
+            observed_environments=environment_stats,
             conflicts=conflicts,
         )
 
@@ -354,6 +357,78 @@ class KnowledgeAggregationEngine:
             for runtime, bucket in sorted(buckets.items())
         ]
 
+    def _aggregate_environments(
+        self,
+        bundle: EvidenceBundle,
+        session_outcomes: Dict[str, str],
+    ) -> List[ObservedEnvironment]:
+        buckets: Dict[str, Dict[str, Any]] = {}
+
+        for key, environment in sorted(bundle.artifacts.items()):
+            if not key.startswith("run_environment:"):
+                continue
+            if not isinstance(environment, dict):
+                continue
+            session_id = key.split(":", 1)[1]
+            identity = environment_identity(environment)
+            bucket = buckets.setdefault(
+                identity,
+                {
+                    "summary": self._environment_summary(environment),
+                    "observation_count": 0,
+                    "verified_success_count": 0,
+                    "verified_failure_count": 0,
+                    "evidence_references": [],
+                },
+            )
+            bucket["observation_count"] += 1
+            outcome = session_outcomes.get(session_id, "unverifiable")
+            if outcome == "verified_success":
+                bucket["verified_success_count"] += 1
+            elif outcome == "verified_failure":
+                bucket["verified_failure_count"] += 1
+
+            ref = next(
+                (
+                    item
+                    for item in bundle.references
+                    if item.source_type == EvidenceSourceType.RUN_ENVIRONMENT
+                    and item.source_id == session_id
+                ),
+                None,
+            )
+            if ref:
+                bucket["evidence_references"].append(self._to_knowledge_ref(ref, environment))
+
+        return [
+            ObservedEnvironment(
+                environment_identity=identity,
+                summary=bucket["summary"],
+                observation_count=bucket["observation_count"],
+                verified_success_count=bucket["verified_success_count"],
+                verified_failure_count=bucket["verified_failure_count"],
+                evidence_references=bucket["evidence_references"],
+            )
+            for identity, bucket in sorted(buckets.items())
+        ]
+
+    @staticmethod
+    def _environment_summary(environment: Dict[str, Any]) -> str:
+        parts: List[str] = []
+        wine_version = environment.get("wine_version")
+        if wine_version:
+            parts.append(str(wine_version))
+        host_os = environment.get("host_os")
+        host_arch = environment.get("host_architecture")
+        if host_os and host_arch:
+            parts.append(f"{host_os}/{host_arch}")
+        elif host_os:
+            parts.append(str(host_os))
+        prefix_id = environment.get("prefix_id")
+        if prefix_id:
+            parts.append(f"prefix:{str(prefix_id)[:12]}")
+        return " | ".join(parts) if parts else "environment observed"
+
     def _record_runtime_observation(
         self,
         buckets: Dict[str, Dict[str, Any]],
@@ -431,11 +506,14 @@ class KnowledgeAggregationEngine:
             EvidenceSourceType.VERIFICATION,
             EvidenceSourceType.FRAMEWORK_DETECTION,
             EvidenceSourceType.MANIFEST_CAPTURE,
+            EvidenceSourceType.RUN_ENVIRONMENT,
         ):
             parts = ref.source_id.split(":")
             if len(parts) == 2:
                 session_id, attempt_id = parts[0], int(parts[1])
         elif ref.source_type == EvidenceSourceType.SESSION:
+            session_id = ref.source_id
+        elif ref.source_type == EvidenceSourceType.RUN_ENVIRONMENT:
             session_id = ref.source_id
 
         excerpt = ref.excerpt

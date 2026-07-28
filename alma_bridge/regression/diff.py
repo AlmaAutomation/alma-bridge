@@ -46,6 +46,7 @@ class RegressionDiffEngine:
         findings.extend(self._detect_framework_changes(before, after, generated_at))
         findings.extend(self._detect_verification_contract_changes(before, after, generated_at))
         findings.extend(self._detect_runtime_changes(before, after, generated_at))
+        findings.extend(self._detect_environment_changes(before, after, generated_at))
         findings.extend(self._detect_new_conflicts(before, after, generated_at))
 
         return sorted(
@@ -410,6 +411,103 @@ class RegressionDiffEngine:
             ),
             summary=f"Runtime observation changed for {runtime}.",
             confidence=0.7,
+        )
+
+    def _detect_environment_changes(
+        self,
+        before: CompatibilityKnowledgeProfile,
+        after: CompatibilityKnowledgeProfile,
+        generated_at: str,
+    ) -> List[RegressionFinding]:
+        before_map = {item.environment_identity: item for item in before.observed_environments}
+        findings: List[RegressionFinding] = []
+
+        for after_env in after.observed_environments:
+            before_env = before_map.get(after_env.environment_identity)
+            if before_env is None:
+                if not after_env.evidence_references:
+                    continue
+                findings.append(
+                    self._environment_change_finding(
+                        before,
+                        after,
+                        environment=after_env.summary or after_env.environment_identity,
+                        generated_at=generated_at,
+                        previous_value="not observed in baseline sessions",
+                        current_value=(
+                            f"summary={after_env.summary}, "
+                            f"observations={after_env.observation_count}"
+                        ),
+                        before_refs=after_env.evidence_references[:1],
+                        after_refs=after_env.evidence_references,
+                    )
+                )
+                continue
+
+            changed = (
+                before_env.observation_count != after_env.observation_count
+                or before_env.verified_success_count != after_env.verified_success_count
+                or before_env.verified_failure_count != after_env.verified_failure_count
+            )
+            if not changed:
+                continue
+            if not before_env.evidence_references or not after_env.evidence_references:
+                continue
+
+            findings.append(
+                self._environment_change_finding(
+                    before,
+                    after,
+                    environment=after_env.summary or after_env.environment_identity,
+                    generated_at=generated_at,
+                    previous_value=(
+                        f"observations={before_env.observation_count}, "
+                        f"verified_successes={before_env.verified_success_count}, "
+                        f"verified_failures={before_env.verified_failure_count}"
+                    ),
+                    current_value=(
+                        f"observations={after_env.observation_count}, "
+                        f"verified_successes={after_env.verified_success_count}, "
+                        f"verified_failures={after_env.verified_failure_count}"
+                    ),
+                    before_refs=before_env.evidence_references,
+                    after_refs=after_env.evidence_references,
+                )
+            )
+        return findings
+
+    def _environment_change_finding(
+        self,
+        before: CompatibilityKnowledgeProfile,
+        after: CompatibilityKnowledgeProfile,
+        *,
+        environment: str,
+        generated_at: str,
+        previous_value: str,
+        current_value: str,
+        before_refs: List[KnowledgeEvidenceReference],
+        after_refs: List[KnowledgeEvidenceReference],
+    ) -> RegressionFinding:
+        return self._build_finding(
+            before=before,
+            after=after,
+            regression_type=RegressionType.ENVIRONMENT_CHANGED,
+            subject=environment,
+            generated_at=generated_at,
+            previous=RegressionStateSnapshot(
+                dimension="run_environment",
+                label=environment,
+                value=previous_value,
+                evidence_references=before_refs,
+            ),
+            current=RegressionStateSnapshot(
+                dimension="run_environment",
+                label=environment,
+                value=current_value,
+                evidence_references=after_refs,
+            ),
+            summary=f"Run environment snapshot differs for {environment}.",
+            confidence=0.75,
         )
 
     def _detect_new_conflicts(

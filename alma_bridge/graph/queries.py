@@ -74,3 +74,12 @@ def manifest_runtime_identity(manifest: Mapping[str, Any]) -> str:
             "version_family": str(base_runtime.get("version_family") or "unknown"),
         }
     )
+
+
+def environment_identity(environment: Mapping[str, Any]) -> str:
+    return sha256_v1(
+        {
+            "schema": str(environment.get("schema_version") or "compatibility_run_environment_v1"),
+            "payload": dict(sorted(environment.items())),
+        }
+    )

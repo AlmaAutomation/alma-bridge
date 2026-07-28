@@ -190,6 +190,25 @@ class EvidenceBundleBuilder:
                     )
                 )
 
+            run_environment = session.get("run_environment")
+            if run_environment:
+                ekey = f"run_environment:{session_id}"
+                artifacts[ekey] = run_environment
+                session_artifact["run_environment"] = run_environment
+                references.append(
+                    EvidenceReference(
+                        source_type=EvidenceSourceType.RUN_ENVIRONMENT,
+                        source_id=session_id,
+                        artifact_key=ekey,
+                        captured_at=session.get("started_at"),
+                        excerpt=str(
+                            run_environment.get("wine_version")
+                            or run_environment.get("host_os")
+                            or "run_environment"
+                        ),
+                    )
+                )
+
             artifacts["sessions"].append(session_artifact)
 
         if not references:

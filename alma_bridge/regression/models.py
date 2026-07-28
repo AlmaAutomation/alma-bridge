@@ -21,6 +21,7 @@ class RegressionType(str, Enum):
     STRATEGY_SUCCESS_RATE_DROPPED = "strategy_success_rate_dropped"
     VERIFICATION_CONTRACT_CHANGED = "verification_contract_changed"
     RUNTIME_OBSERVATION_CHANGED = "runtime_observation_changed"
+    ENVIRONMENT_CHANGED = "environment_changed"
     NEW_CONFLICT = "new_conflict"
 
 
@@ -38,6 +39,7 @@ _SEVERITY_BY_TYPE = {
     RegressionType.FRAMEWORK_CHANGED: RegressionSeverity.INFO,
     RegressionType.VERIFICATION_CONTRACT_CHANGED: RegressionSeverity.INFO,
     RegressionType.RUNTIME_OBSERVATION_CHANGED: RegressionSeverity.INFO,
+    RegressionType.ENVIRONMENT_CHANGED: RegressionSeverity.INFO,
 }
 
 

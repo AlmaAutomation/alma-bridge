@@ -123,6 +123,28 @@ class ObservedRuntime(BaseModel):
         )
 
 
+class ObservedEnvironment(BaseModel):
+    environment_identity: str
+    summary: str
+    observation_count: int = Field(ge=0)
+    verified_success_count: int = Field(ge=0)
+    verified_failure_count: int = Field(ge=0)
+    evidence_references: List[KnowledgeEvidenceReference] = Field(default_factory=list)
+
+    @field_validator("evidence_references")
+    @classmethod
+    def _require_provenance(
+        cls,
+        value: List[KnowledgeEvidenceReference],
+    ) -> List[KnowledgeEvidenceReference]:
+        if not value:
+            raise ValueError("observed environments require at least one evidence reference")
+        return sorted(
+            value,
+            key=lambda ref: (ref.source_type, ref.source_id, ref.artifact_key),
+        )
+
+
 class KnowledgeConflict(BaseModel):
     relationship: str
     conflict_type: str
@@ -165,6 +187,7 @@ class CompatibilityKnowledgeProfile(BaseModel):
     observed_launch_strategies: List[ObservedLaunchStrategy] = Field(default_factory=list)
     verification_contracts: List[VerificationContractAggregate] = Field(default_factory=list)
     observed_runtimes: List[ObservedRuntime] = Field(default_factory=list)
+    observed_environments: List[ObservedEnvironment] = Field(default_factory=list)
     conflicts: List[KnowledgeConflict] = Field(default_factory=list)
 
     @field_validator("observed_frameworks")
@@ -189,6 +212,11 @@ class CompatibilityKnowledgeProfile(BaseModel):
     @classmethod
     def _sort_runtimes(cls, value: List[ObservedRuntime]) -> List[ObservedRuntime]:
         return sorted(value, key=lambda item: item.runtime)
+
+    @field_validator("observed_environments")
+    @classmethod
+    def _sort_environments(cls, value: List[ObservedEnvironment]) -> List[ObservedEnvironment]:
+        return sorted(value, key=lambda item: item.environment_identity)
 
     @field_validator("conflicts")
     @classmethod

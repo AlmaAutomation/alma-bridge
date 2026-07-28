@@ -22,6 +22,7 @@ class GraphNodeType(str, Enum):
     PREFIX_MANIFEST = "prefix_manifest"
     EXECUTION_SESSION = "execution_session"
     EVIDENCE_RECORD = "evidence_record"
+    ENVIRONMENT = "environment"
 
 
 class GraphEdgeType(str, Enum):
@@ -32,6 +33,7 @@ class GraphEdgeType(str, Enum):
     USED_PREFIX_MANIFEST = "used_prefix_manifest"
     PRODUCED_EVIDENCE = "produced_evidence"
     RUNTIME_OBSERVED = "runtime_observed"
+    SESSION_USED_ENVIRONMENT = "session_used_environment"
 
 
 VALID_NODE_TYPES = frozenset(item.value for item in GraphNodeType)

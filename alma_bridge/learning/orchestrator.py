@@ -2636,6 +2636,22 @@ def _report_progress(session_id: str, message: str) -> None:
     outcomes.update_session_progress(session_id, message)
 
 
+def _capture_session_run_environment(session_id: str, record: AttemptRecord) -> None:
+    from alma_bridge.compatibility.run_environment import (
+        capture_run_environment,
+        environment_to_dict,
+    )
+
+    session = outcomes.get_session(session_id)
+    if not session or session.get("run_environment"):
+        return
+    hardware_profile = session.get("hardware_profile") or {}
+    snapshot = capture_run_environment(hardware_profile=hardware_profile, record=record)
+    if snapshot is None:
+        return
+    outcomes.set_session_run_environment(session_id, environment_to_dict(snapshot))
+
+
 def _persist_attempt(
     session_id: str,
     record: AttemptRecord,
@@ -2669,6 +2685,7 @@ def _persist_attempt(
         route_id=route_id,
         escalation_kind=escalation_kind,
     )
+    _capture_session_run_environment(session_id, record)
     if record.remediation_id and record.error_signature:
         try:
             from alma_bridge.learning.remediation_learning import record_remediation_outcome

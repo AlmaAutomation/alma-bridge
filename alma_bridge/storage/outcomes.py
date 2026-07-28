@@ -88,6 +88,7 @@ _SESSION_COLUMN_MIGRATIONS = {
     "session_timeout_at": "TEXT",
     "lease_owner_id": "TEXT",
     "lease_expires_at": "TEXT",
+    "run_environment_json": "TEXT",
 }
 
 _ATTEMPT_COLUMN_MIGRATIONS = {
@@ -479,6 +480,35 @@ def record_attempt(
         return int(cursor.lastrowid)
 
 
+def set_session_run_environment(session_id: str, environment: Dict[str, Any]) -> None:
+    """Persist run environment once per session; no-op if already captured."""
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT run_environment_json FROM bridge_sessions WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        if row and row["run_environment_json"]:
+            return
+        conn.execute(
+            "UPDATE bridge_sessions SET run_environment_json = ? WHERE session_id = ?",
+            (json.dumps(environment), session_id),
+        )
+        conn.commit()
+
+
+def list_distinct_application_fingerprints() -> List[str]:
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT file_hash
+            FROM bridge_sessions
+            WHERE file_hash IS NOT NULL AND TRIM(file_hash) != ''
+            ORDER BY file_hash ASC
+            """
+        ).fetchall()
+    return [str(row["file_hash"]) for row in rows]
+
+
 def update_session_progress(session_id: str, summary: str) -> None:
     """Write live progress into an in-flight session (summary until finalize)."""
     with _connect() as conn:
@@ -536,6 +566,10 @@ def get_session(session_id: str) -> Optional[Dict[str, Any]]:
     result = dict(session)
     result["hardware_profile"] = json.loads(result.get("hardware_profile") or "{}")
     result["rerank_events"] = json.loads(result.get("rerank_events") or "[]")
+    raw_environment = result.get("run_environment_json")
+    result["run_environment"] = (
+        json.loads(raw_environment) if raw_environment else None
+    )
     result["attempts"] = [_deserialize_attempt(dict(row)) for row in attempts]
     winning = next((attempt for attempt in reversed(result["attempts"]) if attempt.get("success")), None)
     result["winning_attempt"] = winning

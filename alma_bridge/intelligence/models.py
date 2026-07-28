@@ -18,6 +18,7 @@ class EvidenceSourceType(str, Enum):
     VERIFICATION = "verification"
     FRAMEWORK_DETECTION = "framework_detection"
     MANIFEST_CAPTURE = "manifest_capture"
+    RUN_ENVIRONMENT = "run_environment"
     SHADOW_COMPARISON = "shadow_comparison"
     INSPECTION = "inspection"
 
