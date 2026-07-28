@@ -24,12 +24,12 @@ def _application_name(file_path: Optional[str]) -> str:
 
 
 def _session_state(row: Dict[str, Any]) -> str:
+    if row.get("finished_at"):
+        return "SUCCEEDED" if bool(row.get("success")) else "FAILED"
     raw = row.get("session_state")
     if raw:
         return str(raw).upper()
-    if not row.get("finished_at"):
-        return "RUNNING"
-    return "SUCCEEDED" if bool(row.get("success")) else "FAILED"
+    return "RUNNING"
 
 
 def _graph_compatible(fingerprint: Optional[str]) -> bool:
