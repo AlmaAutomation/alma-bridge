@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from alma_bridge.advisor.models import (
-    AdvisorExplanation,
+    AdvisorExplanationResponse,
     AdvisorNotFoundError,
     MalformedAdvisorError,
     PolicyViolationError,
@@ -20,15 +20,20 @@ _service = CompatibilityAdvisorService()
 
 @router.get(
     "/bridge/advisor/applications/{fingerprint}",
-    response_model=AdvisorExplanation,
+    response_model=AdvisorExplanationResponse,
     tags=["Advisor"],
 )
 def advisor_for_application(
     fingerprint: str,
     session_id: Optional[str] = Query(default=None),
-) -> AdvisorExplanation:
+    render: Literal["deterministic", "llm"] = Query(default="deterministic"),
+) -> AdvisorExplanationResponse:
     try:
-        return _service.explain_for_application(fingerprint, session_id=session_id)
+        return _service.explain_for_application(
+            fingerprint,
+            session_id=session_id,
+            render=render,
+        )
     except AdvisorNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except MalformedAdvisorError as exc:
@@ -45,12 +50,15 @@ def advisor_for_application(
 
 @router.get(
     "/bridge/advisor/sessions/{session_id}",
-    response_model=AdvisorExplanation,
+    response_model=AdvisorExplanationResponse,
     tags=["Advisor"],
 )
-def advisor_for_session(session_id: str) -> AdvisorExplanation:
+def advisor_for_session(
+    session_id: str,
+    render: Literal["deterministic", "llm"] = Query(default="deterministic"),
+) -> AdvisorExplanationResponse:
     try:
-        return _service.explain_for_session(session_id)
+        return _service.explain_for_session(session_id, render=render)
     except AdvisorNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except MalformedAdvisorError as exc:

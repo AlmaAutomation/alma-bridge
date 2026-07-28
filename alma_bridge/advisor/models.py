@@ -17,6 +17,7 @@ from alma_bridge.regression.models import CompatibilityRegressionReport
 
 ADVISOR_SCHEMA_VERSION = "compatibility_advisor_v1"
 ADVISOR_ENGINE_VERSION = "compatibility_advisor_deterministic_v1"
+ADVISOR_RESPONSE_SCHEMA_VERSION = "compatibility_advisor_response_v1"
 
 VALID_OBSERVATION_CATEGORIES = frozenset(
     {
@@ -131,6 +132,14 @@ class AdvisorExplanation(BaseModel):
     @classmethod
     def _sort_limitations(cls, value: List[str]) -> List[str]:
         return sorted(value)
+
+
+class AdvisorExplanationResponse(AdvisorExplanation):
+    """Advisor explanation with optional LLM rendering metadata."""
+
+    render_mode: str = "deterministic"
+    fallback_reason: Optional[str] = None
+    response_schema_version: str = ADVISOR_RESPONSE_SCHEMA_VERSION
 
 
 class AdvisorNotFoundError(Exception):

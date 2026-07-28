@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -111,6 +112,15 @@ class Settings(BaseSettings):
     compatibility_profile_creation_enabled: bool = False
     compatibility_profile_shadow_mode: bool = False
     compatibility_profile_reuse_enabled: bool = False
+
+    # Advisor optional LLM rendering (Phase 2 — disabled by default)
+    advisor_llm_enabled: bool = Field(default=False, validation_alias="ALMA_ADVISOR_LLM_ENABLED")
+    advisor_llm_provider: str = Field(default="", validation_alias="ALMA_ADVISOR_LLM_PROVIDER")
+    advisor_llm_model: str = Field(default="", validation_alias="ALMA_ADVISOR_LLM_MODEL")
+    advisor_llm_timeout_seconds: float = Field(
+        default=10.0,
+        validation_alias="ALMA_ADVISOR_LLM_TIMEOUT_SECONDS",
+    )
 
 
 settings = Settings()

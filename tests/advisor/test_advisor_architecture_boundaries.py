@@ -113,3 +113,10 @@ class TestAdvisorArchitectureBoundaries:
             response = client.get(f"/bridge/advisor/applications/{CODEBLOCKS_FINGERPRINT}")
             assert response.status_code == 200
             mocked.assert_not_called()
+
+    def test_llm_package_has_no_forbidden_imports(self):
+        llm_dir = ROOT / "alma_bridge" / "advisor" / "llm"
+        offenders: list[str] = []
+        for path in _py_files(llm_dir):
+            offenders.extend(_forbidden_imports(path))
+        assert offenders == []
