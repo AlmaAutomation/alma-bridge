@@ -546,6 +546,8 @@ _SESSION_LIST_SELECT = """
     SELECT
         s.session_id,
         s.file_path,
+        s.file_hash,
+        s.session_state,
         s.started_at,
         s.finished_at,
         s.success,

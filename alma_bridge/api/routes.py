@@ -127,6 +127,7 @@ from alma_bridge.schemas.models import (
     OutcomeStatsResponse,
     ProgramPreflightResponse,
     PriorSuccessResponse,
+    RecentSessionsResponse,
     ServiceScanRequest,
     ServiceScanResponse,
     TlsAssessRequest,
@@ -142,6 +143,7 @@ from alma_bridge.schemas.models import (
 from alma_bridge.execution.shim_pack import build_shim_pack, run_shim_pack, sandbox_status
 from alma_bridge.api.intelligence_routes import router as intelligence_router
 from alma_bridge.api.graph_routes import router as graph_router
+from alma_bridge.bridge.recent_sessions import build_recent_sessions_response
 from alma_bridge.config import settings
 from alma_bridge.storage import outcomes
 
@@ -351,10 +353,13 @@ def bridge_run_result(session_id: str) -> BridgeSessionResult:
     return _session_to_result(session)
 
 
-@router.get("/bridge/sessions/recent", tags=["Bridge"])
-def bridge_sessions_recent(limit: int = 20, path: str | None = None) -> dict:
-    sessions = outcomes.list_recent_sessions(limit=limit, file_path=path)
-    return {"sessions": sessions, "count": len(sessions)}
+@router.get(
+    "/bridge/sessions/recent",
+    response_model=RecentSessionsResponse,
+    tags=["Bridge"],
+)
+def bridge_sessions_recent(limit: int = 20, path: str | None = None) -> RecentSessionsResponse:
+    return build_recent_sessions_response(limit=limit, file_path=path)
 
 
 @router.get("/bridge/session/{session_id}", tags=["Bridge"])

@@ -189,6 +189,22 @@ class PriorSuccessResponse(BaseModel):
     success_rate_for_path: float = 0.0
 
 
+class RecentSessionItem(BaseModel):
+    session_id: str
+    application_fingerprint: Optional[str] = None
+    application_name: str
+    state: str
+    verified: bool
+    started_at: str
+    finished_at: Optional[str] = None
+    graph_compatible: bool = False
+
+
+class RecentSessionsResponse(BaseModel):
+    sessions: List[RecentSessionItem] = Field(default_factory=list)
+    count: int = 0
+
+
 class ImportRequest(BaseModel):
     sysdet_db: Optional[str] = None
     resolve_audit_dir: Optional[str] = None

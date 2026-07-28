@@ -89,7 +89,7 @@ def test_bridge_sessions_recent(tmp_path, client):
     assert response.status_code == 200
     body = response.json()
     assert body["count"] >= 1
-    assert body["sessions"][0]["file_path"] == str(script)
+    assert body["sessions"][0]["application_name"] == script.name
 
     filtered = client.get("/bridge/sessions/recent", params={"path": str(script)})
     assert filtered.status_code == 200
@@ -122,8 +122,10 @@ def test_bridge_sessions_include_attempt_metadata(tmp_path, client):
 
     response = client.get("/bridge/sessions/recent", params={"limit": 5})
     session = response.json()["sessions"][0]
-    assert session["attempt_count"] >= 1
-    assert session["winning_strategy_id"]
+    assert session["session_id"]
+    assert session["application_name"] == "meta.sh"
+    assert "graph_compatible" in session
+    assert "verified" in session
 
 
 def test_bridge_run_native_script(tmp_path, client):
