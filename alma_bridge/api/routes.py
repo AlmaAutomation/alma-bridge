@@ -159,6 +159,7 @@ from alma_bridge.api.compatibility_intelligence_routes import (
 from alma_bridge.api.governance_routes import router as governance_router
 from alma_bridge.api.expansion_routes import router as expansion_router
 from alma_bridge.api.evidence_routes import router as evidence_router
+from alma_bridge.api.research_routes import router as research_router
 from alma_bridge.bridge.recent_sessions import build_recent_sessions_response
 from alma_bridge.config import settings
 from alma_bridge.storage import outcomes
@@ -180,6 +181,7 @@ router.include_router(compatibility_intelligence_router)
 router.include_router(governance_router)
 router.include_router(expansion_router)
 router.include_router(evidence_router)
+router.include_router(research_router)
 orchestrator = BridgeOrchestrator()
 import_service = ImportService()
 tls_modernizer = TlsModernizer(ca_file=settings.compliance_ca_file)
