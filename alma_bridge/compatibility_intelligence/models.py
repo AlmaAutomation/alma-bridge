@@ -248,6 +248,28 @@ class PredictionSnapshot(BaseModel):
     engine_version: str
 
 
+class OutcomeLink(BaseModel):
+    """Links a prediction snapshot to an authoritative verification outcome."""
+
+    schema_version: str = ACI_CALIBRATION_SCHEMA_VERSION
+    outcome_id: str
+    snapshot_id: str
+    session_id: str
+    attempt_id: Optional[int] = None
+    binary_digest: str
+    analysis_digest: str
+    provider_id: str
+    provider_version: str
+    capability_snapshot_digest: str = ""
+    outcome_type: OutcomeType
+    verification_result_ref: Optional[str] = None
+    predicted_eligible: bool = False
+    verified_success: bool = False
+    failure_signature: Optional[str] = None
+    created_at: str
+    engine_version: str
+
+
 class CompatibilityAnalysisResult(BaseModel):
     schema_version: str = ACI_SCHEMA_VERSION
     analysis_id: str

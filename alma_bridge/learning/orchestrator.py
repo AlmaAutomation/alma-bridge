@@ -17,6 +17,11 @@ from alma_bridge.compatibility.profile_shadow_models import (
     ShadowActualInputs,
     ShadowPlanningInputs,
 )
+from alma_bridge.compatibility_intelligence.outcome_linking import (
+    OutcomeLinkingService,
+    resolve_outcome_type,
+)
+from alma_bridge.compatibility_intelligence.service import CompatibilityIntelligenceService
 from alma_bridge.config import settings
 from alma_bridge.execution.container_checks import sandbox_ready
 from alma_bridge.execution.errors import (
@@ -348,6 +353,14 @@ class BridgeOrchestrator:
                 or getattr(inspection, "recommended_strategy_id", None)
             ),
             shadow_host_payload_overlay=request.shadow_host_payload_overlay,
+        )
+        self._create_aci_prediction_snapshot_before_plan(
+            session_id=session_id,
+            file_path=request.file_path,
+            preferred_strategy_id=(
+                request.preferred_strategy_id
+                or getattr(inspection, "recommended_strategy_id", None)
+            ),
         )
 
         if kind.get("needs_wine") and wine_prefix:
@@ -2058,6 +2071,88 @@ class BridgeOrchestrator:
         except Exception:  # noqa: BLE001
             pass
 
+    @staticmethod
+    def _infer_provider_from_strategy(strategy_id: Optional[str]) -> str:
+        sid = (strategy_id or "").lower()
+        if "native" in sid:
+            return "native_alma"
+        if "proton" in sid:
+            return "proton"
+        if "container" in sid:
+            return "container"
+        return "wine"
+
+    def _create_aci_prediction_snapshot_before_plan(
+        self,
+        *,
+        session_id: str,
+        file_path: str,
+        preferred_strategy_id: Optional[str] = None,
+    ) -> None:
+        try:
+            provider_id = self._infer_provider_from_strategy(preferred_strategy_id)
+            if preferred_strategy_id is None:
+                provider_id = "native_alma"
+            CompatibilityIntelligenceService().create_prediction_snapshot(
+                file_path,
+                provider_id=provider_id,
+                session_id=session_id,
+                persist=True,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _record_aci_calibration_outcome(
+        self,
+        *,
+        lifecycle: SessionLifecycleManager,
+        result: BridgeSessionResult,
+        budget: Optional[AutoCompatibilityBudget] = None,
+    ) -> None:
+        try:
+            svc = CompatibilityIntelligenceService()
+            snapshot = svc.get_prediction_snapshot_by_session(result.session_id)
+            if snapshot is None:
+                return
+
+            winning = result.winning_attempt
+            verification_ref: Optional[str] = None
+            if winning:
+                from alma_bridge.compatibility.profile_store import load_candidate_for_session_attempt
+
+                snap = load_candidate_for_session_attempt(
+                    result.session_id,
+                    winning.attempt_number,
+                )
+                if snap:
+                    verification_ref = snap.verification_binding_key
+
+            failure_signature = None
+            if not result.success and result.attempts:
+                for attempt in reversed(result.attempts):
+                    if attempt.error_signature:
+                        failure_signature = attempt.error_signature
+                        break
+
+            outcome_type = resolve_outcome_type(
+                success=result.success,
+                verification_result_ref=verification_ref,
+                execution_attempted=bool(result.attempts),
+                blocked_by_policy=budget.exhausted if budget else False,
+            )
+
+            OutcomeLinkingService().link_outcome(
+                snapshot,
+                session_id=result.session_id,
+                attempt_id=winning.attempt_number if winning else None,
+                outcome_type=outcome_type,
+                verification_result_ref=verification_ref,
+                verified_success=result.success and outcome_type.value == "verified_success",
+                failure_signature=failure_signature,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
     def _finalize_bridge_session(
         self,
         *,
@@ -2075,6 +2170,7 @@ class BridgeOrchestrator:
             )
         self._ensure_terminal_lifecycle_state(lifecycle=lifecycle, result=result, budget=budget)
         self._record_shadow_actual_outcome(lifecycle=lifecycle, result=result, budget=budget)
+        self._record_aci_calibration_outcome(lifecycle=lifecycle, result=result, budget=budget)
 
     def _ensure_terminal_lifecycle_state(
         self,
