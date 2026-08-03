@@ -18,5 +18,6 @@
 | [ADR-018](../adr/ADR-018-capability-registry-governance.md) | Capability maturity is scoped and human-gated; registry changes are append-only versioned | Calibration evidence must not auto-mutate provider capability registries | Accepted — 2026-08-02 |
 | [ADR-019](../adr/ADR-019-capability-guided-runtime-expansion.md) | Runtime expansion plans rank bounded engineering candidates from observed evidence; advisory only | Deterministic engineering priorities without auto-implementation or registry mutation | Accepted — 2026-08-02 |
 | [ADR-020](../adr/ADR-020-native-runtime-engineering-platform.md) | Native Runtime Engineering Platform v1 — per-API specs, behavior suites, benchmarks, read-only dashboard | Measurable, engineerable native shims without GET-triggered execution | Accepted — 2026-08-02 |
+| [ADR-021](../adr/ADR-021-runtime-certification-platform.md) | Runtime Certification Platform v1 — behavior-scoped certification, compliance matrix, stale detection, append-only history | Prove exactly which behaviors are certified and why from deterministic evidence | Accepted — 2026-08-02 |
 
 **Related design (not ADR):** Plugin architecture — design-only stub, Phase 8 (`docs/architecture/plugin-architecture.md`).
