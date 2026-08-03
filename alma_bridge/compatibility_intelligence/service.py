@@ -16,6 +16,7 @@ from alma_bridge.compatibility_intelligence.coverage import (
 )
 from alma_bridge.compatibility_intelligence.graph import build_compatibility_graph
 from alma_bridge.compatibility_intelligence.imports import build_import_graph, extract_imports
+from alma_bridge.compatibility_intelligence.calibration_service import CalibrationService
 from alma_bridge.compatibility_intelligence.metrics import compute_registry_metrics
 from alma_bridge.compatibility_intelligence.models import (
     ACI_SCHEMA_VERSION,
@@ -145,6 +146,7 @@ class CompatibilityIntelligenceService:
             analysis,
             provider_id=provider_id,
             session_id=session_id,
+            fixture_name=Path(file_path).name,
         )
         if persist:
             self._calibration_repo.save_snapshot(snapshot)
@@ -155,3 +157,6 @@ class CompatibilityIntelligenceService:
 
     def get_prediction_snapshot_by_session(self, session_id: str) -> Optional[PredictionSnapshot]:
         return self._calibration_repo.get_snapshot_by_session(session_id)
+
+    def get_calibration_metrics(self, provider_id: Optional[str] = None) -> dict:
+        return CalibrationService(self._calibration_repo).compute_metrics(provider_id=provider_id).to_dict()

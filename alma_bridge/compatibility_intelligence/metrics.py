@@ -7,8 +7,16 @@ from alma_bridge.compatibility_intelligence.capabilities import (
     CAPABILITY_REGISTRY,
     list_capabilities,
 )
-from alma_bridge.compatibility_intelligence.models import ImplementationStatus
-from alma_bridge.compatibility_intelligence.models import RegistryMetrics
+from alma_bridge.compatibility_intelligence.models import ImplementationStatus, RegistryMetrics
+
+
+class CalibrationRegistryMetrics(RegistryMetrics):
+    """Extended registry metrics including calibration sample sizes."""
+
+    calibration_total_records: int = 0
+    calibration_authoritative_sample_size: int = 0
+    calibration_true_positive_rate: float = 0.0
+    calibration_false_positive_rate: float = 0.0
 
 
 def compute_registry_metrics() -> RegistryMetrics:
@@ -27,3 +35,10 @@ def compute_registry_metrics() -> RegistryMetrics:
         capability_count=len(list_capabilities()),
         native_supported_capabilities=native_supported,
     )
+
+
+def compute_calibration_summary() -> dict:
+    """Calibration metrics summary for planner/UI consumption."""
+    from alma_bridge.compatibility_intelligence.calibration_service import CalibrationService
+
+    return CalibrationService().compute_metrics().to_dict()

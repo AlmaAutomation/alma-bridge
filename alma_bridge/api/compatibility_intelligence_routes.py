@@ -13,10 +13,12 @@ from alma_bridge.compatibility_intelligence.models import (
     CompatibilityAnalysisResult,
     RegistryMetrics,
 )
+from alma_bridge.compatibility_intelligence.calibration_service import CalibrationService
 from alma_bridge.compatibility_intelligence.service import CompatibilityIntelligenceService
 
 router = APIRouter()
 _service = CompatibilityIntelligenceService()
+_calibration = CalibrationService()
 
 
 class AnalyzeRequest(BaseModel):
@@ -128,3 +130,31 @@ def predict_from_path(file_path: str) -> dict:
             for pid, breakdown in result.coverage.providers.items()
         },
     }
+
+
+@router.get(
+    "/bridge/compatibility/calibration",
+    tags=["Compatibility Intelligence"],
+)
+def calibration_metrics(provider_id: str | None = None):
+    """Read-only calibration metrics with sample sizes — no execution."""
+    metrics = _calibration.compute_metrics(provider_id=provider_id)
+    return metrics.to_dict()
+
+
+@router.get(
+    "/bridge/compatibility/calibration/capabilities/{capability_id}",
+    tags=["Compatibility Intelligence"],
+)
+def calibration_by_capability(capability_id: str):
+    """Per-capability calibration evidence — read-only, no execution."""
+    return _calibration.get_capability_calibration(capability_id)
+
+
+@router.get(
+    "/bridge/compatibility/calibration/analyses/{analysis_digest}",
+    tags=["Compatibility Intelligence"],
+)
+def calibration_by_analysis(analysis_digest: str):
+    """Calibration records for an analysis digest — read-only, no execution."""
+    return _calibration.get_analysis_calibration(analysis_digest)

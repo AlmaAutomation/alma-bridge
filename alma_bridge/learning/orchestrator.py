@@ -21,7 +21,7 @@ from alma_bridge.compatibility_intelligence.outcome_linking import (
     OutcomeLinkingService,
     resolve_outcome_type,
 )
-from alma_bridge.compatibility_intelligence.service import CompatibilityIntelligenceService
+from alma_bridge.compatibility_intelligence.calibration_service import CalibrationService
 from alma_bridge.config import settings
 from alma_bridge.execution.container_checks import sandbox_ready
 from alma_bridge.execution.errors import (
@@ -2150,6 +2150,10 @@ class BridgeOrchestrator:
                 verified_success=result.success and outcome_type.value == "verified_success",
                 failure_signature=failure_signature,
             )
+            outcomes = OutcomeLinkingService().list_outcomes_for_session(result.session_id)
+            cal_svc = CalibrationService()
+            for outcome in outcomes:
+                cal_svc.calibrate(snapshot, outcome)
         except Exception:  # noqa: BLE001
             pass
 
