@@ -1,21 +1,21 @@
 # Alma Bridge: Technical Architecture White Paper
 
 **Document status:** As-built systems description  
-**Audit baseline:** Phase 1 Architecture Audit, 2026-07-31  
+**Audit baseline:** Phase 1 Architecture Audit (2026-07-31); Decision Pipeline Phases 1–3 (2026-08-02)  
 **Repository:** `alma-bridge` (`alma_bridge/` package)  
-**Evidence basis:** Implemented code, architecture tests, nine accepted ADRs, Phase 1 audit documents
+**Evidence basis:** Implemented code, architecture tests, twelve accepted ADRs, Phase 1 audit documents
 
 ---
 
 ## 1. Executive Summary
 
-Alma Bridge is a Windows compatibility platform for Linux delivered as a single FastAPI application (`alma_bridge/main.py`). Its core function is to answer, with inspectable evidence: *what must be true about this host for this Windows application to run correctly?* The system inspects binaries, plans execution strategies, runs programs under guarded lifecycle authority, verifies outcomes through a structured verification engine, and persists durable evidence in SQLite. Downstream read-only layers consume that evidence to build compatibility graphs, aggregated knowledge, regression reports, session comparisons, deterministic explanations, and evidence-grounded question answering.
+Alma Bridge is a Windows compatibility platform for Linux delivered as a single FastAPI application (`alma_bridge/main.py`). Its core function is to answer, with inspectable evidence: *what must be true about this host for this Windows application to run correctly?* The system inspects binaries, plans execution strategies, runs programs under guarded lifecycle authority, verifies outcomes through a structured verification engine, and persists durable evidence in SQLite. Downstream read-only layers consume that evidence to build compatibility graphs, aggregated knowledge, regression reports, session comparisons, deterministic explanations, evidence-grounded question answering, and—since August 2026—a **human-governed Decision Pipeline** that produces auditable plan recommendations, reviews, and non-executing dry-run validation reports without granting execution authority.
 
-The architecture enforces a strict separation between **execution authority** (core) and **evidence consumers** (platform). Only `BridgeOrchestrator` drives `/bridge/run` lifecycle, and only `VerificationGateway.declare_verified_session_success()` may transition a session to `SUCCEEDED` (ADR-001). Subprocess exit codes and attempt-level success flags alone are not treated as verified compatibility success. This invariant is enforced by dedicated tests (`tests/test_verification_authority.py`, `tests/test_orchestrator_authority.py`) and by per-package architecture boundary tests for every read-only module.
+The architecture enforces a strict separation between **execution authority** (core) and **evidence consumers** (platform). Only `BridgeOrchestrator` drives `/bridge/run` lifecycle, and only `VerificationGateway.declare_verified_session_success()` may transition a session to `SUCCEEDED` (ADR-001). Subprocess exit codes and attempt-level success flags alone are not treated as verified compatibility success. The Decision Pipeline (ADR-010 through ADR-012) adds a third tier: **governance without execution**—operators may approve and validate plans, but no decision endpoint launches applications or mutates prefixes.
 
 The Phase 1 audit (2026-07-31) found **no critical read-only boundary violations**. Production-readiness risks concentrate in the core cluster: scattered SQLite persistence (~20 ad-hoc schemas), mutual import cycles, and a monolithic core API router—not in platform-tier breaches of execution authority.
 
-This repository provides HTTP JSON APIs and a CLI; it does **not** include a frontend package. External UIs (for example references to `:9002` and `:3001` in routes and README) are out of repo scope.
+This repository provides HTTP JSON APIs and a CLI; the **Compatibility Explorer UI** lives in the external **almasysdet** repository and consumes Bridge decision, review, and validation endpoints via HTTP proxy.
 
 ---
 
@@ -59,7 +59,7 @@ Design goals stated in platform direction and ADRs, mapped to as-built enforceme
 | Verification before success | ADR-001; `VerificationGateway`; aggregate policy `bridge_aggregate_v1` |
 | Evidence over memory for platform tier | `EvidenceBundleBuilder`; read-only packages never call orchestrator |
 | Provenance on every platform claim | `EvidenceReference`, `KnowledgeEvidenceReference`, `GraphProvenance` |
-| Read-only intelligence | Forbidden import tests in eight platform packages |
+| Read-only intelligence | Forbidden import tests in eleven platform packages (incl. decision pipeline) |
 | Observation separated from execution | Platform reads `verification_json`; never invokes `VerificationEngine` |
 | Safe host modernization path | Automation approval tokens; `allow_mutations` gates; autopilot dry-run default |
 | Test-enforced architecture | 116+ test files; boundary tests per read-only package |
@@ -853,7 +853,62 @@ Tests: `tests/ask/test_ask_architecture_boundaries.py`.
 
 ---
 
-## 16. Compatibility Catalog
+## 16. Decision Pipeline
+
+The Decision Pipeline (ADR-010, ADR-011, ADR-012) extends the read-only platform tier with human-governed plan artifacts. It does **not** invoke `BridgeOrchestrator`, mutate prefixes, or consume verification authority.
+
+```mermaid
+flowchart TB
+    subgraph Evidence["Read-only evidence"]
+        K[Knowledge] --> DE[Decision Engine]
+        R[Regression] --> DE
+        A[Advisor] --> DE
+    end
+    DE --> DR[Plan Review]
+    DR --> DV[Plan Validation]
+    DR --> EX[Export]
+    DE -.-x BO[BridgeOrchestrator]
+    DR -.-x BO
+    DV -.-x BO
+```
+
+### 16.1 Phase 1 — Decision Engine (`decision/`)
+
+Deterministic `DecisionPlan` recommendations synthesizing Knowledge, Regression, optional Comparison, Advisor observations, and optional Ask Alma context. Every recommendation includes confidence, constraints, provenance, and `human_approval_required=true`.
+
+- `GET/POST /bridge/decision/plan`
+- Stable `plan_id`; no plan persistence in Phase 1
+- Forbidden imports: orchestrator, runner, VerificationGateway, ActionIntent
+
+### 16.2 Phase 2 — Plan Review (`decision_review/`)
+
+Append-only human review workflow binding approval to canonical `plan_digest` (excludes `generated_at`). Stale approvals do not carry forward silently.
+
+- `GET/POST /bridge/decision/plans/{plan_id}/reviews`
+- `POST /bridge/decision/plans/{plan_id}/export` (JSON, Markdown)
+- Eight-point approval policy including risk acknowledgement and evidence requirements
+- Export disclaimer: *This artifact does not authorize or perform execution.*
+
+### 16.3 Phase 3 — Plan Validation (`decision_validation/`)
+
+Non-executing dry-run of approved plans against current host inventory and policy simulation.
+
+- `POST /bridge/decision/plans/{plan_id}/validate` (`mode: dry_run` only)
+- Every report: `execution_performed=false`, `mutations_performed=false`
+- Status precedence: `stale` → `invalid` → `blocked` → `indeterminate` → `valid`
+- `has_warnings=true` when valid with observational warnings (e.g. optional legacy env fields)
+
+**No execute endpoint exists.** Approval and validation are operator decision records, not execution events.
+
+Deep-dive: [architecture/decision_pipeline.md](./architecture/decision_pipeline.md).
+
+Tests: `tests/decision/`, `tests/decision_review/`, `tests/decision_validation/` (78+ cases including status reducer matrix and architecture boundary guards).
+
+Explorer UI (almasysdet): Decision Plan tab, Plan Review workflow, Validate plan control—no Run/Execute/Apply buttons.
+
+---
+
+## 17. Compatibility Catalog
 
 `catalog/` provides a read-only application browser (ADR-008):
 
@@ -873,7 +928,7 @@ Tests: `tests/catalog/test_catalog_architecture_boundaries.py`.
 
 ---
 
-## 17. Architecture Decisions (ADR-001+)
+## 18. Architecture Decisions (ADR-001+)
 
 | ADR | Title | Status |
 |-----|-------|--------|
@@ -886,6 +941,9 @@ Tests: `tests/catalog/test_catalog_architecture_boundaries.py`.
 | ADR-007 | Ask Alma evidence-grounded Q&A | Accepted |
 | ADR-008 | Run environment and catalog | Accepted |
 | ADR-009 | Environment-aware session comparison | Accepted |
+| ADR-010 | Decision Engine read-only and deterministic | Accepted — 2026-08-02 |
+| ADR-011 | Decision plan review, approval, and export | Accepted — 2026-08-02 |
+| ADR-012 | Approved plan validation and dry-run | Accepted — 2026-08-02 |
 
 Full decision/rationale table: [tables/adrs.md](./tables/adrs.md).
 
@@ -893,7 +951,7 @@ Full decision/rationale table: [tables/adrs.md](./tables/adrs.md).
 
 ---
 
-## 18. Security
+## 19. Security
 
 Alma Bridge targets on-premise K-12 lab deployment (`SECURITY.md`).
 
@@ -911,7 +969,7 @@ Alma Bridge targets on-premise K-12 lab deployment (`SECURITY.md`).
 
 Deep-dive: [architecture/security_model.md](./architecture/security_model.md).
 
-### 18.1 Mutating endpoint inventory (representative)
+### 19.1 Mutating endpoint inventory (representative)
 
 When API key is configured, the following classes require authentication (`SECURITY.md`):
 
@@ -927,13 +985,13 @@ When API key is configured, the following classes require authentication (`SECUR
 
 Read-only platform GET routes (`/bridge/knowledge/*`, `/bridge/advisor/*`, etc.) and assess endpoints remain unauthenticated for monitoring UIs—network isolation remains the primary production control.
 
-### 18.2 Autopilot safety model
+### 19.2 Autopilot safety model
 
 Compliance autopilot (`compliance/autopilot.py`) is dry-run by default. With `execute:true`, only allow-listed read-only probes run (`ldd`, `ldconfig -p`, local `curl`, etc.). Mutating steps are returned as plans for operator review—destructive commands are not generated (`README.md` autopilot section).
 
 ---
 
-## 19. Performance
+## 20. Performance
 
 ### 19.1 Documented measurements
 
@@ -975,13 +1033,13 @@ These are architectural observations from the Phase 1 audit—not measured laten
 
 ---
 
-## 20. Testing
+## 21. Testing
 
-### 20.1 Scale
+### 21.1 Scale
 
-Phase 1 audit: **116** `test_*.py` files under `tests/`, covering core lifecycle, compliance, automation, and per-layer platform suites.
+Phase 1 audit baseline: **116** `test_*.py` files; Decision Pipeline adds **78+** tests across `tests/decision/`, `tests/decision_review/`, and `tests/decision_validation/` (including status reducer matrix and dry-run invariant checks).
 
-### 20.2 Architecture enforcement
+### 21.2 Architecture enforcement
 
 | Test category | Purpose |
 |---------------|---------|
@@ -991,17 +1049,17 @@ Phase 1 audit: **116** `test_*.py` files under `tests/`, covering core lifecycle
 | `test_*architecture_boundaries.py` | Per-package forbidden imports + GET-only routes |
 | `test_suite_isolation.py` | Detect DB/module polluters |
 
-Read-only packages with boundary tests: intelligence, graph, knowledge, regression, comparison, advisor, ask, catalog.
+Read-only packages with boundary tests: intelligence, graph, knowledge, regression, comparison, advisor, ask, catalog, decision, decision_review, decision_validation.
 
-### 20.3 Known debt
+### 21.3 Known debt
 
 Full-suite isolation issues documented in `docs/reviews/full-suite-test-isolation-triage.md` (R7). `scripts/find_polluters.py` supports triage.
 
-### 20.4 Integration tests
+### 21.4 Integration tests
 
 Layer-specific integration tests exist (e.g. `tests/comparison/test_comparison_integration.py`, `tests/graph/`, `tests/knowledge/`). Campaign and shadow validation CLI paths have dedicated suites under `tests/compatibility/`.
 
-### 20.5 Campaign and shadow validation testing
+### 21.5 Campaign and shadow validation testing
 
 Compatibility profile shadow mode has extensive module surface (`profile_shadow_*.py`). Validation campaigns use:
 
@@ -1012,7 +1070,7 @@ Compatibility profile shadow mode has extensive module surface (`profile_shadow_
 
 Shadow predictions are explicitly non-authoritative (ADR-002 §3); shadow validation tests ensure promotion gates before any future reuse enablement.
 
-### 20.6 Dependency boundary testing methodology
+### 21.6 Dependency boundary testing methodology
 
 Boundary tests combine static source scans for forbidden import fragments with runtime checks:
 
@@ -1023,7 +1081,7 @@ Boundary tests combine static source scans for forbidden import fragments with r
 
 **Gap (R4):** Fragment list omits `planner`, `remediation`, `execution.`, `automation`, `operator`—currently not imported by platform tier per AST audit, but guard would not catch future regression. Centralization recommended Phase 3.
 
-### 20.7 Core cluster tests
+### 21.7 Core cluster tests
 
 Beyond platform boundaries, core tests cover:
 
@@ -1038,7 +1096,7 @@ Full-suite isolation debt (R7) means some tests may pass individually but fail i
 
 ---
 
-## 21. Extensibility
+## 22. Extensibility
 
 ### 21.1 Current state
 
@@ -1073,7 +1131,7 @@ Source: [diagrams/plugin_architecture_proposal.mmd](./diagrams/plugin_architectu
 
 ---
 
-## 22. Current Limitations
+## 23. Current Limitations
 
 Honest constraints from Phase 1 audit—full list in [appendices/limitations.md](./appendices/limitations.md).
 
@@ -1081,7 +1139,7 @@ Honest constraints from Phase 1 audit—full list in [appendices/limitations.md]
 
 1. No unified persistence layer; ~20 SQLite schemas (R1)
 2. Application identity = `file_hash` only (R8)
-3. No in-repo frontend (external UIs)
+3. Explorer UI in external **almasysdet** repo (decision review integrated; not in alma-bridge)
 4. Open-by-default API auth on localhost (R5)
 5. Core import cycles and monolithic `api/routes.py` (R2, R3)
 6. Graph lazy ingestion; knowledge computed on read
@@ -1090,8 +1148,9 @@ Honest constraints from Phase 1 audit—full list in [appendices/limitations.md]
 9. `/bridge/run` performance not benchmarked
 10. Plugin architecture design-only
 11. Compliance/autopilot paths outside ADR-001 bridge lifecycle
+12. Decision Pipeline has no execution handoff (Phase 4 not implemented); approval ≠ authorization to run
 
-### 22.1 Production-readiness scorecard (Phase 1 audit)
+### 23.1 Production-readiness scorecard (Phase 1 audit)
 
 | Dimension | Grade | Rationale |
 |-----------|:-----:|-----------|
@@ -1108,7 +1167,7 @@ Source: `ARCHITECTURE_REPORT.md` §6.
 
 ---
 
-## 23. Future Roadmap
+## 24. Future Roadmap
 
 Items below are **Future work** unless cited as implemented in progress docs.
 
@@ -1119,16 +1178,16 @@ Items below are **Future work** unless cited as implemented in progress docs.
 | Relocate verification predicate to neutral module | READ_ONLY_BOUNDARIES §5 | Removes read→core smell |
 | Centralized forbidden-import test list | READ_ONLY_BOUNDARIES §5 | Closes R4 gap |
 | Plugin registry Phase 8 | plugin-architecture.md | Design questions listed |
-| Compatibility Explorer UI | platform-direction | Not in this repo |
+| Compatibility Explorer UI | almasysdet | Decision review + dry-run validation implemented |
 | Knowledge Database Phase 2 persistence | ADR-004 consequences | Cache aggregated profiles |
 | Graph background indexer | ADR-003 consequences | |
 | LLM-assisted remediation for novel signatures | README roadmap unchecked | Distinct from advisor LLM render |
-| Cloud sync | platform-direction | Evidence sharing, not execution authority |
+| Decision execution handoff | ADR-010 consequences | Explicit human trigger; not implemented |
 | SOC 2 Type II | SECURITY.md | Not yet |
 
 Implemented capabilities referenced in README roadmap (checked items) include: sysdet/resolve import, ranker training, compliance/automation platform, container shim pack—evidence in codebase and tests, not repeated here.
 
-### 23.1 V1.2 phased engineering plan
+### 24.1 V1.2 phased engineering plan
 
 The Phase 1 audit work plan (`V1.2_WORK_PLAN.md`) sequences production-readiness work:
 
@@ -1145,11 +1204,11 @@ The Phase 1 audit work plan (`V1.2_WORK_PLAN.md`) sequences production-readiness
 
 This plan is **Future work** scheduling—not a commitment timeline.
 
-### 23.2 Shadow validation and profile promotion
+### 24.2 Shadow validation and profile promotion
 
 Compatibility profile shadow validation (`compatibility/profile_shadow_validation_*.py`, CLI `shadow_validation.py`) supports campaign-based evaluation of profile predictions against verified outcomes. Promotion of shadow profiles into execution reuse remains gated—shadow predictions stay non-authoritative per ADR-002 until explicit promotion criteria pass (platform direction CompatibilityProfile section).
 
-### 23.3 Toward Runtime Independence
+### 24.3 Toward Runtime Independence
 
 Phase 0B introduces the **Compatibility Runtime Provider** layer (`alma_bridge/runtime/`) as an additive contract boundary over existing Wine, Proton, and container execution paths. This work does **not** claim Wine independence in the current release.
 
@@ -1157,10 +1216,11 @@ Phase 0B introduces the **Compatibility Runtime Provider** layer (`alma_bridge/r
 |-----------|--------|-------|
 | `CompatibilityRuntimeProvider` protocol | Implemented (Phase 0B) | inspect/prepare/launch/observe/terminate/teardown |
 | Wine/Proton/Container providers | Implemented (Phase 0B) | Thin adapters; orchestrator unchanged |
-| `NativeAlmaRuntime` | Experimental, fail-closed | Design-only loader under `native_runtime/` |
+| `NativeAlmaRuntime` | Milestone 1 prototype | Isolated worker; flags default off (ADR-015) |
 | `GET /bridge/runtime/providers` | Implemented (Phase 0B) | Read-only inventory |
-| Runtime conformance foundation | Implemented (Phase 0B) | Non-authoritative baseline comparison |
-| Native PE loader | Future work | Milestones 1–7 in `docs/roadmap/native-alma-runtime.md` |
+| `POST /bridge/runtime/native/inspect` | Implemented (M1) | Read-only PE eligibility |
+| Runtime conformance foundation | Implemented (M1 extended) | Wine vs native fixture baselines |
+| Native PE loader | Milestone 1 (partial) | Parser + shim; full IAT/native entry in M2 |
 
 VerificationEngine remains the sole success authority (ADR-001). Runtime providers must not import VerificationGateway or transition session lifecycle (ADR-014). Planner integration annotates existing strategy plans with `runtime_provider_id` without changing strategy IDs.
 
@@ -1168,11 +1228,11 @@ Source: [runtime-dependency-audit.md](../architecture/runtime-dependency-audit.m
 
 ---
 
-## 24. Conclusion
+## 25. Conclusion
 
-Alma Bridge implements a two-tier architecture with test-enforced boundaries: a core that owns guarded execution and verification-gated success, and a read-only platform that transforms persisted evidence into graphs, aggregated knowledge, regression and session comparisons, explanations, and grounded Q&A. Nine accepted ADRs codify this split; the Phase 1 audit confirms the split is real in source imports and tests, with no critical platform-to-core authority violations.
+Alma Bridge implements a three-tier architecture with test-enforced boundaries: a core that owns guarded execution and verification-gated success; a read-only platform that transforms persisted evidence into graphs, knowledge, regression, comparisons, explanations, and Q&A; and a **Decision Pipeline** (ADR-010–012) that produces human-governed plan artifacts and non-executing dry-run validation without launching software. Twelve accepted ADRs codify this split; the Phase 1 audit confirms platform-to-core authority separation in source imports and tests.
 
-The vertical operator chain—from Alma Automation and binary scanning through verification to Ask Alma—maps cleanly onto repository modules, with explicit labeling of external scanner dependencies and design-only extensibility. Production readiness improvements concentrate on persistence unification, core decoupling, and operational hardening rather than on re-architecting the authority model.
+The vertical operator chain—from Alma Automation and binary scanning through verification to Ask Alma and Decision Plan Review—maps onto repository modules, with Explorer UI in almasysdet consuming decision endpoints via HTTP. Production readiness improvements concentrate on persistence unification, core decoupling, and explicit execution handoff design rather than on re-architecting the authority model.
 
 For module-level detail, diagrams, API tables, and glossary, see the [white paper package index](./README.md). For document quality audit and residual evidentiary gaps, see [appendices/self_review.md](./appendices/self_review.md).
 
@@ -1183,7 +1243,7 @@ Every major claim in this document traces to one of:
 | Evidence class | Examples |
 |----------------|----------|
 | Source modules | `learning/orchestrator.py`, `session/verification_gateway.py`, `intelligence/evidence.py` |
-| ADRs | ADR-001 verification authority through ADR-009 session comparison |
+| ADRs | ADR-001 verification authority through ADR-012 decision validation |
 | Phase 1 audit | `ARCHITECTURE_REPORT.md`, `READ_ONLY_BOUNDARIES.md`, `DATA_FLOW.md` |
 | Tests | `test_verification_authority.py`, `test_*architecture_boundaries.py` |
 | Operational docs | `SECURITY.md`, `README.md` (scoped to implemented endpoints) |
@@ -1197,9 +1257,10 @@ Claims labeled **Future work** intentionally lack implementation evidence—plug
 | Can Advisor mutate my prefix? | §5.5, §14, [read_only_intelligence.md](./architecture/read_only_intelligence.md) |
 | What counts as success? | §8, [verification_authority.md](./architecture/verification_authority.md) |
 | Where is evidence stored? | §9, [evidence_model.md](./architecture/evidence_model.md) |
-| What APIs are safe to expose? | §18, [api_endpoints.md](./tables/api_endpoints.md) |
-| What's not built yet? | §22–§23, [limitations.md](./appendices/limitations.md) |
+| Can a decision plan launch my app? | §16, [decision_pipeline.md](./architecture/decision_pipeline.md) |
+| What APIs are safe to expose? | §19, [api_endpoints.md](./tables/api_endpoints.md) |
+| What's not built yet? | §23–§24, [limitations.md](./appendices/limitations.md) |
 
 ---
 
-*Document generated from Phase 1 audit baseline. Cite ADRs and architecture docs when deriving deployment or integration decisions.*
+*Document generated from Phase 1 audit baseline, updated for Decision Pipeline Phases 1–3 (2026-08-02). Cite ADRs and architecture docs when deriving deployment or integration decisions.*

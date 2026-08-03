@@ -1,35 +1,40 @@
 # Native Alma Runtime Roadmap
 
-Design-only roadmap for a future native PE compatibility runtime. **No loader
-implementation is claimed in Phase 0B.**
+Roadmap for the native PE compatibility runtime. **Milestone 1** delivers an
+experimental console PE loader behind feature flags.
 
-## Milestone 0 — Boundary and audit (complete in Phase 0B)
+## Milestone 0 — Boundary and audit (complete)
 
 - Runtime dependency audit
 - ADR-014 provider boundary
 - `NativeAlmaRuntime` fail-closed stub
 - Design structure under `alma_bridge/native_runtime/`
 
-## Milestone 1 — PE format research
+## Milestone 1 — Console loader prototype (complete)
 
-- Document DOS/COFF/optional header parsing requirements
-- Import table and thunk research notes under `native_runtime/pe/`
+- User-space PE parser and eligibility checks
+- Isolated worker subprocess execution
+- Kernel32 API shim (simulation + optional C `.so`)
+- Allow-listed conformance fixtures
+- `POST /bridge/runtime/native/inspect` read-only API
+- ADR-015, threat model, conformance docs
+- Feature flags: `native_runtime_enabled`, `allow_experimental_runtimes`
 
-## Milestone 2 — Loader design
+## Milestone 2 — Loader hardening
 
-- Virtual memory mapping strategy
-- Base relocation handling
-- Design docs under `native_runtime/loader/`
+- Full IAT patch and native entry invocation
+- Base relocation coverage for ASLR images
+- PE32 worker on x86_64 hosts
 
 ## Milestone 3 — Minimal console subset
 
-- kernel32/ntdll API surface research for console PE
-- Capability declaration: `pe_console` moves from `unknown` to `partial`
+- Expanded kernel32 surface
+- Capability: `pe_console` partial → supported with evidence
 
 ## Milestone 4 — Conformance harness
 
-- Native-vs-Wine baseline scenarios
-- Integration with `runtime/conformance/`
+- Native-vs-Wine baseline on full fixture catalog
+- Integration with `runtime/conformance/` launch path
 
 ## Milestone 5 — Isolated prototype
 
@@ -38,8 +43,8 @@ implementation is claimed in Phase 0B.**
 
 ## Milestone 6 — Provider integration
 
-- `NativeAlmaRuntime.prepare/launch` behind feature flag
-- Planner bridge selects native provider only when explicitly requested
+- `NativeAlmaRuntime.prepare/launch` in orchestrator `/bridge/run`
+- Planner selects native provider when explicitly requested
 
 ## Milestone 7 — Production evaluation
 
@@ -55,6 +60,7 @@ implementation is claimed in Phase 0B.**
 
 ## References
 
+- [native-alma-runtime-m1.md](../architecture/native-alma-runtime-m1.md)
+- [ADR-015](../adr/ADR-015-native-console-runtime-milestone-1.md)
 - [alma-compatibility-runtime.md](../architecture/alma-compatibility-runtime.md)
-- [ADR-014](../adr/ADR-014-compatibility-runtime-provider-boundary.md)
-- `alma_bridge/native_runtime/README.md`
+- ADR-014
