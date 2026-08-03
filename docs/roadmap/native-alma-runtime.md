@@ -29,6 +29,16 @@ experimental console PE loader behind feature flags.
 - Anti-simulation test suite
 - ADR-016, native-pe64-loader.md, native-shim-abi.md
 
+## ACI Phase 2 — Prediction calibration (complete)
+
+- Immutable versioned prediction snapshots before execution
+- Outcome linking to VerificationEngine results after session finalize
+- Behavioral capability profiles (symbol vs behavior coverage)
+- Deterministic calibration classifications and failure attribution
+- Read-only GET calibration API endpoints
+- Behavioral gap fixture (`file_append_unsupported.exe`)
+- ADR-017, calibration architecture docs
+
 ## Milestone 3 — Minimal console subset
 
 - Expanded kernel32 surface
@@ -65,5 +75,7 @@ experimental console PE loader behind feature flags.
 
 - [native-alma-runtime-m1.md](../architecture/native-alma-runtime-m1.md)
 - [ADR-016](../adr/ADR-016-native-console-runtime-milestone-2.md)
+- [ADR-017](../adr/ADR-017-compatibility-prediction-calibration.md)
+- [compatibility-prediction-calibration.md](../architecture/compatibility-prediction-calibration.md)
 - [alma-compatibility-runtime.md](../architecture/alma-compatibility-runtime.md)
 - ADR-014

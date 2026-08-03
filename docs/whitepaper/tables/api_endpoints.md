@@ -21,6 +21,31 @@ Derived from `alma_bridge/api/routes.py` and read-only sub-routers as of Phase 1
 | `/bridge/advisor/sessions/{session_id}` | GET | Session-scoped advisor explanation | None; optional LLM |
 | `/bridge/ask` | POST | Evidence-grounded Q&A | None (no persistence); optional LLM |
 | `/bridge/catalog/applications` | GET | Application catalog listing | None |
+| `/bridge/compatibility/analyze` | POST | PE capability analysis and prediction (read-only) | Writes analysis JSON to data dir when persist=true |
+| `/bridge/compatibility/history` | GET | Recent compatibility analyses | None |
+| `/bridge/compatibility/analysis/{digest}` | GET | Analysis by binary digest | None |
+| `/bridge/compatibility/capabilities` | GET | Capability registry | None |
+| `/bridge/compatibility/apis` | GET | API classification registry | None |
+| `/bridge/compatibility/metrics` | GET | Registry metrics | None |
+| `/bridge/compatibility/predict` | GET | Quick prediction from file path (read-only) | None |
+| `/bridge/compatibility/calibration` | GET | Prediction calibration metrics with sample sizes | None |
+| `/bridge/compatibility/calibration/capabilities/{capability_id}` | GET | Per-capability calibration evidence | None |
+| `/bridge/compatibility/calibration/analyses/{analysis_digest}` | GET | Calibration records for an analysis digest | None |
+
+## Decision pipeline (Phases 1–3)
+
+| Endpoint | Method | Purpose | Side Effects |
+|----------|--------|---------|--------------|
+| `/bridge/decision/plan` | GET, POST | Deterministic decision plan from session/fingerprint | None |
+| `/bridge/decision/plans/{plan_id}` | GET | Plan detail with digest and summary | None |
+| `/bridge/decision/plans/{plan_id}/reviews` | GET, POST | Review history / submit review | POST writes review row |
+| `/bridge/decision/plans/{plan_id}/review/latest` | GET | Latest review for plan | None |
+| `/bridge/decision/plans/{plan_id}/export` | POST | Export JSON or Markdown artifact | Writes export row |
+| `/bridge/decision/plans/{plan_id}/validate` | POST | Non-executing dry-run validation | Writes validation row |
+| `/bridge/decision/plans/{plan_id}/validations` | GET | Validation history | None |
+| `/bridge/decision/plans/{plan_id}/validation/latest` | GET | Latest validation report | None |
+
+**Authority note:** No execute endpoint exists. Approval and validation do not authorize `/bridge/run`.
 
 ## System, hardware, bridge (inspection / planning)
 

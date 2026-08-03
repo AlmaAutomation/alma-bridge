@@ -11,5 +11,9 @@
 | [ADR-007](../adr/ADR-007-ask-alma-evidence-grounded-qa.md) | Ask Alma is evidence-grounded Q&A; deterministic classification first; optional LLM wording only | Scoped operator questions without becoming an execution agent | Accepted — 2026-07-28 |
 | [ADR-008](../adr/ADR-008-compatibility-run-environment-catalog.md) | Persist `CompatibilityRunEnvironment` on sessions; expose catalog via GET; environment in graph/knowledge/regression | Deterministic environment identity for comparison and catalog surfaces | Accepted |
 | [ADR-009](../adr/ADR-009-environment-aware-session-comparison.md) | Session comparison is read-only pair diff with explicit non-causality when environment and verification both change | Operators need session-scoped diffs distinct from application-level regression | Accepted — 2026-07-28 |
+| [ADR-010](../adr/ADR-010-decision-engine.md) | Decision Engine is read-only and deterministic; recommendations require human approval | Operators need evidence-backed plan recommendations without execution authority | Accepted — 2026-08-02 |
+| [ADR-011](../adr/ADR-011-decision-plan-review-and-approval.md) | Plan review is append-only; approval binds to plan digest; exports are non-executing | Human governance before any future execution handoff | Accepted — 2026-08-02 |
+| [ADR-012](../adr/ADR-012-approved-plan-validation-and-dry-run.md) | Approved plan validation is observational dry-run only; status semantics with `has_warnings` | Operators validate feasibility without launching software or mutating state | Accepted — 2026-08-02 |
+| [ADR-017](../adr/ADR-017-compatibility-prediction-calibration.md) | ACI prediction snapshots are immutable; calibration compares statically predicted vs authoritatively verified outcomes | Close prediction accuracy loop without bypassing VerificationEngine | Accepted — 2026-08-02 |
 
 **Related design (not ADR):** Plugin architecture — design-only stub, Phase 8 (`docs/architecture/plugin-architecture.md`).
