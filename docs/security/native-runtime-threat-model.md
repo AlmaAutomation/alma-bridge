@@ -1,10 +1,13 @@
-# Native Alma Runtime — Threat Model (Milestone 1)
+# Native Alma Runtime — Threat Model (Milestone 2)
 
 ## Scope
 
-Milestone 1 executes **allow-listed console PE fixtures** inside an **isolated
-worker subprocess**. The FastAPI/Uvicorn process never maps or executes PE
-images directly.
+Milestone 2 executes **allow-listed console PE fixtures** via **real mapped
+PE64 entrypoints** inside an **isolated worker subprocess**. The
+FastAPI/Uvicorn process never maps or executes PE images directly.
+
+Simulation is diagnostic-only (`ALMA_NATIVE_SIMULATION=1`); production launch
+uses `use_simulation=False`.
 
 ## Assets
 

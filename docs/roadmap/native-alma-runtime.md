@@ -20,11 +20,14 @@ experimental console PE loader behind feature flags.
 - ADR-015, threat model, conformance docs
 - Feature flags: `native_runtime_enabled`, `allow_experimental_runtimes`
 
-## Milestone 2 — Loader hardening
+## Milestone 2 — Real PE64 execution (complete)
 
-- Full IAT patch and native entry invocation
-- Base relocation coverage for ASLR images
-- PE32 worker on x86_64 hosts
+- Full IAT patch and native entry invocation via `libalma_native_shim.so`
+- DIR64 relocations with actual `mmap` base delta
+- Evidence fields on worker IPC (`simulation_used`, `entrypoint_invoked`, etc.)
+- Digest-based fixture manifest supplement
+- Anti-simulation test suite
+- ADR-016, native-pe64-loader.md, native-shim-abi.md
 
 ## Milestone 3 — Minimal console subset
 
@@ -61,6 +64,6 @@ experimental console PE loader behind feature flags.
 ## References
 
 - [native-alma-runtime-m1.md](../architecture/native-alma-runtime-m1.md)
-- [ADR-015](../adr/ADR-015-native-console-runtime-milestone-1.md)
+- [ADR-016](../adr/ADR-016-native-console-runtime-milestone-2.md)
 - [alma-compatibility-runtime.md](../architecture/alma-compatibility-runtime.md)
 - ADR-014
