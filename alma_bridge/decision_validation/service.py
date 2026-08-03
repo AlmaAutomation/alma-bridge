@@ -20,7 +20,8 @@ from alma_bridge.decision_validation.models import (
 )
 from alma_bridge.decision_validation.queries import latest_validation, validation_history
 from alma_bridge.decision_validation.repository import append_validation, new_validation_id, now_iso
-from alma_bridge.decision_validation.validators import aggregate_status, run_all_validations
+from alma_bridge.decision_validation.status import aggregate_status
+from alma_bridge.decision_validation.validators import run_all_validations
 
 
 class DecisionValidationService:
@@ -54,7 +55,7 @@ class DecisionValidationService:
         current_digest = compute_plan_digest(plan)
         if request.plan_digest != current_digest or review.plan_digest != current_digest:
             approval_stale_flag = True
-        status = aggregate_status(
+        status, has_warnings = aggregate_status(
             review=review,
             checks=checks,
             approval_stale_flag=approval_stale_flag,
@@ -69,6 +70,7 @@ class DecisionValidationService:
             session_id=request.session_id or plan.session_id,
             application_fingerprint=plan.application_fingerprint,
             status=status,
+            has_warnings=has_warnings,
             approval_stale=approval_stale_flag,
             checks=checks,
             validated_at=now_iso(),

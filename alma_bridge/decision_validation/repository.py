@@ -38,6 +38,7 @@ def init_decision_validation_store() -> None:
                 session_id TEXT,
                 application_fingerprint TEXT NOT NULL,
                 status TEXT NOT NULL,
+                has_warnings INTEGER NOT NULL DEFAULT 0,
                 approval_stale INTEGER NOT NULL DEFAULT 0,
                 checks TEXT NOT NULL DEFAULT '[]',
                 validated_at TEXT NOT NULL,
@@ -53,6 +54,18 @@ def init_decision_validation_store() -> None:
             """
         )
         conn.commit()
+        _ensure_has_warnings_column(conn)
+
+
+def _ensure_has_warnings_column(conn: sqlite3.Connection) -> None:
+    columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(decision_plan_validations)").fetchall()
+    }
+    if "has_warnings" not in columns:
+        conn.execute(
+            "ALTER TABLE decision_plan_validations ADD COLUMN has_warnings INTEGER NOT NULL DEFAULT 0"
+        )
+        conn.commit()
 
 
 def append_validation(report: DecisionPlanDryRunReport) -> DecisionPlanDryRunReport:
@@ -62,10 +75,10 @@ def append_validation(report: DecisionPlanDryRunReport) -> DecisionPlanDryRunRep
             """
             INSERT INTO decision_plan_validations (
                 validation_id, plan_id, plan_version, plan_digest, review_id,
-                session_id, application_fingerprint, status, approval_stale,
+                session_id, application_fingerprint, status, has_warnings, approval_stale,
                 checks, validated_at, mode, execution_performed, mutations_performed,
                 disclaimer, evidence_references, schema_version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 report.validation_id,
@@ -76,6 +89,7 @@ def append_validation(report: DecisionPlanDryRunReport) -> DecisionPlanDryRunRep
                 report.session_id,
                 report.application_fingerprint,
                 report.status.value,
+                int(report.has_warnings),
                 int(report.approval_stale),
                 json.dumps([item.model_dump(mode="json") for item in report.checks]),
                 report.validated_at,
@@ -107,6 +121,7 @@ def _row_to_report(row: sqlite3.Row) -> DecisionPlanDryRunReport:
         session_id=row["session_id"],
         application_fingerprint=row["application_fingerprint"],
         status=PlanValidationStatus(row["status"]),
+        has_warnings=bool(row["has_warnings"]) if "has_warnings" in row.keys() else False,
         approval_stale=bool(row["approval_stale"]),
         checks=[ValidationCheck(**item) for item in checks_raw],
         validated_at=row["validated_at"],

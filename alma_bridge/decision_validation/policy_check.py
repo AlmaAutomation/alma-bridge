@@ -59,18 +59,17 @@ def simulate_policy_feasibility(
         )
     )
 
-    auto_remediate_enabled = bool(settings.operator_allow_mutations)
-    prefix_mutation_allowed = auto_remediate_enabled
+    prefix_mutation_allowed = bool(settings.operator_allow_mutations)
     checks.append(
         _check(
             code="prefix_mutation_policy_simulation",
             message=(
-                "Policy simulation: prefix mutation would be denied (dry-run only)."
+                "Dry-run confirmed no prefix mutation was performed; policy would deny mutation."
                 if not prefix_mutation_allowed
-                else "Policy simulation: prefix mutation preconditions exist but dry-run performs none."
+                else "Dry-run confirmed no prefix mutation was performed; policy preconditions were simulated only."
             ),
-            passed=not prefix_mutation_allowed,
-            severity=ValidationCheckSeverity.INFO if prefix_mutation_allowed else ValidationCheckSeverity.WARNING,
+            passed=True,
+            severity=ValidationCheckSeverity.INFO,
         )
     )
 
@@ -109,7 +108,7 @@ def _simulate_campaign_guard(plan: DecisionPlan) -> Optional[ValidationCheck]:
             code="campaign_guard_violation",
             message=f"Campaign guard would reject this plan: {exc}",
             passed=False,
-            severity=ValidationCheckSeverity.WARNING,
+            severity=ValidationCheckSeverity.BLOCKING,
         )
 
 

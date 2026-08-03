@@ -78,7 +78,37 @@ Same boundary as ADR-010/011. The decision_validation package must not import:
 
 Policy simulation mirrors PolicyGate semantics without constructing `ActionIntent`.
 
-### 6. HTTP API
+### 7. Validation report status semantics
+
+Status reduction follows strict precedence:
+
+| Order | Status | Condition |
+|------:|--------|-----------|
+| 1 | `stale` | Approved digest no longer matches or approval TTL expired |
+| 2 | `invalid` | Review is not approved, or blocking plan-integrity / identity checks fail |
+| 3 | `blocked` | Other blocking feasibility checks fail (runtime, policy guard, verification) |
+| 4 | `indeterminate` | Required environment information remains unknown |
+| 5 | `valid` | All blocking checks pass and no required unknowns remain |
+
+When `status=valid` and observational warnings exist, reports include `has_warnings=true`.
+This preserves API compatibility without adding a new enum value.
+
+**Severity vs status effect**
+
+| Severity | Failed check effect |
+|----------|---------------------|
+| `blocking` | May produce `invalid` or `blocked` depending on category |
+| `warning` | Surfaces in checks; may set `has_warnings=true` when status is `valid` |
+| `info` | Non-status-bearing; informational only |
+
+**Environment unknowns**
+
+- *Optional legacy* fields (e.g. `LD_LIBRARY_PATH`) → warning only, do not force `indeterminate`
+- *Required unknown* fields (unrecognized keys needed for feasibility) → `indeterminate`
+
+Dry-run invariants hold for every status: `execution_performed=false`, `mutations_performed=false`.
+
+### 8. HTTP API
 
 - `POST /bridge/decision/plans/{plan_id}/validate`
 - `GET /bridge/decision/plans/{plan_id}/validations`

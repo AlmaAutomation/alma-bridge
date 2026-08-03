@@ -11,8 +11,11 @@ from alma_bridge.decision_review.digest import compute_plan_digest
 from alma_bridge.decision_review.models import Decision, DecisionPlanReview
 from alma_bridge.decision_review.policy import _collect_evidence_references
 from alma_bridge.decision_validation.capability_check import check_runtime_feasibility
+from alma_bridge.decision_validation.environment_fields import (
+    classify_environment_fields,
+    format_field_list,
+)
 from alma_bridge.decision_validation.models import (
-    PlanValidationStatus,
     ValidationCheck,
     ValidationCheckCategory,
     ValidationCheckSeverity,
@@ -230,19 +233,34 @@ def check_environment_feasibility(plan: DecisionPlan) -> List[ValidationCheck]:
             )
         )
 
-    known_keys = {"WINEPREFIX", "WINEDLLOVERRIDES", "WINEDEBUG", "DISPLAY"}
-    unknown = sorted(key for key in env_fields if key not in known_keys)
-    if unknown:
+    optional_unknown, required_unknown = classify_environment_fields(env_fields)
+    if required_unknown:
         checks.append(
             _check(
                 category=ValidationCheckCategory.ENVIRONMENT_FEASIBILITY,
-                code="legacy_unknown_environment",
-                message=f"Legacy unknown environment fields remain indeterminate: {', '.join(unknown)}",
+                code="required_unknown_environment",
+                message=(
+                    "Required environment information remains unknown: "
+                    f"{format_field_list(required_unknown)}"
+                ),
+                passed=False,
+                severity=ValidationCheckSeverity.WARNING,
+            )
+        )
+    if optional_unknown:
+        checks.append(
+            _check(
+                category=ValidationCheckCategory.ENVIRONMENT_FEASIBILITY,
+                code="optional_unknown_environment",
+                message=(
+                    "Optional legacy environment fields were observed but are not required "
+                    f"for feasibility: {format_field_list(optional_unknown)}"
+                ),
                 passed=True,
                 severity=ValidationCheckSeverity.WARNING,
             )
         )
-    else:
+    if not required_unknown and not optional_unknown:
         checks.append(
             _check(
                 category=ValidationCheckCategory.ENVIRONMENT_FEASIBILITY,
@@ -345,31 +363,3 @@ def run_all_validations(
 
     stale = approval_stale(review, current_digest=compute_plan_digest(plan))
     return checks, stale
-
-
-def aggregate_status(
-    *,
-    review: DecisionPlanReview,
-    checks: List[ValidationCheck],
-    approval_stale_flag: bool,
-) -> PlanValidationStatus:
-    if approval_stale_flag:
-        return PlanValidationStatus.STALE
-
-    if review.decision != Decision.APPROVED:
-        return PlanValidationStatus.INVALID
-
-    blocking_failed = any(
-        not check.passed and check.severity == ValidationCheckSeverity.BLOCKING for check in checks
-    )
-    if blocking_failed:
-        return PlanValidationStatus.BLOCKED
-
-    indeterminate = any(
-        check.code == "legacy_unknown_environment" and check.severity == ValidationCheckSeverity.WARNING
-        for check in checks
-    )
-    if indeterminate:
-        return PlanValidationStatus.INDETERMINATE
-
-    return PlanValidationStatus.VALID

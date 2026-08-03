@@ -89,6 +89,7 @@ class DecisionPlanDryRunReport(BaseModel):
     session_id: Optional[str] = None
     application_fingerprint: str
     status: PlanValidationStatus
+    has_warnings: bool = False
     approval_stale: bool = False
     checks: List[ValidationCheck] = Field(default_factory=list)
     validated_at: str

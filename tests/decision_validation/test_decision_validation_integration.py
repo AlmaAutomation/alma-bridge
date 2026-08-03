@@ -210,8 +210,8 @@ class TestDecisionValidationBackend:
             _validation_request(plan, review),
         )
         assert report.status in {
-            PlanValidationStatus.BLOCKED,
             PlanValidationStatus.INVALID,
+            PlanValidationStatus.BLOCKED,
             PlanValidationStatus.STALE,
         }
         assert any(check.code == "evidence_resolves" and not check.passed for check in report.checks)
@@ -311,6 +311,30 @@ class TestDecisionValidationBackend:
         )
         assert report.execution_performed is False
         assert any(check.code == "campaign_guard_violation" for check in report.checks)
+        assert report.status == PlanValidationStatus.BLOCKED
+
+    def test_optional_ld_library_path_valid_with_warnings(
+        self, seeded_plan, review_service, validation_service, monkeypatch
+    ):
+        _mock_runtime_ok(monkeypatch)
+        _mock_path_exists(monkeypatch, exists=True)
+        patched_session = _session_with_overrides(KNOWLEDGE_SESSION_C)
+        attempts = [dict(item) for item in patched_session.get("attempts", [])]
+        attempts[-1]["env"] = dict(attempts[-1].get("env") or {})
+        attempts[-1]["env"]["LD_LIBRARY_PATH"] = "/usr/lib"
+        patched_session["attempts"] = attempts
+        _patch_session(monkeypatch, KNOWLEDGE_SESSION_C, patched_session)
+        review = _approve_and_get_review(seeded_plan, review_service)
+        report = validation_service.validate_plan(
+            seeded_plan.plan_id,
+            DecisionInput(session_id=KNOWLEDGE_SESSION_C),
+            _validation_request(seeded_plan, review),
+        )
+        assert report.status == PlanValidationStatus.VALID
+        assert report.has_warnings is True
+        assert any(check.code == "optional_unknown_environment" for check in report.checks)
+        assert report.execution_performed is False
+        assert report.mutations_performed is False
 
     def test_legacy_unknown_environment_indeterminate(
         self, seeded_plan, review_service, validation_service, monkeypatch
@@ -330,7 +354,7 @@ class TestDecisionValidationBackend:
             _validation_request(seeded_plan, review),
         )
         assert report.status == PlanValidationStatus.INDETERMINATE
-        assert any(check.code == "legacy_unknown_environment" for check in report.checks)
+        assert any(check.code == "required_unknown_environment" for check in report.checks)
 
     def test_newer_contradictory_evidence_warning(
         self, seeded_plan, review_service, validation_service, monkeypatch
@@ -475,6 +499,8 @@ class TestDecisionValidationBackend:
             PlanValidationStatus.INDETERMINATE,
             PlanValidationStatus.BLOCKED,
         }
+        if report.status == PlanValidationStatus.VALID:
+            assert isinstance(report.has_warnings, bool)
 
     def test_api_validate_and_list(self, seeded_plan, review_service, monkeypatch):
         _mock_runtime_ok(monkeypatch)
