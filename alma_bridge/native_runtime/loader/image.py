@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 from alma_bridge.native_runtime.errors import LoadError, REASON_LOAD_FAILED
-from alma_bridge.native_runtime.loader.memory import allocate_image
 from alma_bridge.native_runtime.pe.parser import ParsedPE
 from alma_bridge.native_runtime.pe.relocations import apply_relocations
 from alma_bridge.native_runtime.pe.headers import IMAGE_DIRECTORY_ENTRY_BASERELOC
@@ -20,14 +19,13 @@ class LoadedImage:
     entry_rva: int
 
 
-def map_pe_image(parsed: ParsedPE) -> LoadedImage:
+def map_pe_image(parsed: ParsedPE, *, load_base: Optional[int] = None) -> LoadedImage:
+    """Map PE image into a buffer; optional load_base forces relocation delta."""
     try:
         size = parsed.optional.size_of_image
         image = bytearray(size)
-        # Copy headers
         hdr_size = min(parsed.optional.size_of_headers, len(parsed.data))
         image[:hdr_size] = parsed.data[:hdr_size]
-        # Copy sections
         for sec in parsed.sections:
             if sec.size_of_raw_data == 0:
                 continue
@@ -38,9 +36,9 @@ def map_pe_image(parsed: ParsedPE) -> LoadedImage:
             dest_end = dest_start + len(src)
             if dest_end <= len(image):
                 image[dest_start:dest_end] = src
-        base = parsed.optional.image_base
-        mapped_base = base  # M1: load at preferred base in buffer (RVA space)
-        delta = mapped_base - base
+        preferred = parsed.optional.image_base
+        mapped_base = load_base if load_base is not None else preferred
+        delta = mapped_base - preferred
         reloc_rva = parsed.optional.data_directories[IMAGE_DIRECTORY_ENTRY_BASERELOC][0]
         reloc_size = parsed.optional.data_directories[IMAGE_DIRECTORY_ENTRY_BASERELOC][1]
         apply_relocations(
