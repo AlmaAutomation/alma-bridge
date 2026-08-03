@@ -37,10 +37,11 @@ def _candidate_from_behavior(
     behavior_id: str,
 ) -> Optional[RuntimeExpansionCandidate]:
     service = ExpansionPlanningService()
-    plan = service.generate_plan(provider_id=provider_id)
+    plan = service.generate_plan()
     for candidate in plan.ranked_candidates:
         if (
-            candidate.capability_id == capability_id
+            candidate.provider_id == provider_id
+            and candidate.capability_id == capability_id
             and candidate.behavior_id == behavior_id
         ):
             return candidate

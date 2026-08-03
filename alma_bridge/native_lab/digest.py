@@ -23,5 +23,6 @@ def compute_work_item_id(
     *,
     version: str = "v1",
 ) -> str:
-    key = f"{provider_id}__{capability_id}__{behavior_id}__{version}".replace("/", "_")
-    return f"wi_{key}"
+    cap = capability_id.replace(".", "_").replace("/", "_")
+    beh = behavior_id.replace(".", "_").replace("/", "_")
+    return f"wi_{provider_id}_{cap}_{beh}_{version}"
