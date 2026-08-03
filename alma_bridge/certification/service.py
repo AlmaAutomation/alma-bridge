@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from alma_bridge.certification.dashboard import build_certification_dashboard
 from alma_bridge.certification.models import (
     BehaviorCertification,
+    CertificationDashboard,
     CertificationHistory,
+    ComplianceMatrix,
+    StaleCertificationItem,
 )
 from alma_bridge.certification.queries import CertificationQueries
 from alma_bridge.certification.repository import CertificationRepository
@@ -44,3 +48,12 @@ class CertificationService:
         self, capability_id: str, behavior_id: str
     ) -> CertificationHistory:
         return self._queries.get_certification_history(capability_id, behavior_id)
+
+    def compliance_matrix(self) -> ComplianceMatrix:
+        return self._queries.compliance_matrix()
+
+    def stale_certifications(self) -> list[StaleCertificationItem]:
+        return self._queries.stale_certifications()
+
+    def certification_dashboard(self) -> CertificationDashboard:
+        return build_certification_dashboard(self._queries)

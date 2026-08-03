@@ -37,3 +37,41 @@ def get_behavior_certification(capability_id: str, behavior_id: str):
     except BehaviorNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return cert.model_dump(mode="json")
+
+
+@router.get("/bridge/certification/matrix", tags=["Certification"])
+def compliance_matrix():
+    """Compliance matrix API × behavior (read-only)."""
+    matrix = _service().compliance_matrix()
+    return matrix.model_dump(mode="json")
+
+
+@router.get(
+    "/bridge/certification/history/{capability_id}/{behavior_id}",
+    tags=["Certification"],
+)
+def certification_history(capability_id: str, behavior_id: str):
+    """Historical certification evolution (read-only)."""
+    try:
+        history = _service().get_certification_history(capability_id, behavior_id)
+    except BehaviorNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return history.model_dump(mode="json")
+
+
+@router.get("/bridge/certification/stale", tags=["Certification"])
+def stale_certifications():
+    """Behaviors requiring revalidation (read-only)."""
+    stale = _service().stale_certifications()
+    return {
+        "schema_version": CERTIFICATION_SCHEMA_VERSION,
+        "count": len(stale),
+        "stale": [s.model_dump(mode="json") for s in stale],
+    }
+
+
+@router.get("/bridge/certification/dashboard", tags=["Certification"])
+def certification_dashboard():
+    """Aggregated certification dashboard (read-only)."""
+    dashboard = _service().certification_dashboard()
+    return dashboard.model_dump(mode="json")

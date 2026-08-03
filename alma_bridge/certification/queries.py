@@ -10,10 +10,15 @@ from alma_bridge.certification.behavioral_profiles import (
     suite_cases_for_behavior,
 )
 from alma_bridge.certification.certificates import generate_behavior_certification
+from alma_bridge.certification.compliance import build_compliance_matrix
 from alma_bridge.certification.errors import BehaviorNotFoundError
+from alma_bridge.certification.verification_matrix import build_verification_matrix
+from alma_bridge.certification.versioning import detect_stale_items
 from alma_bridge.certification.models import (
     BehaviorCertification,
     CertificationHistory,
+    ComplianceMatrix,
+    StaleCertificationItem,
     CERTIFICATION_PROVIDER_ID,
 )
 from alma_bridge.certification.repository import CertificationRepository
@@ -121,3 +126,15 @@ class CertificationQueries:
                 f"No behavior target: {capability_id}/{behavior_id}"
             )
         return self._cert_repo.get_history(capability_id, behavior_id)
+
+    def compliance_matrix(self) -> ComplianceMatrix:
+        certs = self.list_behavior_certifications()
+        return build_compliance_matrix(certs)
+
+    def verification_matrix(self) -> list:
+        certs = self.list_behavior_certifications()
+        return build_verification_matrix(certs)
+
+    def stale_certifications(self) -> List[StaleCertificationItem]:
+        certs = self.list_behavior_certifications()
+        return detect_stale_items(certs)
