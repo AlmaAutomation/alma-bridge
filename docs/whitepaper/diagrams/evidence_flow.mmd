@@ -1,0 +1,42 @@
+flowchart LR
+    subgraph WritePath["Write path (core authority)"]
+        RUN["POST /bridge/run"]
+        ORC["BridgeOrchestrator"]
+        ATT["bridge_attempts row<br/>verification_json, exit_code, ..."]
+        SES["bridge_sessions row<br/>inspection_json, run_environment_json, success"]
+        RUN --> ORC --> ATT
+        ORC --> SES
+    end
+
+    subgraph ReadPath["Read path (platform tier)"]
+        REPO["intelligence/repository.py<br/>OutcomesStoreAdapter"]
+        BUILD["EvidenceBundleBuilder"]
+        REFS["EvidenceReference[]<br/>SESSION, ATTEMPT, VERIFICATION,<br/>INSPECTION, RUN_ENVIRONMENT, ..."]
+        ART["artifacts map<br/>attempt:{sid}:{n}, verification:{sid}:{n}, ..."]
+        REPO --> BUILD
+        BUILD --> REFS
+        BUILD --> ART
+    end
+
+    subgraph Consumers["Downstream consumers"]
+        INT["CompatibilityAssessment<br/>intelligence/engine"]
+        GR["GraphIngestionEngine"]
+        KN["KnowledgeAggregationEngine"]
+        RG["RegressionDiffEngine"]
+        CM["SessionComparisonDiffEngine"]
+        CA["CatalogAggregationEngine"]
+    end
+
+    SES --> REPO
+    ATT --> REPO
+    ART --> INT
+    ART --> GR
+    ART --> KN
+    ART --> RG
+    ART --> CM
+    ART --> CA
+
+    classDef write fill:#fff3cd
+    classDef read fill:#e8f4e8
+    class WritePath write
+    class ReadPath,Consumers read

@@ -1,0 +1,24 @@
+stateDiagram-v2
+    [*] --> PLANNING: BridgeOrchestrator.run starts
+    PLANNING --> EXECUTING: strategy selected
+    EXECUTING --> OBSERVING: process completes
+    OBSERVING --> VERIFYING: eligible for verification
+    OBSERVING --> CLASSIFYING: execution failed
+    VERIFYING --> SUCCEEDED: VerificationGateway.declare_verified_session_success
+    VERIFYING --> CLASSIFYING: aggregate policy failed
+    CLASSIFYING --> EXECUTING: remediation retry (same session_id)
+    SUCCEEDED --> [*]: finalize_session success=True
+    CLASSIFYING --> [*]: exhausted / failed
+
+    note right of SUCCEEDED
+        Sole path to SUCCEEDED.
+        exit_code==0 alone is NOT success.
+        ADR-001 enforced by
+        test_verification_authority.py
+    end note
+
+    note right of VERIFYING
+        DefaultVerificationEngine
+        bridge_aggregate_v1 policy
+        per phase: native, install, launcher
+    end note

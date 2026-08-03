@@ -148,6 +148,7 @@ from alma_bridge.api.regression_routes import router as regression_router
 from alma_bridge.api.advisor_routes import router as advisor_router
 from alma_bridge.api.ask_routes import router as ask_router
 from alma_bridge.api.catalog_routes import router as catalog_router
+from alma_bridge.api.comparison_routes import router as comparison_router
 from alma_bridge.bridge.recent_sessions import build_recent_sessions_response
 from alma_bridge.config import settings
 from alma_bridge.storage import outcomes
@@ -160,6 +161,7 @@ router.include_router(regression_router)
 router.include_router(advisor_router)
 router.include_router(ask_router)
 router.include_router(catalog_router)
+router.include_router(comparison_router)
 orchestrator = BridgeOrchestrator()
 import_service = ImportService()
 tls_modernizer = TlsModernizer(ca_file=settings.compliance_ca_file)

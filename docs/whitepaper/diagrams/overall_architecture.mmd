@@ -1,0 +1,77 @@
+flowchart TB
+    subgraph External["External systems (not in alma-bridge repo)"]
+        SYSDET["almasysdet<br/>Binary Compatibility Scanner"]
+        RESOLVE["alma_resolve<br/>Recovery audits"]
+        UI["External HTTP UIs<br/>e.g. :9002 / :3001"]
+    end
+
+    subgraph Interface["Interface layer"]
+        API["FastAPI alma_bridge/api/<br/>JSON + OpenAPI"]
+        CLI["CLI shadow_validation.py"]
+        METRICS["Prometheus /metrics"]
+    end
+
+    subgraph Core["Core — execution authority (ADR-001)"]
+        AUTO["automation/<br/>scan→assess→apply→verify"]
+        BRIDGE["bridge/ + execution/<br/>inspect, plan, run"]
+        ORC["learning/orchestrator.py<br/>BridgeOrchestrator"]
+        COMPAT["compatibility/<br/>planner, profiles, shadow"]
+        SESS["session/ + services/<br/>lifecycle, policy, mutations"]
+        HW["hardware/<br/>profiler, shims, proton"]
+        OPR["operator/<br/>autonomous loop"]
+        CPL["compliance/<br/>TLS, autopilot, modernization"]
+    end
+
+    subgraph Verify["Verification authority"]
+        VE["session/services/verification.py"]
+        VG["session/verification_gateway.py"]
+    end
+
+    subgraph Evidence["Evidence substrate"]
+        DB[("storage/outcomes.db<br/>bridge_sessions / bridge_attempts")]
+        IEV["intelligence/EvidenceBundleBuilder"]
+    end
+
+    subgraph Platform["Read-only platform tier"]
+        GRAPH["graph/"]
+        KN["knowledge/"]
+        REG["regression/"]
+        CMPN["comparison/"]
+        ADV["advisor/"]
+        ASK["ask/"]
+        CAT["catalog/"]
+    end
+
+    SYSDET -->|import via importers/sysdet| DB
+    RESOLVE -->|import via importers/resolve| DB
+    UI --> API
+    CLI --> COMPAT
+
+    API --> Core
+    API --> Platform
+
+    AUTO --> BRIDGE
+    BRIDGE --> ORC
+    ORC --> VE
+    VE --> VG
+    ORC --> DB
+    VG --> DB
+
+    DB --> IEV
+    IEV --> GRAPH
+    IEV --> KN
+    IEV --> REG
+    IEV --> CMPN
+    IEV --> CAT
+    GRAPH --> KN
+    KN --> REG
+    KN --> CMPN
+    REG --> ADV
+    ADV --> ASK
+
+    classDef core fill:#fff3cd,stroke:#856404
+    classDef ro fill:#e8f4e8,stroke:#2d6a2d
+    classDef ext fill:#f0f0f0,stroke:#666
+    class Core,Verify core
+    class Platform,Evidence ro
+    class External ext

@@ -1,0 +1,38 @@
+flowchart LR
+    subgraph Forbidden["Forbidden imports in read-only tier"]
+        ORC_F["learning.orchestrator"]
+        VG_F["session.verification_gateway"]
+        MUT_F["session.mutations"]
+        WT_F["winetricks"]
+        AI_F["ActionIntent"]
+    end
+
+    subgraph AllowedSmell["Documented smell (pure predicate only)"]
+        SOS["session.stop_on_success_verification<br/>aggregate_verification_passed()"]
+    end
+
+    subgraph ReadOnly["Read-only packages"]
+        INT2[intelligence]
+        GR2[graph]
+        KN2[knowledge]
+        RG2[regression]
+        CM2[comparison]
+        AD2[advisor]
+        AS2[ask]
+        CA2[catalog]
+    end
+
+    subgraph Core2["Core packages"]
+        SESS2[session/]
+        EXE2[execution/]
+        LRN2[learning/]
+    end
+
+    ReadOnly -.->|must NOT import| Forbidden
+    KN2 -->|imports| SOS
+    CM2 -->|imports| SOS
+    SOS --> SESS2
+    Core2 -->|writes evidence| DB2[(outcomes.db)]
+    ReadOnly -->|SELECT only| DB2
+
+    note1["Enforced by tests/*/test_*architecture_boundaries.py<br/>No critical violations found (Phase 1 audit)"]

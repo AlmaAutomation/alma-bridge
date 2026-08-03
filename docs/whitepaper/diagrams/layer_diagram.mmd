@@ -1,0 +1,56 @@
+flowchart TD
+    subgraph L0["Layer 0 — Shared kernel"]
+        SCH[schemas/]
+        CFG[config.py]
+    end
+
+    subgraph L1["Layer 1 — Execution"]
+        EXE[execution/ bridge/ learning/]
+        AUT[automation/ operator/ compliance/]
+        CMP[compatibility/ hardware/]
+    end
+
+    subgraph L2["Layer 2 — Verification"]
+        VE[session/services/verification]
+        VG[verification_gateway]
+        SOS[stop_on_success_verification]
+    end
+
+    subgraph L3["Layer 3 — Evidence"]
+        STO[(outcomes.db)]
+        INT[intelligence/]
+    end
+
+    subgraph L4["Layers 4–9 — Read-only platform"]
+        G4[graph/]
+        G5[knowledge/]
+        G6[regression/]
+        G7[comparison/]
+        G8[advisor/]
+        G9[ask/]
+    end
+
+    CAT[catalog/ — top-level browser]
+
+    L0 -.-> L1
+    L1 --> L2
+    L2 --> STO
+    L1 --> STO
+    STO --> INT
+    INT --> G4
+    INT --> G5
+    INT --> G6
+    INT --> G7
+    INT --> CAT
+    G4 --> G5
+    G5 --> G6
+    G5 --> G7
+    G6 --> G8
+    G5 --> G8
+    G8 --> G9
+    G5 --> CAT
+
+    classDef ro fill:#e8f4e8,stroke:#2d6a2d
+    classDef core fill:#fff3cd,stroke:#856404
+    class L1,L2 core
+    class G4,G5,G6,G7,G8,G9,CAT ro

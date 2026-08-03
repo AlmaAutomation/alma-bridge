@@ -1,0 +1,33 @@
+flowchart TD
+    A1["Alma Automation<br/>automation/runner.py<br/>POST /automation/run"] --> A2["Scan lite / host assess<br/>automation/scanlite.py<br/>compliance/modernization"]
+    A2 --> A3["Playbook plan / apply<br/>automation/playbooks.py<br/>approval tokens"]
+    A3 --> A4["Optional Bridge run<br/>BridgeOrchestrator via<br/>POST /bridge/run"]
+
+    B1["Binary Compatibility Scanner<br/>External: almasysdet<br/>Bridge: GET /bridge/inspect<br/>bridge/profile_builder.py"] --> B2["Classification + fingerprint<br/>compatibility/program_kind.py<br/>execution/runner.file_hash"]
+    B2 --> B3["Strategy planning<br/>DefaultCompatibilityPlanner<br/>learning/ranker (optional ML)"]
+    B3 --> B4["Execution<br/>execution/runner.py<br/>wine / proton / container"]
+
+    A4 --> B3
+    B4 --> V1["DefaultVerificationEngine<br/>session/services/verification.py"]
+    V1 --> V2["VerificationGateway.declare_verified_session_success<br/>session/verification_gateway.py"]
+    V2 --> V3["Persist to outcomes.db<br/>storage/outcomes.py"]
+
+    V3 --> E1["EvidenceBundleBuilder<br/>intelligence/evidence.py"]
+    E1 --> G1["Compatibility Graph<br/>graph/ingestion.py"]
+    E1 --> K1["Knowledge Aggregation<br/>knowledge/aggregation.py"]
+    K1 --> R1["Regression Intelligence<br/>regression/diff.py"]
+    E1 --> C1["Environment Comparison<br/>comparison/diff.py"]
+    R1 --> AD1["Advisor<br/>advisor/explanation.py"]
+    C1 --> AD1
+    AD1 --> Q1["Ask Alma<br/>ask/service.py"]
+
+    style A1 fill:#fff3cd
+    style B1 fill:#f0f0f0
+    style V2 fill:#ffe0b2
+    style E1 fill:#dfe9f5
+    style G1 fill:#e8f4e8
+    style K1 fill:#e8f4e8
+    style R1 fill:#e8f4e8
+    style C1 fill:#e8f4e8
+    style AD1 fill:#e8f4e8
+    style Q1 fill:#e8f4e8

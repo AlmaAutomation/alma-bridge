@@ -1,0 +1,39 @@
+erDiagram
+    bridge_sessions ||--o{ bridge_attempts : contains
+    bridge_sessions {
+        string session_id PK
+        string file_path
+        string file_hash
+        datetime started_at
+        datetime finished_at
+        bool success
+        string session_state
+        json inspection_json
+        json run_environment_json
+        json policy_context_json
+    }
+    bridge_attempts {
+        int id PK
+        string session_id FK
+        int attempt_number
+        string strategy_id
+        string runtime
+        bool success
+        int exit_code
+        json verification_json
+        string error_signature
+    }
+    compatibility_graph_nodes {
+        string node_id PK
+        string node_type
+        json payload
+    }
+    compatibility_graph_edges {
+        string edge_id PK
+        string source_node_id
+        string target_node_id
+        string edge_type
+        json provenance
+    }
+    bridge_sessions ||..o{ compatibility_graph_nodes : "evidence-derived ingestion"
+    bridge_attempts ||..o{ compatibility_graph_edges : "verified_by when passed"

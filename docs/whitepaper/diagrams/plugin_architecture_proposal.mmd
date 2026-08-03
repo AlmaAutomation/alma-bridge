@@ -1,0 +1,32 @@
+%% FUTURE WORK — Design-only (Phase 8, docs/architecture/plugin-architecture.md)
+%% No plugin registry is implemented in alma-bridge as of audit date 2026-07-31.
+
+flowchart TB
+    subgraph FuturePlugins["Proposed plugin families (design-only)"]
+        DET["Framework detector plugin"]
+        DEP["Dependency resolver plugin"]
+        INS["Runtime installer plugin"]
+        PLN["Launch planner plugin"]
+        VER["Verification strategy plugin"]
+        KB["Knowledge provider plugin"]
+    end
+
+    subgraph Registry["Explicit startup registry (proposed)"]
+        REG["plugin_id + version<br/>no untrusted dynamic loading in v1"]
+    end
+
+    subgraph CoreBoundary["Core authority boundary (existing)"]
+        PG["PolicyGate"]
+        PL["prefix_lock"]
+        VG2["VerificationGateway<br/>plugins MUST NOT call declare_verified_session_success"]
+        ORC3["BridgeOrchestrator"]
+    end
+
+    REG --> FuturePlugins
+    FuturePlugins -->|"return plans + evidence only"| ORC3
+    FuturePlugins --> PG
+    FuturePlugins --> PL
+    ORC3 --> VG2
+
+    style FuturePlugins fill:#f5f5f5,stroke:#999,stroke-dasharray: 5 5
+    style Registry fill:#f5f5f5,stroke:#999,stroke-dasharray: 5 5
