@@ -37,3 +37,7 @@ Route: `/certification`
 - Read-only display — no binary execution from dashboard
 - Certification levels computed from evidence; no auto-promotion
 - Governance and calibration displayed as references; full records via ACI/Evidence panels
+
+## almasysdet commit status
+
+Frontend source committed to almasysdet on branch `main` alongside this documentation.
