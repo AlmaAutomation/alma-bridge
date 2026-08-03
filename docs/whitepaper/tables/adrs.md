@@ -15,5 +15,7 @@
 | [ADR-011](../adr/ADR-011-decision-plan-review-and-approval.md) | Plan review is append-only; approval binds to plan digest; exports are non-executing | Human governance before any future execution handoff | Accepted — 2026-08-02 |
 | [ADR-012](../adr/ADR-012-approved-plan-validation-and-dry-run.md) | Approved plan validation is observational dry-run only; status semantics with `has_warnings` | Operators validate feasibility without launching software or mutating state | Accepted — 2026-08-02 |
 | [ADR-017](../adr/ADR-017-compatibility-prediction-calibration.md) | ACI prediction snapshots are immutable; calibration compares statically predicted vs authoritatively verified outcomes | Close prediction accuracy loop without bypassing VerificationEngine | Accepted — 2026-08-02 |
+| [ADR-018](../adr/ADR-018-capability-registry-governance.md) | Capability maturity is scoped and human-gated; registry changes are append-only versioned | Calibration evidence must not auto-mutate provider capability registries | Accepted — 2026-08-02 |
+| [ADR-019](../adr/ADR-019-capability-guided-runtime-expansion.md) | Runtime expansion plans rank bounded engineering candidates from observed evidence; advisory only | Deterministic engineering priorities without auto-implementation or registry mutation | Accepted — 2026-08-02 |
 
 **Related design (not ADR):** Plugin architecture — design-only stub, Phase 8 (`docs/architecture/plugin-architecture.md`).

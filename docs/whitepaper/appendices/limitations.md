@@ -26,7 +26,7 @@ This appendix lists known constraints documented in the Phase 1 architecture aud
 
 ## Product and deployment
 
-10. **No frontend in this repository.** Operator surfaces are HTTP JSON APIs, external UIs on other ports, and CLI (`SYSTEM_OVERVIEW` §2).
+10. **No frontend in alma-bridge.** Operator HTTP JSON APIs and CLI live here; Compatibility Explorer UI is in **almasysdet** (decision review and dry-run validation integrated as of 2026-08-02).
 
 11. **Open-by-default API auth.** `api_key=None` leaves mutating endpoints unauthenticated on localhost (R5, `SECURITY.md`).
 
@@ -44,22 +44,34 @@ This appendix lists known constraints documented in the Phase 1 architecture aud
 
 17. **Legacy sessions lack run environment.** `run_environment_json` absent on pre-ADR-008 sessions; fields remain null (ADR-008, ADR-009).
 
+## Decision pipeline
+
+18. **No execution handoff from decision artifacts.** Phases 1–3 produce plans, reviews, and dry-run validation only; approval does not authorize `/bridge/run` (ADR-010–012).
+
+19. **Decision validation is observational.** Dry-run reports simulate policy and inventory; they do not launch target applications or mutate prefixes.
+
 ## Testing
 
-18. **Full-suite test isolation debt.** Shared-DB bleed and polluters tracked in `docs/reviews/full-suite-test-isolation-triage.md` (R7).
+20. **Full-suite test isolation debt.** Shared-DB bleed and polluters tracked in `docs/reviews/full-suite-test-isolation-triage.md` (R7).
 
 ## Performance
 
-19. **No end-to-end bridge latency benchmarks.** Compliance scan concurrency is documented (~3.8× on 4-target scan in README); core `/bridge/run` path is **not yet benchmarked**.
+21. **No end-to-end bridge latency benchmarks.** Compliance scan concurrency is documented (~3.8× on 4-target scan in README); core `/bridge/run` path is **not yet benchmarked**.
 
 ## Extensibility
 
-20. **Plugin architecture is design-only.** No registry or plugin contracts implemented (`plugin-architecture.md`, Phase 8).
+22. **Plugin architecture is design-only.** No registry or plugin contracts implemented (`plugin-architecture.md`, Phase 8).
 
-21. **App-specific legacy branches remain in core.** e.g. Ascension layout code flagged for plugin migration (TD7).
+23. **App-specific legacy branches remain in core.** e.g. Ascension layout code flagged for plugin migration (TD7).
 
 ## Schema and planning debt
 
-22. **`CompatibilityBridgePlan` not wired as orchestrator input.** Planner role split between schema and `session/services/planner.py` (TD6).
+24. **`CompatibilityBridgePlan` not wired as orchestrator input.** Planner role split between schema and `session/services/planner.py` (TD6).
 
-23. **Compliance/autopilot lifecycle separate from ADR-001 bridge lifecycle.** Host-policy paths not wrapped in verification gateway (ADR-001 migration notes).
+25. **Compliance/autopilot lifecycle separate from ADR-001 bridge lifecycle.** Host-policy paths not wrapped in verification gateway (ADR-001 migration notes).
+
+## Compatibility intelligence
+
+26. **Runtime expansion plans are advisory only.** ACI Phase 4 ranks bounded engineering candidates from observed evidence; plans do not guarantee compatibility, auto-implement APIs, or mutate the capability registry (ADR-019).
+
+27. **Expansion demand requires Alma usage evidence.** Popularity or external download counts are not used as demand signals without explicit analysis or calibration records.

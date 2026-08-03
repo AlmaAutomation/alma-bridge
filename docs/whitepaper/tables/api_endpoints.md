@@ -31,6 +31,13 @@ Derived from `alma_bridge/api/routes.py` and read-only sub-routers as of Phase 1
 | `/bridge/compatibility/calibration` | GET | Prediction calibration metrics with sample sizes | None |
 | `/bridge/compatibility/calibration/capabilities/{capability_id}` | GET | Per-capability calibration evidence | None |
 | `/bridge/compatibility/calibration/analyses/{analysis_digest}` | GET | Calibration records for an analysis digest | None |
+| `/bridge/compatibility/governance/proposals` | GET | List capability promotion proposals | None |
+| `/bridge/compatibility/governance/proposals/{proposal_id}` | GET | Promotion proposal detail | None |
+| `/bridge/compatibility/governance/registry` | GET | Current versioned capability maturity registry | None |
+| `/bridge/compatibility/governance/registry/versions` | GET | Registry version history | None |
+| `/bridge/compatibility/expansion/plan` | GET | Ranked runtime expansion engineering plan (advisory) | None |
+| `/bridge/compatibility/expansion/candidates/{candidate_id}` | GET | Single expansion candidate detail | None |
+| `/bridge/compatibility/expansion/capabilities/{capability_id}` | GET | Expansion candidates for a capability | None |
 
 ## Decision pipeline (Phases 1–3)
 

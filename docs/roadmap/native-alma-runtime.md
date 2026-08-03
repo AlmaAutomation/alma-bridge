@@ -39,6 +39,23 @@ experimental console PE loader behind feature flags.
 - Behavioral gap fixture (`file_append_unsupported.exe`)
 - ADR-017, calibration architecture docs
 
+## ACI Phase 3 — Capability registry governance (complete)
+
+- Scoped capability maturity states and promotion proposals
+- Human-gated review bound to proposal digest
+- Append-only versioned capability maturity registry
+- Read-only GET governance API + Explorer governance panel
+- ADR-018, capability governance docs
+
+## ACI Phase 4 — Runtime expansion planning (complete)
+
+- Deterministic engineering priority ranking from observed evidence
+- Demand deduplication, bounded impact, complexity, and risk dimensions
+- Read-only GET expansion plan API endpoints
+- Explorer runtime expansion section (demand, impact, risk distinct)
+- Plans are advisory — no auto-implementation, registry mutation, or execution
+- ADR-019, runtime-expansion-planning.md
+
 ## Milestone 3 — Minimal console subset
 
 - Expanded kernel32 surface
@@ -76,6 +93,9 @@ experimental console PE loader behind feature flags.
 - [native-alma-runtime-m1.md](../architecture/native-alma-runtime-m1.md)
 - [ADR-016](../adr/ADR-016-native-console-runtime-milestone-2.md)
 - [ADR-017](../adr/ADR-017-compatibility-prediction-calibration.md)
+- [ADR-018](../adr/ADR-018-capability-registry-governance.md)
+- [ADR-019](../adr/ADR-019-capability-guided-runtime-expansion.md)
 - [compatibility-prediction-calibration.md](../architecture/compatibility-prediction-calibration.md)
+- [runtime-expansion-planning.md](../architecture/runtime-expansion-planning.md)
 - [alma-compatibility-runtime.md](../architecture/alma-compatibility-runtime.md)
 - ADR-014
