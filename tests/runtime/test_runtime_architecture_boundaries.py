@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = ROOT / "alma_bridge" / "runtime"
+NATIVE_RUNTIME = ROOT / "alma_bridge" / "native_runtime"
 
 FORBIDDEN_IMPORT_FRAGMENTS = (
     "verification_gateway",
@@ -48,5 +49,11 @@ class TestRuntimeArchitectureBoundaries:
     def test_runtime_package_has_no_orchestrator_imports(self):
         offenders: list[str] = []
         for path in _py_files(RUNTIME):
+            offenders.extend(_forbidden_imports(path))
+        assert offenders == []
+
+    def test_native_runtime_has_no_verification_gateway_imports(self):
+        offenders: list[str] = []
+        for path in _py_files(NATIVE_RUNTIME):
             offenders.extend(_forbidden_imports(path))
         assert offenders == []

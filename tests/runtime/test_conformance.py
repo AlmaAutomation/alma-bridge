@@ -47,6 +47,6 @@ class TestConformanceClassification:
     def test_default_suite_runs(self):
         service = ConformanceService()
         report = service.run_default_suite()
-        assert len(report.results) == 3
-        native = next(r for r in report.results if r.candidate_provider_id == "native_alma")
+        assert len(report.results) == 4
+        native = next(r for r in report.results if r.scenario_id == "native_alma_fail_closed")
         assert native.classification == ConformanceClassification.CANDIDATE_FAILED

@@ -39,3 +39,17 @@ class TestRuntimeRoutes:
                     sys.modules.pop(mod, None)
                 else:
                     sys.modules[mod] = previous
+
+    def test_native_inspect_endpoint(self, tmp_path):
+        from tests.native_runtime.minimal_pe import minimal_pe_bytes
+
+        pe = tmp_path / "hello64.exe"
+        pe.write_bytes(minimal_pe_bytes())
+        client = TestClient(app)
+        response = client.post(
+            "/bridge/runtime/native/inspect",
+            json={"file_path": str(pe)},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["eligible"] is True
