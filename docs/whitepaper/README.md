@@ -25,6 +25,7 @@ Items labeled **Future work** are documented intent without implementation evide
 | Executive overview | [alma_bridge_whitepaper.md](./alma_bridge_whitepaper.md) §1–§6 |
 | Execution and verification law | §7–§8; [architecture/verification_authority.md](./architecture/verification_authority.md) |
 | Evidence lifecycle and operating system | §9–§15; [architecture/compatibility_operating_system.md](./architecture/compatibility_operating_system.md), [architecture/evidence_model.md](./architecture/evidence_model.md) |
+| Evidence-driven research (Alma Research Platform v1) | §9.1; [architecture/evidence_driven_research.md](./architecture/evidence_driven_research.md) |
 | Evidence and read-only platform | [architecture/read_only_intelligence.md](./architecture/read_only_intelligence.md) |
 | Decision pipeline (plan → review → validate) | §16; [architecture/decision_pipeline.md](./architecture/decision_pipeline.md) |
 | API surface | [tables/api_endpoints.md](./tables/api_endpoints.md); white paper §17–§18 |
@@ -44,6 +45,7 @@ docs/whitepaper/
 │   ├── verification_authority.md
 │   ├── compatibility_operating_system.md  ← Alma v2.0 evidence lifecycle
 │   ├── evidence_model.md
+│   ├── evidence_driven_research.md    ← Alma Research Platform v1
 │   ├── read_only_intelligence.md
 │   ├── decision_pipeline.md           ← Decision Engine Phases 1–3
 │   └── security_model.md

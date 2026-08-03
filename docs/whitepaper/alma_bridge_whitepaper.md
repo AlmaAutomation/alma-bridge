@@ -710,6 +710,39 @@ Tests: `tests/intelligence/test_architecture_boundaries.py`.
 
 ---
 
+## 9.1 Evidence-Driven Compatibility Research
+
+Alma Research Platform (`alma_bridge/research/`) transforms accumulated compatibility evidence into **deterministic engineering knowledge**. It consumes read-only inputs—`CompatibilityEvidenceBundle`, prediction snapshots, calibration records, governance proposals, expansion plans, and timeline events—and produces ten report types with mandatory sample sizes, time windows, registry version binding, explainable confidence, limitations, and evidence references.
+
+**Research questions answered (descriptive, not causal):**
+
+| Report | Engineering question |
+|--------|---------------------|
+| Top unsupported behaviors | Which behavior gaps appear most frequently? |
+| Top calibration gaps | Which calibration classifications recur? |
+| Unknown APIs | Which unclassified imports appear most often? |
+| Capability maturity growth | How has the governance registry grown? |
+| Prediction accuracy over time | How has calibration accuracy trended? |
+| Behavior coverage evolution | How has behavior profile coverage evolved? |
+| Native runtime growth | How has NativeAlmaRuntime coverage grown? |
+| Governance velocity | How fast are maturity proposals submitted? |
+| Expansion backlog | What engineering candidates remain open? |
+| Verification trends | How have verification outcomes trended? |
+
+**API (read-only GET):**
+
+- `GET /bridge/research/reports` — report catalog
+- `GET /bridge/research/reports/{report_type}` — generate report (filters: `time_window_start`, `time_window_end`, `provider_id`)
+- `GET /bridge/research/dashboard` — aggregated Explorer dashboard
+
+Reports include deterministic `report_digest` values: identical inputs produce identical digests. Summaries use **observed correlation** language; causation terms are rejected at generation time. No endpoint executes binaries, mutates the registry, or invokes AI.
+
+The Compatibility Explorer in **almasysdet** exposes a Research dashboard at `/research` that surfaces sample sizes and limitations on every metric.
+
+Full design: [architecture/evidence_driven_research.md](./architecture/evidence_driven_research.md).
+
+---
+
 ## 10. Compatibility Graph
 
 Phase 1 graph (`alma_bridge/graph/`) materializes evidence into versioned nodes and edges (`compatibility_graph_v1` schema). Identities are SHA-256 derived for idempotent re-ingestion (ADR-003).

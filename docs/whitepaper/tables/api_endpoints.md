@@ -43,6 +43,9 @@ Derived from `alma_bridge/api/routes.py` and read-only sub-routers as of Phase 1
 | `/bridge/evidence/bundles/{bundle_id}/history` | GET | Historical bundle versions | None |
 | `/bridge/evidence/platform/health` | GET | Platform health metrics with sample sizes | None |
 | `/bridge/evidence/assemble` | POST | Assemble bundle from subsystem artifacts | Writes bundle |
+| `/bridge/research/reports` | GET | Research report catalog | None |
+| `/bridge/research/reports/{report_type}` | GET | Deterministic research report | Optional cache write |
+| `/bridge/research/dashboard` | GET | Aggregated research dashboard | None |
 
 ## Decision pipeline (Phases 1–3)
 
