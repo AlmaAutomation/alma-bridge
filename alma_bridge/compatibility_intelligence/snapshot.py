@@ -6,6 +6,7 @@ from typing import Optional
 
 from alma_bridge.compatibility.profile_fingerprints import sha256_v1
 from alma_bridge.compatibility_intelligence.apis import REGISTRY_VERSION
+from alma_bridge.compatibility_intelligence.coverage_validation import compute_coverage_validation
 from alma_bridge.compatibility_intelligence.models import (
     ACI_CALIBRATION_SCHEMA_VERSION,
     CAPABILITY_REGISTRY_VERSION,
@@ -70,15 +71,30 @@ def build_prediction_snapshot(
     provider_id: str,
     session_id: str = "",
     created_at: Optional[str] = None,
+    fixture_name: Optional[str] = None,
 ) -> PredictionSnapshot:
     """Create an immutable prediction snapshot bound to exact binary and registry versions."""
     provider = analysis.coverage.providers.get(provider_id)
     symbol_cov = provider.coverage_percent if provider else 0.0
-    cap_cov = symbol_cov  # refined by behavior coverage in Phase 2 commit 4
+
+    behavior_validation = compute_coverage_validation(
+        analysis.coverage,
+        analysis.required_capabilities,
+        analysis.imports,
+        analysis.api_classifications,
+        analysis.metadata,
+        provider_id=provider_id,
+        fixture_name=fixture_name,
+    )
 
     static = StaticCoverageSnapshot(
         symbol_coverage_percent=symbol_cov,
-        capability_coverage_percent=cap_cov,
+        capability_coverage_percent=behavior_validation.capability_coverage_percent,
+        behavior_coverage_percent=behavior_validation.behavior_coverage_percent,
+        verified_scenario_coverage_percent=behavior_validation.verified_scenario_coverage_percent,
+        unknown_api_count=behavior_validation.unknown_api_count,
+        unresolved_dynamic_behavior_count=behavior_validation.unresolved_dynamic_behavior_count,
+        behavior_gaps=behavior_validation.behavior_gaps,
         providers=dict(analysis.coverage.providers),
     )
 

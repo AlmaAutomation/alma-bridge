@@ -219,6 +219,11 @@ class StaticCoverageSnapshot(BaseModel):
 
     symbol_coverage_percent: float = 0.0
     capability_coverage_percent: float = 0.0
+    behavior_coverage_percent: float = 0.0
+    verified_scenario_coverage_percent: float = 0.0
+    unknown_api_count: int = 0
+    unresolved_dynamic_behavior_count: int = 0
+    behavior_gaps: List[str] = Field(default_factory=list)
     providers: Dict[str, ProviderCoverageBreakdown] = Field(default_factory=dict)
 
 

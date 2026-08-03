@@ -70,7 +70,16 @@ class CompatibilityIntelligenceService:
             extra_caps.append("gui.windowing")
 
         coverage = compute_coverage(classifications, required, extra_capability_ids=extra_caps)
-        prediction = self._predictor.predict(coverage, metadata, provenance=provenance)
+        fixture_name = path.name if path.name else None
+        prediction = self._predictor.predict(
+            coverage,
+            metadata,
+            provenance=provenance,
+            imports=imports,
+            classifications=classifications,
+            required_capabilities=required,
+            fixture_name=fixture_name,
+        )
         graph = build_compatibility_graph(
             str(path),
             digest,

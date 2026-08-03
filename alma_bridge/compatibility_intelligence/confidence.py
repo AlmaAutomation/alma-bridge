@@ -22,6 +22,8 @@ class ConfidenceScorer:
     WEIGHT_UNSUPPORTED_PENALTY = 0.25
     WEIGHT_PROVIDER_MATURITY = 0.15
     WEIGHT_EVIDENCE_QUALITY = 0.10
+    WEIGHT_BEHAVIOR_COVERAGE = 0.15
+    WEIGHT_FALSE_POSITIVE_HISTORY = 0.10
     FULL_COVERAGE_BONUS = 0.29
 
     PROVIDER_MATURITY = {
@@ -38,6 +40,9 @@ class ConfidenceScorer:
         provider_id: str = "native_alma",
         historical_verification: bool = False,
         regression_detected: bool = False,
+        behavior_coverage_percent: float | None = None,
+        behavior_gaps: list[str] | None = None,
+        prior_false_positive_rate: float = 0.0,
         provenance: ProvenanceEvidence | None = None,
     ) -> ConfidenceAssessment:
         prov = provenance or ProvenanceEvidence(
@@ -78,6 +83,24 @@ class ConfidenceScorer:
             evidence_quality = coverage.known_apis / coverage.total_apis
         score += self.WEIGHT_EVIDENCE_QUALITY * evidence_quality
         factors.append(f"evidence_quality={evidence_quality:.2f}")
+
+        if behavior_coverage_percent is not None:
+            beh_frac = behavior_coverage_percent / 100.0
+            score += self.WEIGHT_BEHAVIOR_COVERAGE * beh_frac
+            factors.append(f"behavior_coverage={behavior_coverage_percent}%")
+            if provider and behavior_coverage_percent < provider.coverage_percent:
+                delta = (provider.coverage_percent - behavior_coverage_percent) / 100.0
+                score -= self.WEIGHT_BEHAVIOR_COVERAGE * delta
+                factors.append(f"symbol_behavior_delta={delta:.2f}")
+
+        if behavior_gaps:
+            penalty = min(1.0, len(behavior_gaps) / max(len(behavior_gaps) + 1, 1))
+            score -= self.WEIGHT_BEHAVIOR_COVERAGE * penalty * 0.5
+            factors.append(f"behavior_gaps={len(behavior_gaps)}")
+
+        if prior_false_positive_rate > 0:
+            score = max(0.0, score - self.WEIGHT_FALSE_POSITIVE_HISTORY * prior_false_positive_rate)
+            factors.append(f"prior_false_positive_rate={prior_false_positive_rate:.2f}")
 
         if historical_verification:
             score = min(1.0, score + 0.05)
