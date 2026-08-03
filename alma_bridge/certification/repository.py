@@ -29,16 +29,25 @@ class CertificationRepository:
         return f"{capability_id}__{behavior_id}".replace("/", "_")
 
     def list_records(self) -> List[CertificationRecord]:
-        records = list(self._memory_records)
+        seen: set[str] = set()
+        records: List[CertificationRecord] = []
+        for record in self._memory_records:
+            if record.record_id not in seen:
+                seen.add(record.record_id)
+                records.append(record)
         if not self._records_dir.is_dir():
             return records
         for path in sorted(self._records_dir.glob("*.json")):
             try:
-                records.append(
-                    CertificationRecord.model_validate_json(path.read_text(encoding="utf-8"))
+                record = CertificationRecord.model_validate_json(
+                    path.read_text(encoding="utf-8")
                 )
             except (json.JSONDecodeError, ValueError):
                 continue
+            if record.record_id in seen:
+                continue
+            seen.add(record.record_id)
+            records.append(record)
         return records
 
     def append_record(self, record: CertificationRecord) -> None:
