@@ -22,7 +22,7 @@ from alma_bridge.evidence.models import (
     utc_now_iso,
 )
 from alma_bridge.intelligence.evidence import EvidenceBundleBuilder
-from alma_bridge.intelligence.repository import CompatibilityEvidenceRepository
+from alma_bridge.intelligence.repository import OutcomesStoreAdapter
 
 
 class CompatibilityEvidenceBundleBuilder:
@@ -35,14 +35,14 @@ class CompatibilityEvidenceBundleBuilder:
         calibration_repo: Optional[CalibrationRepository] = None,
         governance_repo: Optional[GovernanceRepository] = None,
         expansion_repo: Optional[ExpansionPlanRepository] = None,
-        session_repo: Optional[CompatibilityEvidenceRepository] = None,
+        session_repo: Optional[OutcomesStoreAdapter] = None,
         decision_service: Optional[DecisionService] = None,
     ) -> None:
         self._analysis = analysis_repo or AnalysisRepository()
         self._calibration = calibration_repo or CalibrationRepository()
         self._governance = governance_repo or GovernanceRepository()
         self._expansion = expansion_repo or ExpansionPlanRepository()
-        self._sessions = session_repo or CompatibilityEvidenceRepository()
+        self._sessions = session_repo or OutcomesStoreAdapter()
         self._session_builder = EvidenceBundleBuilder(self._sessions)
         self._decision = decision_service or DecisionService()
 
