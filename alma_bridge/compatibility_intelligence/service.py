@@ -20,11 +20,14 @@ from alma_bridge.compatibility_intelligence.metrics import compute_registry_metr
 from alma_bridge.compatibility_intelligence.models import (
     ACI_SCHEMA_VERSION,
     CompatibilityAnalysisResult,
+    PredictionSnapshot,
     ProvenanceEvidence,
     RegistryMetrics,
 )
 from alma_bridge.compatibility_intelligence.prediction import CompatibilityPredictor
 from alma_bridge.compatibility_intelligence.repository import AnalysisRepository
+from alma_bridge.compatibility_intelligence.calibration_repository import CalibrationRepository
+from alma_bridge.compatibility_intelligence.snapshot import build_prediction_snapshot
 
 
 class CompatibilityIntelligenceService:
@@ -36,9 +39,11 @@ class CompatibilityIntelligenceService:
         self,
         repository: Optional[AnalysisRepository] = None,
         predictor: Optional[CompatibilityPredictor] = None,
+        calibration_repository: Optional[CalibrationRepository] = None,
     ) -> None:
         self._repo = repository or AnalysisRepository()
         self._predictor = predictor or CompatibilityPredictor()
+        self._calibration_repo = calibration_repository or CalibrationRepository()
 
     def analyze(self, file_path: str, *, persist: bool = True) -> CompatibilityAnalysisResult:
         path = Path(file_path)
@@ -116,3 +121,28 @@ class CompatibilityIntelligenceService:
 
     def get_api_registry(self):
         return list_registry_entries()
+
+    def create_prediction_snapshot(
+        self,
+        file_path: str,
+        *,
+        provider_id: str,
+        session_id: str = "",
+        persist: bool = True,
+    ) -> PredictionSnapshot:
+        """Analyze PE and persist immutable prediction snapshot before execution."""
+        analysis = self.analyze(file_path, persist=persist)
+        snapshot = build_prediction_snapshot(
+            analysis,
+            provider_id=provider_id,
+            session_id=session_id,
+        )
+        if persist:
+            self._calibration_repo.save_snapshot(snapshot)
+        return snapshot
+
+    def get_prediction_snapshot(self, snapshot_id: str) -> Optional[PredictionSnapshot]:
+        return self._calibration_repo.get_snapshot(snapshot_id)
+
+    def get_prediction_snapshot_by_session(self, session_id: str) -> Optional[PredictionSnapshot]:
+        return self._calibration_repo.get_snapshot_by_session(session_id)

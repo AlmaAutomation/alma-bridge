@@ -8,6 +8,8 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 ACI_SCHEMA_VERSION = "compatibility_intelligence_v1"
+ACI_CALIBRATION_SCHEMA_VERSION = "compatibility_intelligence_calibration_v1"
+CAPABILITY_REGISTRY_VERSION = "aci_capability_registry_v1"
 
 
 class ImplementationStatus(str, Enum):
@@ -174,6 +176,76 @@ class RegistryMetrics(BaseModel):
     by_dll: Dict[str, Dict[str, int]] = Field(default_factory=dict)
     capability_count: int
     native_supported_capabilities: int
+
+
+class OutcomeType(str, Enum):
+    VERIFIED_SUCCESS = "verified_success"
+    VERIFIED_FAILURE = "verified_failure"
+    UNVERIFIABLE = "unverifiable"
+    EXECUTION_NOT_ATTEMPTED = "execution_not_attempted"
+    PROVIDER_INELIGIBLE = "provider_ineligible"
+    BLOCKED_BY_POLICY = "blocked_by_policy"
+    RUNTIME_FAULT = "runtime_fault"
+    VERIFICATION_INCONCLUSIVE = "verification_inconclusive"
+
+
+class CalibrationClassification(str, Enum):
+    TRUE_POSITIVE = "true_positive"
+    FALSE_POSITIVE = "false_positive"
+    TRUE_NEGATIVE = "true_negative"
+    FALSE_NEGATIVE = "false_negative"
+    INDETERMINATE = "indeterminate"
+
+
+class FailureAttribution(str, Enum):
+    UNSUPPORTED_DYNAMIC_IMPORT = "unsupported_dynamic_import"
+    CAPABILITY_DECLARED_TOO_BROADLY = "capability_declared_too_broadly"
+    API_SEMANTICS_INCOMPLETE = "API_semantics_incomplete"
+    UNSUPPORTED_API_FLAG_OR_MODE = "unsupported_API_flag_or_mode"
+    PROCESS_ENVIRONMENT_GAP = "process_environment_gap"
+    LOADER_GAP = "loader_gap"
+    ABI_GAP = "ABI_gap"
+    FILESYSTEM_SEMANTICS_GAP = "filesystem_semantics_gap"
+    SYNCHRONIZATION_GAP = "synchronization_gap"
+    EXCEPTION_HANDLING_GAP = "exception_handling_gap"
+    RESOURCE_OR_MANIFEST_GAP = "resource_or_manifest_gap"
+    VERIFICATION_CONTRACT_MISMATCH = "verification_contract_mismatch"
+    NON_RUNTIME_APPLICATION_FAILURE = "non_runtime_application_failure"
+    UNKNOWN = "unknown"
+
+
+class StaticCoverageSnapshot(BaseModel):
+    """Symbol/capability coverage at prediction time — not verified compatibility."""
+
+    symbol_coverage_percent: float = 0.0
+    capability_coverage_percent: float = 0.0
+    providers: Dict[str, ProviderCoverageBreakdown] = Field(default_factory=dict)
+
+
+class PredictionSnapshot(BaseModel):
+    """Immutable pre-execution prediction bound to exact binary and registry versions."""
+
+    schema_version: str = ACI_CALIBRATION_SCHEMA_VERSION
+    snapshot_id: str
+    session_id: str = ""
+    analysis_digest: str
+    binary_digest: str
+    provider_id: str
+    provider_version: str
+    capability_registry_version: str
+    api_registry_version: str
+    required_capabilities: List[str] = Field(default_factory=list)
+    unsupported_capabilities: List[str] = Field(default_factory=list)
+    unknown_apis: List[str] = Field(default_factory=list)
+    delegated_capabilities: List[str] = Field(default_factory=list)
+    static_coverage: StaticCoverageSnapshot
+    confidence_level: ConfidenceLevelName
+    confidence_score: float = Field(ge=0.0, le=1.0)
+    blockers: List[str] = Field(default_factory=list)
+    prediction: CompatibilityPrediction
+    predicted_eligible: bool = False
+    created_at: str
+    engine_version: str
 
 
 class CompatibilityAnalysisResult(BaseModel):
