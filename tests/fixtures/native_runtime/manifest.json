@@ -1,0 +1,12 @@
+{
+  "fixtures": {
+    "c06c809de6b082b2314af2bf9e96bfc6188fb951700b5cfc3bac4cfe44723d81": "environment_read.exe",
+    "3cfb076d0f51c0af5a31101c6b80a59ea9b73eb92b6b0431c7c5e8e04aaac72a": "exit_code.exe",
+    "8d1f7dd46e374241b5b4efd04884ddbd16991628811d1e9750f96960c3760ae4": "file_read.exe",
+    "8309f53f6c992bc5546d7fd030b5ad069ce42f104a45c3d5b8d2280ea25d29e7": "file_write.exe",
+    "d6dadfe19d086949907cd125f0b372b6c540f81aebfaaebbab1cd3436013cfcc": "hello64.exe",
+    "84d6204c8af28ea2c4975fcac34ce68c071bd6363f9647818a989d519b6b315a": "stderr_write.exe",
+    "8851571ebccde549db5304c5263c5611975d8bd7d4c207ea70472aef6f14d609": "stdout_write.exe",
+    "cbdf438dde73189a4b65cdfc092fd46877035e5088545840c7eb9995970ffba0": "unicode_argv.exe"
+  }
+}

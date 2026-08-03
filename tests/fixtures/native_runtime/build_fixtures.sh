@@ -32,8 +32,21 @@ for fixture in stdout_write stderr_write exit_code unicode_argv environment_read
 done
 
 if command -v gcc >/dev/null 2>&1; then
-  gcc -shared -fPIC -O2 -o "$SHIM/libalma_native_shim.so" "$SHIM/kernel32_shim.c"
+  gcc -shared -fPIC -O2 -o "$SHIM/libalma_native_shim.so" \
+    "$SHIM/pe_loader.c" "$SHIM/kernel32_shim.c"
   echo "built shim $SHIM/libalma_native_shim.so"
+fi
+
+if command -v python3 >/dev/null 2>&1; then
+  ROOT="$ROOT" BIN="$BIN" python3 - <<'PY'
+import hashlib, json, os
+from pathlib import Path
+root = Path(os.environ["ROOT"])
+bin_dir = Path(os.environ["BIN"])
+manifest = {hashlib.sha256(pe.read_bytes()).hexdigest(): pe.name for pe in sorted(bin_dir.glob("*.exe"))}
+(root / "manifest.json").write_text(json.dumps({"fixtures": manifest}, indent=2) + "\n")
+print(f"updated manifest with {len(manifest)} digests")
+PY
 fi
 
 echo "fixture build complete"
