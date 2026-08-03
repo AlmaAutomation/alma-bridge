@@ -9,7 +9,6 @@ from alma_bridge.compatibility_intelligence.apis import REGISTRY_VERSION
 from alma_bridge.compatibility_intelligence.coverage_validation import compute_coverage_validation
 from alma_bridge.compatibility_intelligence.models import (
     ACI_CALIBRATION_SCHEMA_VERSION,
-    CAPABILITY_REGISTRY_VERSION,
     CompatibilityAnalysisResult,
     ImplementationStatus,
     PredictionSnapshot,
@@ -19,7 +18,10 @@ from alma_bridge.compatibility_intelligence.calibration_repository import (
     CalibrationRepository,
     _utc_now_iso,
 )
-from alma_bridge.compatibility_intelligence.capabilities import provider_status
+from alma_bridge.compatibility_intelligence.capabilities import (
+    get_governance_registry_version,
+    provider_status,
+)
 
 
 SNAPSHOT_ENGINE_VERSION = "aci_snapshot_v1"
@@ -99,13 +101,14 @@ def build_prediction_snapshot(
     )
 
     ts = created_at or _utc_now_iso()
+    registry_version = get_governance_registry_version()
     payload = {
         "schema": ACI_CALIBRATION_SCHEMA_VERSION,
         "analysis_digest": analysis.analysis_id,
         "binary_digest": analysis.binary_digest,
         "provider_id": provider_id,
         "provider_version": PROVIDER_VERSIONS.get(provider_id, "unknown"),
-        "capability_registry_version": CAPABILITY_REGISTRY_VERSION,
+        "capability_registry_version": registry_version,
         "api_registry_version": REGISTRY_VERSION,
         "created_at": ts,
         "engine": SNAPSHOT_ENGINE_VERSION,
@@ -119,7 +122,7 @@ def build_prediction_snapshot(
         binary_digest=analysis.binary_digest,
         provider_id=provider_id,
         provider_version=PROVIDER_VERSIONS.get(provider_id, "unknown"),
-        capability_registry_version=CAPABILITY_REGISTRY_VERSION,
+        capability_registry_version=registry_version,
         api_registry_version=REGISTRY_VERSION,
         required_capabilities=sorted(r.capability_id for r in analysis.required_capabilities),
         unsupported_capabilities=_unsupported_capabilities(analysis, provider_id),

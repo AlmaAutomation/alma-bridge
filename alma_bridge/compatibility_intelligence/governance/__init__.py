@@ -10,9 +10,8 @@ from alma_bridge.compatibility_intelligence.governance.models import (
     ProposalReviewState,
     RegistryVersion,
 )
-from alma_bridge.compatibility_intelligence.governance.repository import (
-    GovernanceRepository,
-)
+from alma_bridge.compatibility_intelligence.governance.repository import GovernanceRepository
+from alma_bridge.compatibility_intelligence.governance.service import GovernanceService
 
 __all__ = [
     "ACI_GOVERNANCE_SCHEMA_VERSION",
@@ -20,6 +19,7 @@ __all__ = [
     "CapabilityMaturityState",
     "CapabilityScope",
     "GovernanceRepository",
+    "GovernanceService",
     "PromotionProposal",
     "ProposalReview",
     "ProposalReviewState",
