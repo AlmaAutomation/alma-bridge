@@ -27,7 +27,7 @@ build_pe() {
 
 build_pe hello64.c hello64.exe 64
 build_pe hello32.c hello32.exe 32
-for fixture in stdout_write stderr_write exit_code unicode_argv environment_read file_read file_write; do
+for fixture in stdout_write stderr_write exit_code unicode_argv environment_read file_read file_write file_append_unsupported; do
   build_pe "${fixture}.c" "${fixture}.exe" 64
 done
 

@@ -1,12 +1,13 @@
 {
   "fixtures": {
-    "446533ba9af410e1ef5b7d8d0e3cd31316aa929f2c5374199566ab6dbb11038d": "environment_read.exe",
-    "2c9005adff293dd78e152bd47e639fb99554fd3d3c066666a1a1ed1c65f49ec7": "exit_code.exe",
-    "bbd46bcb6013fb0ca5f6d34f80ebf6c4586083452be98317970667c179cb87c8": "file_read.exe",
-    "19e24e00d1eccccd5d273f607c41ddbeee120174171eacffbcb3a5200733a4ca": "file_write.exe",
-    "611bd493af998edbc2d475611df8b9a0f35e9863878467f5059ae69a18be56b2": "hello64.exe",
-    "2d4bb415375bfaaa1371ddf1c50c6494ce0e8314439ffe43ed2eae0b4d4815bb": "stderr_write.exe",
-    "6f42830db038800ea46301bf437979f56cdc29487c3d0bf0be512f13241ad98c": "stdout_write.exe",
-    "feed417a97c8f3cf49907443c548382d31a1508a9b221e9dd9a8460d8fbafd76": "unicode_argv.exe"
+    "07307cf308e62a939b2278e46aaa7b47ef9ca83a0cc1d385f92fd2bae2308842": "environment_read.exe",
+    "5c7d768f88833e46e5581d992ae3fbd5f926e3b4783d4cc0e46e4705563b115e": "exit_code.exe",
+    "d4cead243e918d4f5cc4d1c3220ff17d6d2c97a2491db5ba105c05bd5d119a3a": "file_append_unsupported.exe",
+    "8099bbc7390ad948d7e86b0389093b88d4f0c12b1750dfde3ba464766ba0e31e": "file_read.exe",
+    "ec4998512aef93daeabe1b2a5d14c373fd0d31b1fbb12687ecc32b789e625eb9": "file_write.exe",
+    "7ad6c72213861622fa0c2b7b6205cab8ee5b182c5366231d5649fbaa3bafe764": "hello64.exe",
+    "1ed67cc7cc84174b3348279b3d4a54acb633542c4ffd95d476a42f7ca3406c5f": "stderr_write.exe",
+    "e70fb0741a78f86912c04bbb997b334693116943b98affe62caff5edbf08be2b": "stdout_write.exe",
+    "3f3d914dffb36aa9063f207f4eb07f5a1bafc027c53c36b6a6e2d1f5432b849e": "unicode_argv.exe"
   }
 }

@@ -94,9 +94,11 @@ class ConfidenceScorer:
                 factors.append(f"symbol_behavior_delta={delta:.2f}")
 
         if behavior_gaps:
-            penalty = min(1.0, len(behavior_gaps) / max(len(behavior_gaps) + 1, 1))
-            score -= self.WEIGHT_BEHAVIOR_COVERAGE * penalty * 0.5
+            penalty = min(1.0, len(behavior_gaps) * 0.35)
+            score -= self.WEIGHT_BEHAVIOR_COVERAGE * penalty
             factors.append(f"behavior_gaps={len(behavior_gaps)}")
+            score = max(0.0, score - 0.12 * len(behavior_gaps))
+            factors.append("behavior_gap_confidence_cap=applied")
 
         if prior_false_positive_rate > 0:
             score = max(0.0, score - self.WEIGHT_FALSE_POSITIVE_HISTORY * prior_false_positive_rate)
@@ -111,7 +113,7 @@ class ConfidenceScorer:
             factors.append("regression_history=penalty")
 
         score = max(0.0, min(1.0, round(score, 4)))
-        level = self._level_from_score(score, provider)
+        level = self._level_from_score(score, provider, behavior_gaps=behavior_gaps)
         factors.sort()
 
         return ConfidenceAssessment(
@@ -125,7 +127,14 @@ class ConfidenceScorer:
         self,
         score: float,
         provider: object | None,
+        *,
+        behavior_gaps: list[str] | None = None,
     ) -> ConfidenceLevelName:
+        if behavior_gaps:
+            if score >= 0.75:
+                return ConfidenceLevelName.HIGH
+            if score >= 0.50:
+                return ConfidenceLevelName.MEDIUM
         if provider and getattr(provider, "unknown", 0) == getattr(provider, "total", 1):
             return ConfidenceLevelName.UNKNOWN
         if score >= 0.90:
