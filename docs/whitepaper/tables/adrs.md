@@ -17,5 +17,6 @@
 | [ADR-017](../adr/ADR-017-compatibility-prediction-calibration.md) | ACI prediction snapshots are immutable; calibration compares statically predicted vs authoritatively verified outcomes | Close prediction accuracy loop without bypassing VerificationEngine | Accepted — 2026-08-02 |
 | [ADR-018](../adr/ADR-018-capability-registry-governance.md) | Capability maturity is scoped and human-gated; registry changes are append-only versioned | Calibration evidence must not auto-mutate provider capability registries | Accepted — 2026-08-02 |
 | [ADR-019](../adr/ADR-019-capability-guided-runtime-expansion.md) | Runtime expansion plans rank bounded engineering candidates from observed evidence; advisory only | Deterministic engineering priorities without auto-implementation or registry mutation | Accepted — 2026-08-02 |
+| [ADR-020](../adr/ADR-020-native-runtime-engineering-platform.md) | Native Runtime Engineering Platform v1 — per-API specs, behavior suites, benchmarks, read-only dashboard | Measurable, engineerable native shims without GET-triggered execution | Accepted — 2026-08-02 |
 
 **Related design (not ADR):** Plugin architecture — design-only stub, Phase 8 (`docs/architecture/plugin-architecture.md`).

@@ -56,6 +56,16 @@ experimental console PE loader behind feature flags.
 - Plans are advisory — no auto-implementation, registry mutation, or execution
 - ADR-019, runtime-expansion-planning.md
 
+## Native Runtime Engineering Platform v1 (complete)
+
+- Deterministic API specifications for all M2 kernel32 shims
+- Behavior test suite definitions mapped to conformance fixtures
+- Benchmark and ABI conformance reporting (pytest/CLI execution only)
+- Longitudinal append-only performance history
+- Read-only GET API under `/bridge/native-engineering/*`
+- Explorer Native Engineering dashboard (`/native-engineering`)
+- ADR-020, native-runtime-engineering.md, behavior suite docs
+
 ## Milestone 3 — Minimal console subset
 
 - Expanded kernel32 surface
