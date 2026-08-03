@@ -172,3 +172,12 @@ def provider_status(capability_id: str, provider_id: str) -> ImplementationStatu
     if provider_id == "container":
         return ImplementationStatus.DELEGATED
     return ImplementationStatus.UNKNOWN
+
+
+def get_governance_registry_version() -> str:
+    """Return current versioned capability maturity registry id."""
+    from alma_bridge.compatibility_intelligence.governance.repository import (
+        GovernanceRepository,
+    )
+
+    return GovernanceRepository().get_current_version_id()
