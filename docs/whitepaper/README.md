@@ -1,7 +1,11 @@
 # Alma Bridge Technical White Paper — Package Index
 
-**Version:** Phase 1 as-built (audit date 2026-07-31)  
+**Version:** Alma v2.0 Compatibility Operating System (as-built 2026-08-02)  
 **Audience:** Systems architects, platform engineers, security reviewers
+
+## Alma v2.0 thesis
+
+Alma is a **deterministic compatibility operating system driven by evidence**. One executable tells a complete story through an immutable `CompatibilityEvidenceBundle` and lifecycle timeline. Subsystems integrate into the evidence pipeline; they do not form independent silos.
 
 ## Source-of-truth note
 
@@ -20,10 +24,12 @@ Items labeled **Future work** are documented intent without implementation evide
 |-------------|------------|
 | Executive overview | [alma_bridge_whitepaper.md](./alma_bridge_whitepaper.md) §1–§6 |
 | Execution and verification law | §7–§8; [architecture/verification_authority.md](./architecture/verification_authority.md) |
-| Evidence and read-only platform | §9–§15; [architecture/evidence_model.md](./architecture/evidence_model.md), [architecture/read_only_intelligence.md](./architecture/read_only_intelligence.md) |
-| API surface | [tables/api_endpoints.md](./tables/api_endpoints.md); white paper §16–§17 |
-| Security deployment | §18; [architecture/security_model.md](./architecture/security_model.md) |
-| Honest gaps | §22; [appendices/limitations.md](./appendices/limitations.md) |
+| Evidence lifecycle and operating system | §9–§15; [architecture/compatibility_operating_system.md](./architecture/compatibility_operating_system.md), [architecture/evidence_model.md](./architecture/evidence_model.md) |
+| Evidence and read-only platform | [architecture/read_only_intelligence.md](./architecture/read_only_intelligence.md) |
+| Decision pipeline (plan → review → validate) | §16; [architecture/decision_pipeline.md](./architecture/decision_pipeline.md) |
+| API surface | [tables/api_endpoints.md](./tables/api_endpoints.md); white paper §17–§18 |
+| Security deployment | §19; [architecture/security_model.md](./architecture/security_model.md) |
+| Honest gaps | §23; [appendices/limitations.md](./appendices/limitations.md) |
 | Document quality audit | [appendices/self_review.md](./appendices/self_review.md) |
 
 ## Package contents
@@ -36,14 +42,18 @@ docs/whitepaper/
 ├── architecture/
 │   ├── execution_pipeline.md
 │   ├── verification_authority.md
+│   ├── compatibility_operating_system.md  ← Alma v2.0 evidence lifecycle
 │   ├── evidence_model.md
 │   ├── read_only_intelligence.md
+│   ├── decision_pipeline.md           ← Decision Engine Phases 1–3
 │   └── security_model.md
 ├── diagrams/
 │   ├── overall_architecture.mmd
+│   ├── decision_pipeline.mmd          ← plan → review → validate
 │   ├── execution_pipeline.mmd
 │   ├── verification_authority.mmd
 │   ├── evidence_flow.mmd
+│   ├── evidence_lifecycle.mmd             ← unified pipeline
 │   ├── layer_diagram.mmd
 │   ├── dependency_boundaries.mmd
 │   ├── data_model_overview.mmd

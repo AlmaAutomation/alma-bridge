@@ -16,7 +16,8 @@
 | `importers/` | Import almasysdet and alma_resolve history | Ingestion | External SQLite / audit dirs | Rows in `outcomes.db` | Writes import log + sessions |
 | `validation/` | Campaign guards, freeze/semantic validators | Evidence gatekeeping | Bridge requests, campaign config | Validation errors / evidence artifacts | Writes campaign evidence stores |
 | `storage/outcomes.py` | Authoritative session and attempt store | Evidence persistence | Orchestrator writes | `bridge_sessions`, `bridge_attempts` | Write on core path; read on platform path |
-| `intelligence/` | Evidence bundle assembly and compatibility assessment | Read-only platform | Persisted DB rows | `EvidenceBundle`, `CompatibilityAssessment` | Read-only |
+| `evidence/` | Unified compatibility evidence bundle, timeline, history, platform health | Integration (append-only) | All subsystem artifacts | `CompatibilityEvidenceBundle`, timeline events | Append-only; no inference |
+| `intelligence/` | Session evidence bundle assembly and compatibility assessment | Read-only platform | Persisted DB rows | `EvidenceBundle`, `CompatibilityAssessment` | Read-only |
 | `graph/` | Evidence-derived compatibility graph | Read-only platform | `EvidenceBundle` | `GraphNode`, `GraphEdge`, subgraphs | Writes graph tables only on ingestion; no execution |
 | `knowledge/` | Cross-session knowledge aggregation | Read-only platform | `EvidenceBundle` | `CompatibilityKnowledgeProfile` | Computed on read (Phase 1); no KB tables |
 | `regression/` | Baseline vs current profile comparison | Read-only platform | Knowledge profiles | `CompatibilityRegressionReport` | Pure diff; no writes |
@@ -24,6 +25,9 @@
 | `advisor/` | Deterministic (+ optional LLM) explanations | Read-only platform | Knowledge + regression context | `AdvisorExplanation` | No persistence |
 | `ask/` | Evidence-grounded Q&A | Read-only platform | Natural-language question + fingerprint | `AskAlmaAnswer` | POST is read-only (no DB writes) |
 | `catalog/` | Application browser aggregate | Read-only platform | All fingerprints | `CompatibilityCatalogResponse` | Read-only |
+| `decision/` | Deterministic plan recommendations | Read-only platform | Session/fingerprint + optional comparison/ask context | `DecisionPlan` | No persistence; no execution |
+| `decision_review/` | Human plan review, approval, export | Governance (non-executing) | `DecisionPlan` + review request | `DecisionPlanReview`, export artifacts | Append-only review/export tables only |
+| `decision_validation/` | Approved plan dry-run validation | Observational (non-executing) | Approved plan + review binding | `DecisionPlanDryRunReport` | Append-only validation table only |
 | `api/` | FastAPI routers and auth middleware | Interface | HTTP | JSON responses | Delegates mutability to handlers |
 | `cli/` | Shadow validation CLI | Interface | Campaign config | Reports, gate results | Writes shadow validation store |
 | `observability/` | Prometheus metrics | Cross-cutting | Internal counters | `/metrics` text | Read-only export |

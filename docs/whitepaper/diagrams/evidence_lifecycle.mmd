@@ -1,0 +1,28 @@
+flowchart LR
+    EXE[Executable] --> SA[Static Analysis]
+    SA --> CG[Capability Graph]
+    CG --> COV[Coverage]
+    COV --> PRED[Prediction]
+    PRED --> RT[Runtime Selection]
+    RT --> EXEC[Execution Provider]
+    EXEC --> VER[Verification]
+    VER --> KNOW[Knowledge]
+    KNOW --> REG[Regression]
+    REG --> DEC[Decision]
+    DEC --> REV[Review]
+    REV --> VAL[Validation]
+    VAL --> GOV[Governance]
+    GOV --> EXP[Expansion Planning]
+    EXP --> HIST[Historical Evidence]
+
+    subgraph bundle [CompatibilityEvidenceBundle]
+        direction TB
+        B1[Immutable sections]
+        B2[Provenance refs]
+        B3[Timeline events]
+    end
+
+    VER -.-> bundle
+    DEC -.-> bundle
+    GOV -.-> bundle
+    EXP -.-> bundle
