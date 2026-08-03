@@ -45,18 +45,24 @@ class TestConformance:
         assert "native_vs_wine_hello64" in ids
 
     def test_44_native_launch_with_flags(self, monkeypatch, tmp_path):
-        from tests.native_runtime.minimal_pe import minimal_pe_bytes
-
         monkeypatch.setattr(settings, "native_runtime_enabled", True)
         monkeypatch.setattr(settings, "allow_experimental_runtimes", True)
-        pe = tmp_path / "hello64.exe"
-        pe.write_bytes(minimal_pe_bytes())
+        built = FIXTURES / "hello64.exe"
+        if built.is_file():
+            pe = built
+        else:
+            from tests.native_runtime.minimal_pe import minimal_pe_bytes
+
+            pe = tmp_path / "hello64.exe"
+            pe.write_bytes(minimal_pe_bytes())
         runtime = NativeAlmaRuntime()
         handle = runtime.launch(str(pe))
         obs = runtime.observe(handle)
         runtime.teardown(handle)
         assert obs.exit_code == 0
         assert "Hello" in obs.stdout
+        if built.is_file() and obs.metadata.get("simulation_used") is not None:
+            assert obs.metadata.get("simulation_used") is False
 
     def test_45_built_fixture_conformance(self, monkeypatch):
         fixture = FIXTURES / "hello64.exe"

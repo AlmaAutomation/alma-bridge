@@ -112,8 +112,14 @@ class TestLoaderRuntime:
         fixture = FIXTURES / "hello64.exe"
         if not fixture.is_file():
             pytest.skip("fixtures not built")
-        result = run_pe_in_workspace(fixture, use_simulation=True)
+        from alma_bridge.native_runtime.loader.entrypoint import shim_available
+
+        use_sim = not shim_available()
+        result = run_pe_in_workspace(fixture, use_simulation=use_sim)
         assert result.success
+        if shim_available():
+            assert result.simulation_used is False
+            assert result.entrypoint_invoked is True
 
     def test_32_map_built_fixture(self):
         fixture = FIXTURES / "hello64.exe"
