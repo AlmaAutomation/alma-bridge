@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import platform
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from alma_bridge.native_runtime.errors import (
     REASON_COM,
@@ -45,6 +47,32 @@ FIXTURE_ALLOWLIST: Set[str] = {
     "file_write.exe",
 }
 
+_MANIFEST_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "native_runtime" / "manifest.json"
+
+
+def pe_binary_digest(file_path: str | Path) -> str:
+    data = Path(file_path).read_bytes()
+    return hashlib.sha256(data).hexdigest()
+
+
+def _load_fixture_manifest() -> Dict[str, str]:
+    """digest hex -> fixture label."""
+    if not _MANIFEST_PATH.is_file():
+        return {}
+    try:
+        payload = json.loads(_MANIFEST_PATH.read_text(encoding="utf-8"))
+        entries = payload.get("fixtures", payload)
+        if isinstance(entries, dict):
+            return {str(k).lower(): str(v) for k, v in entries.items()}
+    except (json.JSONDecodeError, OSError):
+        pass
+    return {}
+
+
+def manifest_match(path: Path) -> bool:
+    digest = pe_binary_digest(path)
+    return digest.lower() in _load_fixture_manifest()
+
 
 @dataclass
 class EligibilityResult:
@@ -52,26 +80,40 @@ class EligibilityResult:
     reason_codes: List[str] = field(default_factory=list)
     notes: List[str] = field(default_factory=list)
     parsed: Optional[ParsedPE] = None
+    binary_digest: Optional[str] = None
+    manifest_match: bool = False
 
 
 def check_eligibility(file_path: str | Path) -> EligibilityResult:
     path = Path(file_path)
     basename = path.name.lower()
-    if basename in FIXTURE_ALLOWLIST:
+    digest: Optional[str] = None
+    matched_manifest = False
+    if path.is_file():
+        digest = pe_binary_digest(path)
+        matched_manifest = digest.lower() in _load_fixture_manifest()
+    if basename in FIXTURE_ALLOWLIST or matched_manifest:
         try:
             parsed = parse_pe_file(path)
         except Exception:
-            return EligibilityResult(eligible=False, reason_codes=[REASON_INVALID_PE])
+            return EligibilityResult(
+                eligible=False,
+                reason_codes=[REASON_INVALID_PE],
+                binary_digest=digest,
+            )
+        note = "allowlisted fixture" if basename in FIXTURE_ALLOWLIST else "manifest digest match"
         return EligibilityResult(
             eligible=True,
-            notes=["allowlisted fixture"],
+            notes=[note],
             parsed=parsed,
+            binary_digest=digest,
+            manifest_match=matched_manifest,
         )
     try:
         parsed = parse_pe_file(path)
     except Exception:
-        return EligibilityResult(eligible=False, reason_codes=[REASON_NOT_PE])
-    return _strict_pe_checks(parsed)
+        return EligibilityResult(eligible=False, reason_codes=[REASON_NOT_PE], binary_digest=digest)
+    return _strict_pe_checks(parsed, binary_digest=digest)
 
 
 def inspect_pe(file_path: str | Path) -> PEInspection:
@@ -92,10 +134,16 @@ def inspect_pe(file_path: str | Path) -> PEInspection:
         import_dlls=import_dlls,
         reason_codes=result.reason_codes,
         notes=result.notes,
+        binary_digest=result.binary_digest,
+        manifest_match=result.manifest_match,
+        metadata={
+            "binary_digest": result.binary_digest,
+            "manifest_match": result.manifest_match,
+        },
     )
 
 
-def _strict_pe_checks(parsed: ParsedPE) -> EligibilityResult:
+def _strict_pe_checks(parsed: ParsedPE, *, binary_digest: Optional[str] = None) -> EligibilityResult:
     reasons: List[str] = []
     notes: List[str] = []
 
@@ -134,11 +182,20 @@ def _strict_pe_checks(parsed: ParsedPE) -> EligibilityResult:
             notes.append(f"import={dll}")
 
     if reasons:
-        return EligibilityResult(eligible=False, reason_codes=sorted(set(reasons)), notes=notes, parsed=parsed)
-    return EligibilityResult(eligible=True, notes=["strict PE checks passed"], parsed=parsed)
+        return EligibilityResult(
+            eligible=False,
+            reason_codes=sorted(set(reasons)),
+            notes=notes,
+            parsed=parsed,
+            binary_digest=binary_digest,
+        )
+    return EligibilityResult(
+        eligible=True,
+        notes=["strict PE checks passed"],
+        parsed=parsed,
+        binary_digest=binary_digest,
+    )
 
 
 def _has_32bit_worker() -> bool:
-    import platform
-
     return platform.machine().lower() in ("i686", "i386", "x86")

@@ -70,6 +70,7 @@ class RuntimeObservation(BaseModel):
     stdout: str = ""
     stderr: str = ""
     notes: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class TerminationResult(BaseModel):

@@ -18,6 +18,8 @@ class PEInspection(BaseModel):
     reason_codes: List[str] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    binary_digest: Optional[str] = None
+    manifest_match: bool = False
 
 
 class NativeRunResult(BaseModel):
@@ -30,3 +32,8 @@ class NativeRunResult(BaseModel):
     error: Optional[str] = None
     reason_codes: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    simulation_used: bool = False
+    entrypoint_invoked: bool = False
+    native_execution_mode: Optional[str] = None
+    load_base: Optional[int] = None
+    binary_digest: Optional[str] = None

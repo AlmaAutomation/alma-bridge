@@ -1,4 +1,4 @@
-"""Experimental native Alma runtime provider (Milestone 1)."""
+"""Experimental native Alma runtime provider (Milestone 2)."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from alma_bridge.runtime.models import (
     TerminationResult,
 )
 
-_PROVIDER_VERSION = "0.1.0-m1"
+_PROVIDER_VERSION = "0.2.0-m2"
 
 # In-memory handle store for observe/terminate (worker subprocess jobs)
 _HANDLES: Dict[str, Dict[str, object]] = {}
@@ -74,6 +74,8 @@ class NativeAlmaRuntime:
                 "import_dlls": inspection.import_dlls,
                 "reason_codes": inspection.reason_codes,
                 "eligible": inspection.eligible,
+                "binary_digest": inspection.binary_digest,
+                "manifest_match": inspection.manifest_match,
             },
         )
 
@@ -121,7 +123,7 @@ class NativeAlmaRuntime:
             "argv": command or [Path(file_path).name],
             "env": dict(env or {}),
             "workspace": workspace,
-            "use_simulation": True,
+            "use_simulation": False,
         }
         job_file = Path(workspace) / "job.json"
         job_file.write_text(json.dumps(job), encoding="utf-8")
@@ -179,6 +181,12 @@ class NativeAlmaRuntime:
             stdout=str(payload.get("stdout") or ""),
             stderr=str(payload.get("stderr") or ""),
             notes=["worker subprocess completed"],
+            metadata={
+                "simulation_used": payload.get("simulation_used"),
+                "entrypoint_invoked": payload.get("entrypoint_invoked"),
+                "native_execution_mode": payload.get("native_execution_mode"),
+                "binary_digest": payload.get("binary_digest"),
+            },
         )
 
     def terminate(self, handle: LaunchHandle) -> TerminationResult:
