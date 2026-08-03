@@ -1149,6 +1149,23 @@ This plan is **Future work** scheduling—not a commitment timeline.
 
 Compatibility profile shadow validation (`compatibility/profile_shadow_validation_*.py`, CLI `shadow_validation.py`) supports campaign-based evaluation of profile predictions against verified outcomes. Promotion of shadow profiles into execution reuse remains gated—shadow predictions stay non-authoritative per ADR-002 until explicit promotion criteria pass (platform direction CompatibilityProfile section).
 
+### 23.3 Toward Runtime Independence
+
+Phase 0B introduces the **Compatibility Runtime Provider** layer (`alma_bridge/runtime/`) as an additive contract boundary over existing Wine, Proton, and container execution paths. This work does **not** claim Wine independence in the current release.
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `CompatibilityRuntimeProvider` protocol | Implemented (Phase 0B) | inspect/prepare/launch/observe/terminate/teardown |
+| Wine/Proton/Container providers | Implemented (Phase 0B) | Thin adapters; orchestrator unchanged |
+| `NativeAlmaRuntime` | Experimental, fail-closed | Design-only loader under `native_runtime/` |
+| `GET /bridge/runtime/providers` | Implemented (Phase 0B) | Read-only inventory |
+| Runtime conformance foundation | Implemented (Phase 0B) | Non-authoritative baseline comparison |
+| Native PE loader | Future work | Milestones 1–7 in `docs/roadmap/native-alma-runtime.md` |
+
+VerificationEngine remains the sole success authority (ADR-001). Runtime providers must not import VerificationGateway or transition session lifecycle (ADR-014). Planner integration annotates existing strategy plans with `runtime_provider_id` without changing strategy IDs.
+
+Source: [runtime-dependency-audit.md](../architecture/runtime-dependency-audit.md), [ADR-014](../adr/ADR-014-compatibility-runtime-provider-boundary.md).
+
 ---
 
 ## 24. Conclusion
