@@ -32,6 +32,8 @@ PROTECTED_PREFIXES = (
     "/operator/remediate",
     "/operator/start",
     "/operator/stop",
+    "/bridge/compatibility/governance/",
+    "/bridge/native-lab/",
 )
 
 

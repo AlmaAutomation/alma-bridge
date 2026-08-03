@@ -211,6 +211,94 @@ class EvidenceService:
             references=[plan_id],
         )
 
+    def record_engineering_work_item_created(
+        self, bundle_id: str, work_item_id: str, work_item_digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.ENGINEERING_WORK_ITEM_CREATED,
+            source="native_lab",
+            evidence_digest=work_item_digest,
+            references=[work_item_id],
+        )
+
+    def record_engineering_work_item_accepted(
+        self, bundle_id: str, work_item_id: str, event_digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.ENGINEERING_WORK_ITEM_ACCEPTED,
+            source="native_lab",
+            evidence_digest=event_digest,
+            references=[work_item_id],
+        )
+
+    def record_implementation_evidence_attached(
+        self, bundle_id: str, work_item_id: str, reference_id: str, digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.IMPLEMENTATION_EVIDENCE_ATTACHED,
+            source="native_lab",
+            evidence_digest=digest,
+            references=[work_item_id, reference_id],
+        )
+
+    def record_behavior_tests_completed(
+        self, bundle_id: str, work_item_id: str, test_digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.BEHAVIOR_TESTS_COMPLETED,
+            source="native_lab",
+            evidence_digest=test_digest,
+            references=[work_item_id],
+        )
+
+    def record_verification_requested(
+        self, bundle_id: str, work_item_id: str, request_digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.VERIFICATION_REQUESTED,
+            source="native_lab",
+            evidence_digest=request_digest,
+            references=[work_item_id],
+        )
+
+    def record_certification_requested(
+        self, bundle_id: str, work_item_id: str, request_digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.CERTIFICATION_REQUESTED,
+            source="native_lab",
+            evidence_digest=request_digest,
+            references=[work_item_id],
+        )
+
+    def record_engineering_work_item_completed(
+        self, bundle_id: str, work_item_id: str, completion_digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.ENGINEERING_WORK_ITEM_COMPLETED,
+            source="native_lab",
+            evidence_digest=completion_digest,
+            references=[work_item_id],
+        )
+
+    def record_engineering_work_item_superseded(
+        self, bundle_id: str, work_item_id: str, successor_id: str, supersede_digest: str
+    ) -> None:
+        self.append_event(
+            bundle_id,
+            TimelineEventType.ENGINEERING_WORK_ITEM_SUPERSEDED,
+            source="native_lab",
+            evidence_digest=supersede_digest,
+            references=[work_item_id, successor_id],
+        )
+
     def platform_health(self) -> PlatformHealthReport:
         """Evidence-backed platform health metrics with sample sizes."""
         limitations: List[str] = []

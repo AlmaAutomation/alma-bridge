@@ -28,6 +28,7 @@ dev = [
 [project.scripts]
 alma-bridge = "alma_bridge.main:main"
 alma-bridge-shadow-validation = "alma_bridge.cli.shadow_validation:main"
+alma-native-lab = "alma_bridge.cli.native_lab:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

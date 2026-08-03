@@ -28,6 +28,14 @@ class TimelineEventType(str, Enum):
     VALIDATION_COMPLETED = "ValidationCompleted"
     GOVERNANCE_APPLIED = "GovernanceApplied"
     EXPANSION_CANDIDATE_GENERATED = "ExpansionCandidateGenerated"
+    ENGINEERING_WORK_ITEM_CREATED = "EngineeringWorkItemCreated"
+    ENGINEERING_WORK_ITEM_ACCEPTED = "EngineeringWorkItemAccepted"
+    IMPLEMENTATION_EVIDENCE_ATTACHED = "ImplementationEvidenceAttached"
+    BEHAVIOR_TESTS_COMPLETED = "BehaviorTestsCompleted"
+    VERIFICATION_REQUESTED = "VerificationRequested"
+    CERTIFICATION_REQUESTED = "CertificationRequested"
+    ENGINEERING_WORK_ITEM_COMPLETED = "EngineeringWorkItemCompleted"
+    ENGINEERING_WORK_ITEM_SUPERSEDED = "EngineeringWorkItemSuperseded"
 
 
 class Provenance(BaseModel):
