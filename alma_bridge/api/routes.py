@@ -153,6 +153,9 @@ from alma_bridge.api.decision_routes import router as decision_router
 from alma_bridge.api.decision_review_routes import router as decision_review_router
 from alma_bridge.api.decision_validation_routes import router as decision_validation_router
 from alma_bridge.api.runtime_routes import router as runtime_router
+from alma_bridge.api.compatibility_intelligence_routes import (
+    router as compatibility_intelligence_router,
+)
 from alma_bridge.bridge.recent_sessions import build_recent_sessions_response
 from alma_bridge.config import settings
 from alma_bridge.storage import outcomes
@@ -170,6 +173,7 @@ router.include_router(decision_router)
 router.include_router(decision_review_router)
 router.include_router(decision_validation_router)
 router.include_router(runtime_router)
+router.include_router(compatibility_intelligence_router)
 orchestrator = BridgeOrchestrator()
 import_service = ImportService()
 tls_modernizer = TlsModernizer(ca_file=settings.compliance_ca_file)

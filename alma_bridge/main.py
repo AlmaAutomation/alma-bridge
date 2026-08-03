@@ -67,6 +67,10 @@ def create_app() -> FastAPI:
             {"name": "Automation", "description": "Unified scan → assess → apply → verify automation spine."},
             {"name": "Operator", "description": "Autonomous AI operator: observes systems + ML and applies modernization/self-healing."},
             {"name": "Container", "description": "Sandbox status and container shim pack execution."},
+            {
+                "name": "Compatibility Intelligence",
+                "description": "Read-only PE capability analysis, coverage, and prediction.",
+            },
         ],
     )
     app.add_middleware(

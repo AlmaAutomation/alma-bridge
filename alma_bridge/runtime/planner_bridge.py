@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from alma_bridge.compatibility.planner import build_execution_plan
+from alma_bridge.compatibility_intelligence.planner_integration import (
+    annotate_plans_with_capability_analysis,
+)
 from alma_bridge.runtime.registry import RuntimeRegistry, build_default_registry
 from alma_bridge.runtime.selection import (
     provider_id_for_strategy,
@@ -57,7 +60,8 @@ def build_execution_plan_with_runtime(
         base_env=base_env,
         error_signature=error_signature,
     )
-    return annotate_plan_with_runtime_providers(plans, registry=registry)
+    plans = annotate_plan_with_runtime_providers(plans, registry=registry)
+    return annotate_plans_with_capability_analysis(plans, file_path, registry=registry)
 
 
 def runtime_requirements_for_plan(plan: Dict[str, Any]) -> Optional[dict]:
