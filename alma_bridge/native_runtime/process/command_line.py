@@ -14,3 +14,8 @@ def build_command_line_w(args: List[str]) -> str:
         else:
             parts.append(arg)
     return " ".join(parts)
+
+
+def build_command_line_utf16le(args: List[str]) -> bytes:
+    """Build UTF-16LE command line bytes for native shim init."""
+    return build_command_line_w(args).encode("utf-16-le") + b"\x00\x00"

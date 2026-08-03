@@ -97,7 +97,7 @@ def simulate_fixture_from_pe(
         state.exit_process(0)
     elif name == "environment_read.exe":
         val = state.get_environment_variable_w("ALMA_TEST_VAR")
-        state.write_file(1, val.encode("utf-16-le"))
+        state.write_file(1, val.encode("ascii"))
         state.exit_process(0)
     elif name == "file_read.exe":
         data = read_file(workspace, "input.txt")
