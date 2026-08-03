@@ -1,45 +1,31 @@
-# Native Alma Runtime — Design Structure (Phase 0)
+# Native Alma Runtime — Milestone 1
 
-This directory holds **design-only** documentation for a future native Windows PE
-compatibility runtime. No loader implementation is claimed in Phase 0B.
-
-## Purpose
-
-Research and document how Alma Bridge could eventually execute PE binaries
-without Wine, while preserving ADR-001 verification authority and the runtime
-provider boundary (ADR-014).
-
-## Proposed layout
-
-```
-native_runtime/
-├── README.md           # This file
-├── pe/                 # PE format parsing research
-│   ├── headers.md      # DOS/COFF/optional header notes
-│   └── imports.md      # Import table and thunk research
-├── loader/             # Loader design
-│   ├── mapping.md      # Virtual memory mapping strategy
-│   └── relocations.md  # Base relocation handling
-├── api/                # Win32 API surface research
-│   └── kernel32.md     # Minimal console subset
-└── conformance/        # Future native-vs-Wine baselines
-    └── scenarios.md
-```
-
-## Milestones
-
-See [docs/roadmap/native-alma-runtime.md](../../docs/roadmap/native-alma-runtime.md)
-for Milestones 0–7.
+Isolated user-space PE console loader with kernel32 shim. See
+[docs/architecture/native-alma-runtime-m1.md](../../docs/architecture/native-alma-runtime-m1.md).
 
 ## Boundary
 
-- `NativeAlmaRuntime` in `alma_bridge/runtime/providers/native_alma.py` is
-  **fail-closed** and experimental.
-- No code here may import `VerificationGateway` or transition session lifecycle.
-- VerificationEngine remains the sole success authority.
+- Execution occurs in **worker subprocess** only.
+- No `VerificationGateway` imports.
+- Feature flags: `native_runtime_enabled`, `allow_experimental_runtimes` (default false).
 
-## Non-goals (Phase 0)
+## Build fixtures
 
-- Shipping a PE loader
-- Replacing Wine in production paths
-- Forking or vendoring Wine
+```bash
+tests/fixtures/native_runtime/build_fixtures.sh
+```
+
+## Package layout
+
+```
+native_runtime/
+├── pe/          PE parser
+├── loader/      Image mapping and entry
+├── process/     Environment, handles, exit
+├── console/     stdout/stderr capture
+├── filesystem/  Sandboxed paths
+├── api/         kernel32 simulation fallback
+├── shim/        C ms_abi shims (optional)
+├── runtime.py   Orchestration
+└── worker.py    Subprocess entry
+```

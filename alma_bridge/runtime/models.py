@@ -50,6 +50,7 @@ class PrepareResult(BaseModel):
     env: Dict[str, str] = Field(default_factory=dict)
     ready: bool = False
     notes: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class LaunchHandle(BaseModel):
@@ -58,6 +59,8 @@ class LaunchHandle(BaseModel):
     env: Dict[str, str] = Field(default_factory=dict)
     pid: Optional[int] = None
     launched: bool = False
+    file_path: Optional[str] = None
+    handle_token: Optional[str] = None
 
 
 class RuntimeObservation(BaseModel):

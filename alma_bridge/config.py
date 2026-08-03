@@ -122,5 +122,9 @@ class Settings(BaseSettings):
         validation_alias="ALMA_ADVISOR_LLM_TIMEOUT_SECONDS",
     )
 
+    # Native Alma runtime (Milestone 1 — experimental, fail-closed by default)
+    native_runtime_enabled: bool = False
+    allow_experimental_runtimes: bool = False
+
 
 settings = Settings()

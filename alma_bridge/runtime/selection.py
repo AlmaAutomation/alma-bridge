@@ -15,6 +15,7 @@ STRATEGY_PROVIDER_MAP: Dict[str, str] = {
     "proton_host": "proton",
     "container_compat": "container",
     "container_podman": "container",
+    "native_alma_console": "native_alma",
 }
 
 STRATEGY_REQUIRED_CAPABILITIES: Dict[str, List[str]] = {
@@ -22,6 +23,7 @@ STRATEGY_REQUIRED_CAPABILITIES: Dict[str, List[str]] = {
     "proton_host": ["pe_console", "pe_gui"],
     "container_compat": ["container_isolation"],
     "container_podman": ["container_isolation"],
+    "native_alma_console": ["pe_console"],
 }
 
 
