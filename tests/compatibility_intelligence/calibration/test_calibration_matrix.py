@@ -123,10 +123,14 @@ class TestPredictionSnapshot:
         assert snap.binary_digest == analysis.binary_digest
 
     def test_03_binds_provider_version(self, hello64_path):
+        from alma_bridge.compatibility_intelligence.governance.models import (
+            GOVERNANCE_REGISTRY_SEED_VERSION,
+        )
+
         analysis = CompatibilityIntelligenceService().analyze(str(hello64_path), persist=False)
         snap = build_prediction_snapshot(analysis, provider_id="native_alma")
         assert snap.provider_version == "0.2.0-m2"
-        assert snap.capability_registry_version == "aci_capability_registry_v1"
+        assert snap.capability_registry_version == GOVERNANCE_REGISTRY_SEED_VERSION
 
 
 class TestCalibrationClassification:

@@ -249,15 +249,18 @@ class GovernanceRepository:
         for entry in version.entries:
             if entry.scope.scope_key() == exact:
                 return entry
-        for entry in version.entries:
-            if (
-                entry.scope.provider_id == scope.provider_id
-                and entry.scope.capability_id == scope.capability_id
-                and not entry.scope.application_scope
-                and not scope.application_scope
-            ):
+        candidates = [
+            e
+            for e in version.entries
+            if e.scope.provider_id == scope.provider_id
+            and e.scope.capability_id == scope.capability_id
+        ]
+        if not candidates:
+            return None
+        for entry in candidates:
+            if not entry.scope.application_scope:
                 return entry
-        return None
+        return candidates[0]
 
     def get_maturity_state(
         self,
