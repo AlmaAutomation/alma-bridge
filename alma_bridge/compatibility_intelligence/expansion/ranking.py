@@ -14,10 +14,7 @@ from alma_bridge.compatibility_intelligence.expansion.models import (
     SecurityRiskCategory,
     TestabilityLevel,
 )
-from alma_bridge.compatibility_intelligence.governance.models import (
-    CapabilityMaturityState,
-    MATURITY_ORDER,
-)
+from alma_bridge.compatibility_intelligence.governance.models import CapabilityMaturityState
 
 HARD_EXCLUDED_CAPABILITIES = frozenset(
     {

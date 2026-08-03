@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from alma_bridge.compatibility_intelligence.behavior_requirements import (
     get_behavior_profile,
-    infer_fixture_behaviors,
     list_behavior_profiles,
 )
 from alma_bridge.compatibility_intelligence.calibration_repository import CalibrationRepository
