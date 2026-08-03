@@ -115,6 +115,12 @@ class CompatibilityIntelligenceService:
 
         if persist:
             self._repo.save(result)
+            try:
+                from alma_bridge.evidence.hooks import on_analysis_created
+
+                on_analysis_created(digest, analysis_id)
+            except Exception:
+                pass
         return result
 
     def get_by_digest(self, digest: str) -> Optional[CompatibilityAnalysisResult]:
@@ -150,6 +156,12 @@ class CompatibilityIntelligenceService:
         )
         if persist:
             self._calibration_repo.save_snapshot(snapshot)
+            try:
+                from alma_bridge.evidence.hooks import on_prediction_snapshot
+
+                on_prediction_snapshot(analysis.binary_digest, snapshot.snapshot_id)
+            except Exception:
+                pass
         return snapshot
 
     def get_prediction_snapshot(self, snapshot_id: str) -> Optional[PredictionSnapshot]:

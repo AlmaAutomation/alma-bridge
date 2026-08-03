@@ -185,6 +185,13 @@ class BridgeOrchestrator:
                 session_timeout_at=timeout_at,
             )
 
+        try:
+            from alma_bridge.evidence.hooks import on_execution_started
+
+            on_execution_started(digest, session_id)
+        except Exception:
+            pass
+
         lifecycle = SessionLifecycleManager(session_id)
         lease = self._lease_manager.acquire(session_id)
         if not lease.acquired:
@@ -887,6 +894,12 @@ class BridgeOrchestrator:
                         summary=summary,
                         rerank_events=[event.model_dump() for event in rerank_events],
                     )
+                    try:
+                        from alma_bridge.evidence.hooks import on_verification_completed
+
+                        on_verification_completed(digest, session_id, verified=True)
+                    except Exception:
+                        pass
                     self._promote_profile_candidate_after_success(candidate_id)
                     return BridgeSessionResult(
                         session_id=session_id,

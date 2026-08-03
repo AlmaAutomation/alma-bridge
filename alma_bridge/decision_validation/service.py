@@ -80,7 +80,18 @@ class DecisionValidationService:
             disclaimer=DRY_RUN_DISCLAIMER,
             evidence_references=_collect_evidence_references(plan),
         )
-        return append_validation(report)
+        saved = append_validation(report)
+        try:
+            from alma_bridge.evidence.hooks import on_validation_completed
+
+            on_validation_completed(
+                plan.application_fingerprint,
+                saved.validation_id,
+                saved.plan_digest,
+            )
+        except Exception:
+            pass
+        return saved
 
     def list_validations(self, plan_id: str) -> List[DecisionPlanDryRunReport]:
         return validation_history(plan_id)

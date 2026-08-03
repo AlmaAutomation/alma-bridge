@@ -37,7 +37,12 @@ Derived from `alma_bridge/api/routes.py` and read-only sub-routers as of Phase 1
 | `/bridge/compatibility/governance/registry/versions` | GET | Registry version history | None |
 | `/bridge/compatibility/expansion/plan` | GET | Ranked runtime expansion engineering plan (advisory) | None |
 | `/bridge/compatibility/expansion/candidates/{candidate_id}` | GET | Single expansion candidate detail | None |
-| `/bridge/compatibility/expansion/capabilities/{capability_id}` | GET | Expansion candidates for a capability | None |
+| `/bridge/evidence/bundles/{binary_digest}` | GET | Evidence bundle by binary digest | Writes bundle on first assemble |
+| `/bridge/evidence/applications/{fingerprint}` | GET | Evidence bundle by application fingerprint | Writes bundle on first assemble |
+| `/bridge/evidence/bundles/{bundle_id}/timeline` | GET | Immutable lifecycle timeline | None |
+| `/bridge/evidence/bundles/{bundle_id}/history` | GET | Historical bundle versions | None |
+| `/bridge/evidence/platform/health` | GET | Platform health metrics with sample sizes | None |
+| `/bridge/evidence/assemble` | POST | Assemble bundle from subsystem artifacts | Writes bundle |
 
 ## Decision pipeline (Phases 1–3)
 

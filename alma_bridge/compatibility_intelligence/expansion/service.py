@@ -569,6 +569,12 @@ class ExpansionPlanningService:
         )
         if persist:
             self._plan_repo.save_plan(plan)
+            try:
+                from alma_bridge.evidence.hooks import on_expansion_plan_generated
+
+                on_expansion_plan_generated(plan.plan_id, plan.evidence_digest)
+            except Exception:
+                pass
         return plan
 
     def get_plan(

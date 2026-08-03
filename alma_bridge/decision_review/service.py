@@ -146,7 +146,18 @@ class DecisionReviewService:
             risk_acknowledgements=request.risk_acknowledgements,
             evidence_references=_collect_evidence_references(plan),
         )
-        return append_review(review)
+        saved = append_review(review)
+        try:
+            from alma_bridge.evidence.hooks import on_review_submitted
+
+            on_review_submitted(
+                plan.application_fingerprint,
+                saved.review_id,
+                saved.plan_digest,
+            )
+        except Exception:
+            pass
+        return saved
 
     def export_plan(
         self,

@@ -218,7 +218,7 @@ class GovernanceService:
                 )
             )
 
-        return self._repo.append_version(
+        new_version = self._repo.append_version(
             new_entries,
             parent_version_id=current.version_id,
             change_summary=(
@@ -227,6 +227,17 @@ class GovernanceService:
                 f"for {proposal.provider_id}/{proposal.capability_id}"
             ),
         )
+        try:
+            from alma_bridge.evidence.hooks import on_governance_applied
+
+            on_governance_applied(
+                proposal.scope.application_scope[0] if proposal.scope.application_scope else "",
+                new_version.version_id,
+                new_version.digest,
+            )
+        except Exception:
+            pass
+        return new_version
 
     def rollback_to_version(self, version_id: str) -> RegistryVersion:
         """Rollback by creating a new registry version from a historical snapshot."""
