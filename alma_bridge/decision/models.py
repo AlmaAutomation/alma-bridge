@@ -66,6 +66,8 @@ class Constraint(BaseModel):
 
 
 class ProvenanceRef(BaseModel):
+    """Decision provenance — use evidence.provenance.from_decision_provenance for canonical form."""
+
     source: str
     artifact_id: str
     digest: str = ""
@@ -79,6 +81,11 @@ class ProvenanceRef(BaseModel):
         if not value:
             raise ValueError("provenance requires source and artifact_id")
         return value
+
+    def to_canonical(self):
+        from alma_bridge.evidence.provenance import from_decision_provenance
+
+        return from_decision_provenance(self)
 
     @classmethod
     def from_knowledge_reference(cls, ref: KnowledgeEvidenceReference, *, source: str) -> ProvenanceRef:

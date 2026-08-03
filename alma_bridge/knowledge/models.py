@@ -38,6 +38,11 @@ class KnowledgeEvidenceReference(BaseModel):
             raise ValueError("evidence reference requires source_type")
         return value
 
+    def to_canonical_provenance(self, *, source: Optional[str] = None):
+        from alma_bridge.evidence.provenance import from_knowledge_reference
+
+        return from_knowledge_reference(self, source=source)
+
 
 class ObservedFramework(BaseModel):
     framework: str

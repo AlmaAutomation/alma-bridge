@@ -50,7 +50,18 @@ Shadow predictions are evidence inputs only (ADR-002 §3).
 
 ## Provenance models
 
-Two reference types exist: `intelligence.models.EvidenceReference` and `knowledge.models.KnowledgeEvidenceReference`. `comparison/queries.py` bridges via private `_to_knowledge_ref` (TD4 — encapsulation debt).
+Alma v2.0 normalizes provenance in `alma_bridge/evidence/models.py::Provenance`. Legacy types remain for backward compatibility:
+
+| Legacy type | Package | Canonical bridge |
+|-------------|---------|-------------------|
+| `ProvenanceEvidence` | `compatibility_intelligence.models` | `evidence.provenance.from_aci_provenance` |
+| `ProvenanceRef` | `decision.models` | `evidence.provenance.from_decision_provenance` |
+| `KnowledgeEvidenceReference` | `knowledge.models` | `evidence.provenance.from_knowledge_reference` |
+| `EvidenceReference` | `intelligence.models` | Consumed by `EvidenceBundleBuilder`; section refs in `CompatibilityEvidenceBundle` |
+
+Each legacy model exposes `.to_canonical()` (or `.to_canonical_provenance()`) without breaking existing APIs.
+
+Two reference types existed pre-v2.0: `intelligence.models.EvidenceReference` and `knowledge.models.KnowledgeEvidenceReference`. `comparison/queries.py` bridges via private `_to_knowledge_ref` (TD4 — encapsulation debt). v2.0 `CompatibilityEvidenceBundle` uses `SectionReference` with digest-linked provenance instead of duplicating payloads.
 
 ## Application identity limitation
 

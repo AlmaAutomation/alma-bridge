@@ -36,6 +36,8 @@ class ApiComplexity(str, Enum):
 
 
 class ProvenanceEvidence(BaseModel):
+    """ACI provenance — use evidence.provenance.from_aci_provenance for canonical form."""
+
     source: str
     artifact_id: str
     digest: str = ""
@@ -47,6 +49,11 @@ class ProvenanceEvidence(BaseModel):
         if not (value or "").strip():
             raise ValueError("provenance requires non-empty source and artifact_id")
         return value.strip()
+
+    def to_canonical(self):
+        from alma_bridge.evidence.provenance import from_aci_provenance
+
+        return from_aci_provenance(self)
 
 
 class ImportedFunction(BaseModel):
