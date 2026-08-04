@@ -7,11 +7,15 @@ import sys
 import pytest
 
 import alma_bridge.api.routes as api_routes
+import alma_bridge.execution.electron_handoff as electron_handoff_module
+import alma_bridge.execution.wine_process as wine_process_module
 import alma_bridge.learning.orchestrator as orchestrator_module
 from alma_bridge.learning.orchestrator import BridgeOrchestrator
 from alma_bridge.storage import outcomes
 
 _ORCHESTRATOR_MODULE = orchestrator_module
+_ELECTRON_HANDOFF_MODULE = electron_handoff_module
+_WINE_PROCESS_MODULE = wine_process_module
 
 
 @pytest.fixture(autouse=True)
@@ -55,3 +59,15 @@ def _stabilize_orchestrator_bindings():
     yield
     sys.modules["alma_bridge.learning.orchestrator"] = _ORCHESTRATOR_MODULE
     api_routes.orchestrator = BridgeOrchestrator()
+
+
+@pytest.fixture(autouse=True)
+def _stabilize_electron_handoff_bindings():
+    """Restore electron handoff callables after tests that patch wine_process symbols."""
+    yield
+    _ELECTRON_HANDOFF_MODULE.wine_has_main_launcher_process = (
+        _WINE_PROCESS_MODULE.wine_has_main_launcher_process
+    )
+    _ELECTRON_HANDOFF_MODULE.wait_for_main_launcher_process = (
+        _WINE_PROCESS_MODULE.wait_for_main_launcher_process
+    )
