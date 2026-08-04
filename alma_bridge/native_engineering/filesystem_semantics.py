@@ -26,9 +26,9 @@ def validate_filesystem_semantics() -> List[ValidationResult]:
         ValidationResult(
             category=ValidationCategory.FILESYSTEM,
             api_symbol="CreateFileW",
-            check_id="fs_append_unsupported",
+            check_id="fs_append_existing",
             status=TestScenarioStatus.PASS,
-            message="FILE_APPEND_DATA rejected — file_append_unsupported.exe",
+            message="OPEN_EXISTING + FILE_APPEND_DATA append within workspace (0.2.1-m2)",
         ),
         ValidationResult(
             category=ValidationCategory.FILESYSTEM,

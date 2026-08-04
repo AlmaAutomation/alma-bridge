@@ -49,7 +49,12 @@ def build_writefile_suite() -> BehaviorTestSuite:
             _case("writefile_regular_file", "Write to file handle", "TRUE, bytes written", fixture="file_write.exe", behavior_id="sequential_write"),
             _case("writefile_zero_length", "Zero-length write", "TRUE, 0 bytes written", behavior_id="sequential_write"),
             _case("writefile_invalid_handle", "Invalid handle rejected", "FALSE, ERROR_INVALID_HANDLE", behavior_id="sequential_write"),
-            _case("writefile_overlapped_unsupported", "Overlapped I/O unsupported", "documented unsupported", behavior_id="overlapped_io", status=TestScenarioStatus.NOT_APPLICABLE),
+            _case("writefile_append_existing", "Append to file handle", "TRUE, bytes appended at EOF", fixture="append_existing_success.exe", behavior_id="append_existing_file"),
+            _case("writefile_append_repeated", "Repeated append cycles", "content preserved and extended", fixture="append_repeated.exe", behavior_id="append_existing_file"),
+            _case("writefile_append_zero_length", "Zero-length append write", "TRUE, 0 bytes written", fixture="append_zero_length.exe", behavior_id="append_existing_file"),
+            _case("writefile_append_invalid_handle", "Invalid handle rejected", "FALSE, ERROR_INVALID_HANDLE", fixture="append_invalid_handle.exe", behavior_id="append_existing_file"),
+            _case("writefile_append_overlapped_unsupported", "Overlapped append unsupported", "FALSE, ERROR_NOT_SUPPORTED", fixture="append_overlapped_unsupported.exe", behavior_id="overlapped_io", status=TestScenarioStatus.PASS),
+            _case("writefile_overlapped_unsupported", "Overlapped I/O unsupported (general)", "documented unsupported", behavior_id="overlapped_io", status=TestScenarioStatus.NOT_APPLICABLE),
         ],
     )
 
@@ -63,7 +68,11 @@ def build_createfilew_suite() -> BehaviorTestSuite:
             _case("createfilew_create_new", "CREATE_ALWAYS create", "valid handle, file created", fixture="file_write.exe", behavior_id="create_always_write"),
             _case("createfilew_truncate", "CREATE_ALWAYS truncates", "file truncated", fixture="file_write.exe", behavior_id="create_always_write"),
             _case("createfilew_access_denied", "Path outside sandbox", "INVALID_HANDLE, ERROR_ACCESS_DENIED", behavior_id="create_always_write"),
-            _case("createfilew_append_unsupported", "FILE_APPEND_DATA unsupported", "failure documented", fixture="file_append_unsupported.exe", behavior_id="append_existing_file", status=TestScenarioStatus.PASS),
+            _case("createfilew_append_existing", "OPEN_EXISTING + FILE_APPEND_DATA", "valid handle, append at EOF", fixture="append_existing_success.exe", behavior_id="append_existing_file"),
+            _case("createfilew_append_unicode", "Unicode filename append", "valid handle", fixture="append_unicode.exe", behavior_id="append_existing_file"),
+            _case("createfilew_append_missing", "Missing file rejected", "INVALID_HANDLE, ERROR_FILE_NOT_FOUND", fixture="append_missing_file.exe", behavior_id="append_existing_file"),
+            _case("createfilew_append_traversal", "Path traversal rejected", "INVALID_HANDLE, ERROR_ACCESS_DENIED", fixture="append_path_traversal.exe", behavior_id="append_existing_file"),
+            _case("createfilew_append_unsupported", "Historical gap fixture passes", "append succeeds", fixture="file_append_unsupported.exe", behavior_id="append_existing_file", status=TestScenarioStatus.PENDING),
         ],
     )
 

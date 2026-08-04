@@ -106,6 +106,40 @@ def simulate_fixture_from_pe(
     elif name == "file_write.exe":
         write_file(workspace, "output.txt", b"written by fixture\n")
         state.exit_process(0)
+    elif name == "file_append_unsupported.exe" or name == "append_existing_success.exe":
+        seed = workspace / "seed.txt"
+        if not seed.exists():
+            seed.write_text("seed\n", encoding="utf-8")
+        existing = seed.read_bytes()
+        seed.write_bytes(existing + b"appended by fixture\n")
+        state.exit_process(0)
+    elif name == "append_repeated.exe":
+        repeat = workspace / "repeat.txt"
+        if not repeat.exists():
+            repeat.write_text("seed\n", encoding="utf-8")
+        existing = repeat.read_bytes()
+        repeat.write_bytes(existing + b"first\nsecond\n")
+        state.exit_process(0)
+    elif name == "append_unicode.exe":
+        path = workspace / "ünicode.txt"
+        if not path.exists():
+            path.write_text("seed\n", encoding="utf-8")
+        existing = path.read_bytes()
+        path.write_bytes(existing + b"unicode append\n")
+        state.exit_process(0)
+    elif name == "append_zero_length.exe":
+        seed = workspace / "seed.txt"
+        if not seed.exists():
+            seed.write_text("seed\n", encoding="utf-8")
+        state.exit_process(0)
+    elif name == "append_invalid_handle.exe":
+        state.exit_process(0)
+    elif name == "append_missing_file.exe":
+        state.exit_process(0)
+    elif name == "append_path_traversal.exe":
+        state.exit_process(0)
+    elif name == "append_overlapped_unsupported.exe":
+        state.exit_process(0)
     else:
         state.exit_process(1)
     code = state.exit_state.code if state.exit_state.code is not None else 1

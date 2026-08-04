@@ -25,9 +25,20 @@ FIXTURE_BENCHMARKS = {
     "environment_read.exe": {"benchmark_id": "runtime_environment_read", "apis": ["GetEnvironmentVariableW", "ExitProcess"]},
     "unicode_argv.exe": {"benchmark_id": "runtime_unicode_argv", "apis": ["GetCommandLineW", "ExitProcess"]},
     "file_append_unsupported.exe": {
-        "benchmark_id": "runtime_append_unsupported",
+        "benchmark_id": "runtime_append_historical",
         "apis": ["CreateFileW", "WriteFile"],
-        "expect_failure": True,
+    },
+    "append_existing_success.exe": {
+        "benchmark_id": "runtime_append_success",
+        "apis": ["CreateFileW", "WriteFile", "CloseHandle"],
+    },
+    "append_repeated.exe": {
+        "benchmark_id": "runtime_append_repeated",
+        "apis": ["CreateFileW", "WriteFile", "CloseHandle"],
+    },
+    "append_unicode.exe": {
+        "benchmark_id": "runtime_append_unicode",
+        "apis": ["CreateFileW", "WriteFile", "CloseHandle"],
     },
 }
 

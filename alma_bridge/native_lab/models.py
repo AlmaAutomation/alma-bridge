@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 NATIVE_LAB_SCHEMA_VERSION = "native_lab_v1"
 NATIVE_LAB_ENGINE_VERSION = "native_lab_service_v1"
 NATIVE_LAB_PROVIDER_ID = "native_alma"
-NATIVE_LAB_IMPLEMENTATION_VERSION = "0.2.0-m2"
+NATIVE_LAB_IMPLEMENTATION_VERSION = "0.2.1-m2"
 
 SEEDED_WORK_ITEM_ID = "wi_native_alma_filesystem_basic_io_append_existing_file_v1"
 

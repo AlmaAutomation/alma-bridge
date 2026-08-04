@@ -33,7 +33,7 @@ def build_engineering_dashboard(queries: NativeEngineeringQueries) -> Engineerin
     limitations = [
         "Benchmark execution requires explicit pytest/CLI — not HTTP GET",
         "M2 worker is single-threaded — threading validation not_applicable",
-        "append_existing_file documented unsupported via file_append_unsupported.exe",
+        "append_existing_file implemented in 0.2.1-m2 — see append_existing_file_design.md",
     ]
 
     return EngineeringDashboard(

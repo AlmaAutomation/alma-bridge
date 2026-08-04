@@ -200,7 +200,7 @@ class NativeEngineeringQueries:
             for behavior in profile.unsupported_behaviors:
                 unsupported.add(behavior)
                 apis = [sym for sym, (_, bs) in API_CAPABILITY_MAP.items() if behavior in bs]
-                status = TestScenarioStatus.PASS if behavior == "append_existing_file" else TestScenarioStatus.NOT_APPLICABLE
+                status = TestScenarioStatus.PASS if behavior == "overlapped_io" else TestScenarioStatus.NOT_APPLICABLE
                 entries.append(
                     BehaviorCoverageEntry(
                         behavior_id=behavior,
@@ -208,7 +208,7 @@ class NativeEngineeringQueries:
                         api_symbols=apis,
                         supported=False,
                         test_status=status,
-                        fixture_paths=["tests/fixtures/native_runtime/bin/file_append_unsupported.exe"] if behavior == "append_existing_file" else [],
+                        fixture_paths=["tests/fixtures/native_runtime/bin/append_overlapped_unsupported.exe"] if behavior == "overlapped_io" else [],
                     )
                 )
 

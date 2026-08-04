@@ -36,9 +36,9 @@ def _build_specs() -> Dict[str, ApiSpecification]:
                 ErrorMode(condition="invalid handle", error_name="ERROR_INVALID_HANDLE", return_value="FALSE"),
                 ErrorMode(condition="overlapped I/O requested", error_name="ERROR_NOT_SUPPORTED", return_value="FALSE"),
             ],
-            supported_behaviors=["write_stdout", "write_stderr", "sequential_write"],
+            supported_behaviors=["write_stdout", "write_stderr", "sequential_write", "append_existing_file"],
             unsupported_behaviors=["overlapped_io"],
-            limitations=["Handles 1/2 route to console buffers; fd handles >= 10 use host write()"],
+            limitations=["Handles 1/2 route to console buffers; fd handles >= 10 use host write(); append uses O_APPEND"],
         )
     )
 
@@ -58,14 +58,15 @@ def _build_specs() -> Dict[str, ApiSpecification]:
             success_semantics="Returns file handle slot >= 10 on success.",
             error_modes=[
                 ErrorMode(condition="path outside workspace sandbox", error_name="ERROR_ACCESS_DENIED", return_value="INVALID_HANDLE_VALUE"),
-                ErrorMode(condition="FILE_APPEND_DATA access", error_name="ERROR_NOT_SUPPORTED", return_value="INVALID_HANDLE_VALUE"),
+                ErrorMode(condition="file not found (OPEN_EXISTING)", error_name="ERROR_FILE_NOT_FOUND", return_value="INVALID_HANDLE_VALUE"),
+                ErrorMode(condition="FILE_APPEND_DATA with non-OPEN_EXISTING disposition", error_name="ERROR_INVALID_PARAMETER", return_value="INVALID_HANDLE_VALUE"),
             ],
-            supported_behaviors=["create_always_write", "sequential_read", "close_handle"],
-            unsupported_behaviors=["append_existing_file", "open_existing_readwrite", "overlapped_io"],
+            supported_behaviors=["create_always_write", "sequential_read", "close_handle", "append_existing_file"],
+            unsupported_behaviors=["open_existing_readwrite", "overlapped_io"],
             limitations=[
                 "CREATE_ALWAYS with GENERIC_WRITE supported",
-                "OPEN_EXISTING without CREATE_ALWAYS not fully supported",
-                "FILE_APPEND_DATA unsupported — see file_append_unsupported.exe",
+                "OPEN_EXISTING + FILE_APPEND_DATA append within workspace (0.2.1-m2)",
+                "Overlapped I/O unsupported",
             ],
         )
     )
@@ -238,8 +239,8 @@ def get_all_specifications() -> Dict[str, ApiSpecification]:
 
 # API → capability/behavior mapping for profiles
 API_CAPABILITY_MAP: Dict[str, tuple[str, List[str]]] = {
-    "WriteFile": ("console.stdout", ["write_stdout", "write_stderr", "sequential_write"]),
-    "CreateFileW": ("filesystem.basic_io", ["create_always_write", "sequential_read", "close_handle"]),
+    "WriteFile": ("console.stdout", ["write_stdout", "write_stderr", "sequential_write", "append_existing_file"]),
+    "CreateFileW": ("filesystem.basic_io", ["create_always_write", "sequential_read", "close_handle", "append_existing_file"]),
     "ReadFile": ("filesystem.basic_io", ["sequential_read"]),
     "GetStdHandle": ("console.stdout", ["write_stdout", "write_stderr"]),
     "ExitProcess": ("process.exit", ["process_exit_with_code"]),

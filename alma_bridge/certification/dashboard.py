@@ -53,7 +53,7 @@ def build_certification_dashboard(queries: CertificationQueries) -> Certificatio
         "Certification computed from evidence — no auto-promotion of governance",
         "Unsupported behaviors show documented gaps, not symbol presence",
         "History is append-only; stale items retain prior certification records",
-        "append_existing_file and overlapped_io are not certified",
+        "append_existing_file implemented in 0.2.1-m2; overlapped_io remains unsupported",
     ]
 
     return CertificationDashboard(

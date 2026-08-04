@@ -77,8 +77,8 @@ BEHAVIOR_CANDIDATE_SPECS: Dict[Tuple[str, str], dict] = {
             "native-shim:kernel32_shim.c",
         ],
         "limitations": [
-            "OPEN_EXISTING without CREATE_ALWAYS not fully supported",
-            "FILE_APPEND_DATA access mode unsupported",
+            "Overlapped I/O unsupported",
+            "open_existing_readwrite not fully supported",
         ],
         "fixture_name": "file_append_unsupported.exe",
     },

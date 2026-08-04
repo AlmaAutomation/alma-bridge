@@ -109,12 +109,19 @@ static size_t utf16le_len(const uint16_t *ws) {
 #define GENERIC_WRITE 0x40000000u
 #define OPEN_EXISTING 3u
 #define CREATE_ALWAYS 2u
+#define FILE_APPEND_DATA 0x0004u
 #define FILE_ATTRIBUTE_NORMAL 0x80u
 #define FILE_SHARE_READ 1u
+#define ERROR_FILE_NOT_FOUND 2u
+#define ERROR_ACCESS_DENIED 3u
+#define ERROR_INVALID_HANDLE 6u
+#define ERROR_NOT_SUPPORTED 50u
+#define ERROR_INVALID_PARAMETER 87u
 
 typedef struct {
     int fd;
     int is_file;
+    int append_mode;
 } file_handle_t;
 
 #define MAX_FILES 32
@@ -125,14 +132,16 @@ static void reset_files(void) {
         if (g_files[i].is_file && g_files[i].fd >= 0) close(g_files[i].fd);
         g_files[i].fd = -1;
         g_files[i].is_file = 0;
+        g_files[i].append_mode = 0;
     }
 }
 
-static int alloc_file_fd(int fd) {
+static int alloc_file_fd(int fd, int append_mode) {
     for (int i = 0; i < MAX_FILES; i++) {
         if (g_files[i].fd < 0) {
             g_files[i].fd = fd;
             g_files[i].is_file = 1;
+            g_files[i].append_mode = append_mode;
             return i + 10;
         }
     }
@@ -241,7 +250,10 @@ static HANDLE MS_ABI shim_GetStdHandle(DWORD n) {
 }
 
 static BOOL MS_ABI shim_WriteFile(HANDLE h, LPCVOID buf, DWORD len, DWORD *written, LPVOID ov) {
-    (void)ov;
+    if (ov != NULL) {
+        g_last_error = ERROR_NOT_SUPPORTED;
+        return 0;
+    }
     intptr_t hv = (intptr_t)h;
     if (hv == 1 || hv == 2) {
         append_out((int)hv, buf, len);
@@ -251,12 +263,20 @@ static BOOL MS_ABI shim_WriteFile(HANDLE h, LPCVOID buf, DWORD len, DWORD *writt
     if (hv >= 10 && hv < 10 + MAX_FILES) {
         file_handle_t *fh = &g_files[hv - 10];
         if (fh->is_file && fh->fd >= 0) {
+            if (len == 0) {
+                if (written) *written = 0;
+                return 1;
+            }
             ssize_t n = write(fh->fd, buf, len);
-            if (n < 0) return 0;
+            if (n < 0) {
+                g_last_error = ERROR_INVALID_HANDLE;
+                return 0;
+            }
             if (written) *written = (DWORD)n;
             return 1;
         }
     }
+    g_last_error = ERROR_INVALID_HANDLE;
     return 0;
 }
 
@@ -309,22 +329,33 @@ static HANDLE MS_ABI shim_CreateFileW(LPCWSTR path, DWORD access, DWORD share, L
     (void)tmpl;
     char full[4096];
     if (resolve_workspace_path(path, full, sizeof(full)) != 0) {
-        g_last_error = 3;
+        g_last_error = ERROR_ACCESS_DENIED;
         return INVALID_HANDLE_VALUE;
     }
+    int append_mode = 0;
     int flags_posix = O_CLOEXEC;
-    if (access & GENERIC_WRITE) {
+    if (access & FILE_APPEND_DATA) {
+        if (disp != OPEN_EXISTING) {
+            g_last_error = ERROR_INVALID_PARAMETER;
+            return INVALID_HANDLE_VALUE;
+        }
+        flags_posix |= O_RDWR | O_APPEND;
+        append_mode = 1;
+    } else if (access & GENERIC_WRITE) {
         if (disp == CREATE_ALWAYS) flags_posix |= O_CREAT | O_TRUNC | O_RDWR;
-        else flags_posix |= O_RDWR;
+        else if (disp == OPEN_EXISTING) flags_posix |= O_RDWR;
+        else flags_posix |= O_CREAT | O_RDWR;
     } else {
         flags_posix |= O_RDONLY;
     }
     int fd = open(full, flags_posix, 0644);
     if (fd < 0) {
-        g_last_error = 2;
+        if (errno == ENOENT) g_last_error = ERROR_FILE_NOT_FOUND;
+        else if (errno == EACCES) g_last_error = ERROR_ACCESS_DENIED;
+        else g_last_error = ERROR_FILE_NOT_FOUND;
         return INVALID_HANDLE_VALUE;
     }
-    int slot = alloc_file_fd(fd);
+    int slot = alloc_file_fd(fd, append_mode);
     if (slot < 0) {
         close(fd);
         return INVALID_HANDLE_VALUE;
