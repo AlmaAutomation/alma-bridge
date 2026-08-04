@@ -1,0 +1,18 @@
+{
+  "release_id": "native-alma-append-cycle-v1",
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "provider_id": "native_alma",
+  "capability_id": "filesystem.basic_io",
+  "behavior_id": "append_existing_file",
+  "implementation_version": "0.2.1-m2",
+  "engineering_complete": true,
+  "governance_disposition": "pending",
+  "status": "completed",
+  "acceptance_criteria_count": 9,
+  "evidence_reference_count": 17,
+  "evidence_manifest_digest": "42aea49e9613ca7b6c15e7fd2ebe93ced7227d361dc6f9f9cdcb8a89e32066c5",
+  "work_item_digest": "11c668f73c195bf831d8f1391bdb00585e2bb4e8be60e1e1cbc798307dc7a2e0",
+  "fixture_count": 17,
+  "scope": "native_alma / PE64 console / OPEN_EXISTING + FILE_APPEND_DATA append",
+  "integrity_digest": "0a4b9b07436a578f7dced9e6582e306609193555d2f94f9af51473e7e9f5b0a0"
+}
