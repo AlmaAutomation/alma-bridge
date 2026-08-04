@@ -206,7 +206,7 @@ class TestEvidenceAttachments:
             attached_by="test",
         )
         assert ref.artifact_id
-        assert ref.digest == "d4cead243e918d4f5cc4d1c3220ff17d6d2c97a2491db5ba105c05bd5d119a3a"
+        assert ref.digest == "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c"
 
     def test_evidence_list_via_api(self):
         resp = client.get(f"/bridge/native-lab/work-items/{SEEDED_WORK_ITEM_ID}/evidence")
@@ -273,7 +273,7 @@ class TestRoutes:
         # Original seeded references unchanged
         original = [e for e in after if e.reference_id == "ev_file_append_unsupported"]
         if original:
-            assert original[0].digest == "d4cead243e918d4f5cc4d1c3220ff17d6d2c97a2491db5ba105c05bd5d119a3a"
+            assert original[0].digest == "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c"
 
 
 class TestRepository:

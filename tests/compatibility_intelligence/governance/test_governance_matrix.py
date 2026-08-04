@@ -658,7 +658,8 @@ class TestAcceptanceScenarios:
             )
         )
         assert entry is not None
-        assert "append_existing_file" in entry.unsupported_behaviors
+        assert "append_existing_file" in entry.supported_behaviors
+        assert "overlapped_io" in entry.unsupported_behaviors
         with pytest.raises(PolicyViolationError):
             governance_service.create_proposal_from_evidence(
                 provider_id="native_alma",

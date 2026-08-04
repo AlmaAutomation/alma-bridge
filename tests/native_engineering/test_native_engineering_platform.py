@@ -52,9 +52,10 @@ class TestApiSpecifications:
         spec = get_specification("WriteFile")
         assert "overlapped_io" in spec.unsupported_behaviors
 
-    def test_createfilew_documents_append_unsupported(self):
+    def test_createfilew_documents_append_supported(self):
         spec = get_specification("CreateFileW")
-        assert "append_existing_file" in spec.unsupported_behaviors
+        assert "append_existing_file" in spec.supported_behaviors
+        assert "overlapped_io" in spec.unsupported_behaviors
 
 
 class TestBehaviorSuites:
@@ -68,11 +69,11 @@ class TestBehaviorSuites:
         assert "writefile_console_stdout" in case_ids
         assert "writefile_overlapped_unsupported" in case_ids
 
-    def test_append_unsupported_fixture_mapped(self):
+    def test_append_fixture_mapped(self):
         suite = get_all_behavior_suites()["CreateFileW"]
-        append_case = next(c for c in suite.cases if c.case_id == "createfilew_append_unsupported")
-        assert "file_append_unsupported.exe" in (append_case.fixture_path or "")
-        assert append_case.status == TestScenarioStatus.PASS
+        append_case = next(c for c in suite.cases if c.case_id == "createfilew_append_existing")
+        assert "append_existing_success.exe" in (append_case.fixture_path or "")
+        assert append_case.behavior_id == "append_existing_file"
 
 
 class TestBenchmarks:
@@ -84,7 +85,7 @@ class TestBenchmarks:
 
     def test_run_all_benchmarks_no_execution(self):
         results = run_all_benchmarks(allow_execution=False)
-        assert len(results) == 9
+        assert len(results) == 12
 
     def test_reproducible_within_tolerance(self):
         results = run_all_benchmarks(allow_execution=False)

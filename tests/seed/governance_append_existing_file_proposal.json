@@ -1,0 +1,28 @@
+{
+  "proposal_id": "gov_proposal_append_existing_file_v1",
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "provider_id": "native_alma",
+  "capability_id": "filesystem.basic_io",
+  "behavior_id": "append_existing_file",
+  "proposed_state": "verified_bounded",
+  "scope": {
+    "architecture": "x64",
+    "subsystem": "console",
+    "application_scope": [
+      "append_existing_success.exe",
+      "append_repeated.exe",
+      "append_unicode.exe",
+      "file_append_unsupported.exe"
+    ],
+    "bounded_scope": "OPEN_EXISTING + FILE_APPEND_DATA workspace-confined synchronous append"
+  },
+  "supported_behaviors": ["append_existing_file"],
+  "preserved_unsupported": ["overlapped_io", "open_existing_readwrite"],
+  "implementation_version": "0.2.1-m2",
+  "requires_human_review": true,
+  "auto_apply": false,
+  "evidence": [
+    "docs/native-runtime/append_existing_file_design.md",
+    "tests/fixtures/native_runtime/bin/append_existing_success.exe"
+  ]
+}

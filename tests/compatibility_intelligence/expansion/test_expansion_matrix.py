@@ -151,6 +151,49 @@ def _append_analysis(
     )
 
 
+def _seed_open_existing_evidence(
+    expansion_service: ExpansionPlanningService,
+    *,
+    sessions: int = 1,
+    binary_digest: str = "readwrite_bin_1",
+):
+    analysis_repo = expansion_service._analysis_repo
+    cal_repo = expansion_service._calibration_repo
+    cal = CalibrationService(cal_repo)
+
+    analysis = _append_analysis(
+        binary_digest=binary_digest,
+        analysis_id=f"analysis_{binary_digest}",
+        file_path="/fixtures/file_read.exe",
+    )
+    analysis_repo.save(analysis)
+
+    for i in range(sessions):
+        session_id = f"readwrite_sess_{binary_digest}_{i}"
+        snap = build_prediction_snapshot(
+            analysis,
+            provider_id="native_alma",
+            session_id=session_id,
+            fixture_name="file_read.exe",
+        )
+        static = snap.static_coverage.model_copy(
+            update={
+                "behavior_gaps": ["open_existing_readwrite"],
+                "behavior_coverage_percent": 50.0,
+            }
+        )
+        snap = snap.model_copy(update={"static_coverage": static, "predicted_eligible": False})
+        cal_repo.save_snapshot(snap)
+        outcome = build_outcome_link(
+            snap,
+            session_id=session_id,
+            outcome_type=OutcomeType.VERIFIED_FAILURE,
+            verification_result_ref="vref",
+            verified_success=False,
+        )
+        cal.calibrate(snap, outcome)
+
+
 def _seed_append_evidence(
     expansion_service: ExpansionPlanningService,
     *,
@@ -193,13 +236,13 @@ def _seed_append_evidence(
 
 class TestDemandDeduplication:
     def test_01_repeated_sessions_no_inflate(self, expansion_service):
-        _seed_append_evidence(expansion_service, sessions=5, binary_digest="same_bin")
+        _seed_open_existing_evidence(expansion_service, sessions=5, binary_digest="same_bin")
         plan = expansion_service.generate_plan()
-        append_candidates = [
-            c for c in plan.ranked_candidates if c.behavior_id == "append_existing_file"
+        candidates = [
+            c for c in plan.ranked_candidates if c.behavior_id == "open_existing_readwrite"
         ]
-        assert append_candidates, "expected append_existing_file candidate"
-        assert append_candidates[0].observed_demand_count == 1
+        assert candidates, "expected open_existing_readwrite candidate"
+        assert candidates[0].observed_demand_count == 1
 
     def test_02_app_a_cannot_affect_capability_b(self, expansion_service):
         _seed_append_evidence(expansion_service, binary_digest="bin_a")
@@ -219,11 +262,11 @@ class TestProviderIsolation:
 
 class TestBehaviorCandidates:
     def test_04_unsupported_behavior_bounded_candidate(self, expansion_service):
-        _seed_append_evidence(expansion_service)
+        _seed_open_existing_evidence(expansion_service)
         plan = expansion_service.generate_plan()
-        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "append_existing_file")
+        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "open_existing_readwrite")
         assert cand.capability_id == "filesystem.basic_io"
-        assert "append" in cand.implementation_scope.lower()
+        assert "open_existing" in cand.implementation_scope.lower()
         assert cand.dll_symbols
 
     def test_05_stable_behavior_excluded(self, expansion_service, tmp_governance_repo):
@@ -253,17 +296,17 @@ class TestBehaviorCandidates:
         assert stdout_missing == []
 
     def test_06_verified_bounded_limitation_visible(self, expansion_service):
-        _seed_append_evidence(expansion_service)
+        _seed_open_existing_evidence(expansion_service)
         plan = expansion_service.generate_plan()
-        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "append_existing_file")
-        assert any("FILE_APPEND_DATA" in lim for lim in cand.limitations)
+        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "open_existing_readwrite")
+        assert cand.limitations
 
 
 class TestImpactLanguage:
     def test_07_blocker_removal_not_guaranteed(self, expansion_service):
-        _seed_append_evidence(expansion_service)
+        _seed_open_existing_evidence(expansion_service)
         plan = expansion_service.generate_plan()
-        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "append_existing_file")
+        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "open_existing_readwrite")
         summary = cand.impact.impact_summary.lower()
         assert "blocker" in summary or "identified" in summary
         assert "guaranteed compatibility" not in summary
@@ -279,9 +322,9 @@ class TestComplexityAndRisk:
         assert c1.factors == c2.factors
 
     def test_09_risk_factors_preserved(self, expansion_service):
-        _seed_append_evidence(expansion_service)
+        _seed_open_existing_evidence(expansion_service)
         plan = expansion_service.generate_plan()
-        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "append_existing_file")
+        cand = next(c for c in plan.ranked_candidates if c.behavior_id == "open_existing_readwrite")
         assert cand.security_risk.categories
         assert cand.security_risk.explanations
         assert cand.semantic_risk.categories
@@ -417,14 +460,10 @@ class TestFileAppendFixture:
         expansion_service._calibration_repo.save_snapshot(snap)
 
         plan = expansion_service.generate_plan()
-        cand = next(
-            (c for c in plan.ranked_candidates if c.behavior_id == "append_existing_file"),
-            None,
-        )
-        assert cand is not None
-        assert any("file_append_unsupported" in ref for ref in cand.evidence_references)
-        assert cand.impact.analyses_blocker_removable >= 1
-        assert "blocker" in cand.impact.impact_summary.lower()
+        append_candidates = [
+            c for c in plan.ranked_candidates if c.behavior_id == "append_existing_file"
+        ]
+        assert append_candidates == [], "append_existing_file gap resolved — no expansion candidate"
 
 
 class TestExplorerContract:

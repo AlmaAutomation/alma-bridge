@@ -106,19 +106,21 @@ class TestWriteFileScenarios:
         assert any("hello64" in (p or "") for p in cert.behavior_suite.fixture_paths)
         assert len(cert.evidence_references) > 0
 
-    def test_append_existing_file_not_certified(self, certification_service):
+    def test_append_existing_file_reviewed_not_forced_certified(self, certification_service):
         cert = certification_service.get_behavior_certification(
             "filesystem.basic_io", "append_existing_file"
         )
-        assert cert.supported is False
-        assert cert.compliance_status == ComplianceStatus.UNSUPPORTED
+        assert cert.supported is True
+        assert cert.compliance_status != ComplianceStatus.UNSUPPORTED
         assert cert.certification_level != CertificationLevel.CERTIFIED
         assert cert.certification_level in (
-            CertificationLevel.SPECIFIED,
             CertificationLevel.BEHAVIOR_TESTED,
+            CertificationLevel.VERIFIED,
+            CertificationLevel.CALIBRATED,
+            CertificationLevel.SPECIFIED,
         )
         assert any(
-            "file_append_unsupported" in (p or "")
+            "append" in (p or "")
             for p in (cert.behavior_suite.fixture_paths if cert.behavior_suite else [])
         )
 
