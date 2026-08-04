@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
+from alma_bridge.config import PROJECT_ROOT
 from alma_bridge.main import app
 from alma_bridge.native_lab.checklists import generate_checklist
 from alma_bridge.native_lab.dependencies import build_dependency_graph, validate_no_cycle_on_add
@@ -29,6 +34,19 @@ from alma_bridge.native_lab.status import validate_transition
 from alma_bridge.native_lab.work_items import is_evidence_gated_complete
 
 client = TestClient(app)
+
+FIXTURE_BIN = PROJECT_ROOT / "tests" / "fixtures" / "native_runtime" / "bin"
+FIXTURE_MANIFEST = PROJECT_ROOT / "tests" / "fixtures" / "native_runtime" / "manifest.json"
+
+
+def _fixture_digest(name: str) -> str:
+    if FIXTURE_MANIFEST.is_file():
+        manifest = json.loads(FIXTURE_MANIFEST.read_text(encoding="utf-8"))
+        for digest, fixture_name in manifest.get("fixtures", {}).items():
+            if fixture_name == name:
+                return digest
+    path = FIXTURE_BIN / name
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 class TestWorkItemCreation:
@@ -200,13 +218,18 @@ class TestRiskReview:
 
 class TestEvidenceAttachments:
     def test_attach_evidence_read_only_link(self, native_lab_service):
+        artifact = FIXTURE_BIN / "file_append_unsupported.exe"
+        before = artifact.read_bytes()
+        expected_digest = _fixture_digest("file_append_unsupported.exe")
         ref = native_lab_service.attach_evidence(
             SEEDED_WORK_ITEM_ID,
-            "tests/fixtures/native_runtime/bin/file_append_unsupported.exe",
+            str(artifact.relative_to(PROJECT_ROOT)),
             attached_by="test",
         )
         assert ref.artifact_id
-        assert ref.digest == "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c"
+        assert ref.digest == expected_digest
+        assert artifact.read_bytes() == before
+        assert hashlib.sha256(artifact.read_bytes()).hexdigest() == expected_digest
 
     def test_evidence_list_via_api(self):
         resp = client.get(f"/bridge/native-lab/work-items/{SEEDED_WORK_ITEM_ID}/evidence")
@@ -273,7 +296,7 @@ class TestRoutes:
         # Original seeded references unchanged
         original = [e for e in after if e.reference_id == "ev_file_append_unsupported"]
         if original:
-            assert original[0].digest == "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c"
+            assert original[0].digest == _fixture_digest("file_append_unsupported.exe")
 
 
 class TestRepository:
