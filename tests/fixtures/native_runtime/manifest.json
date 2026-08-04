@@ -1,13 +1,21 @@
 {
   "fixtures": {
-    "07307cf308e62a939b2278e46aaa7b47ef9ca83a0cc1d385f92fd2bae2308842": "environment_read.exe",
-    "5c7d768f88833e46e5581d992ae3fbd5f926e3b4783d4cc0e46e4705563b115e": "exit_code.exe",
-    "d4cead243e918d4f5cc4d1c3220ff17d6d2c97a2491db5ba105c05bd5d119a3a": "file_append_unsupported.exe",
-    "8099bbc7390ad948d7e86b0389093b88d4f0c12b1750dfde3ba464766ba0e31e": "file_read.exe",
-    "ec4998512aef93daeabe1b2a5d14c373fd0d31b1fbb12687ecc32b789e625eb9": "file_write.exe",
-    "7ad6c72213861622fa0c2b7b6205cab8ee5b182c5366231d5649fbaa3bafe764": "hello64.exe",
-    "1ed67cc7cc84174b3348279b3d4a54acb633542c4ffd95d476a42f7ca3406c5f": "stderr_write.exe",
-    "e70fb0741a78f86912c04bbb997b334693116943b98affe62caff5edbf08be2b": "stdout_write.exe",
-    "3f3d914dffb36aa9063f207f4eb07f5a1bafc027c53c36b6a6e2d1f5432b849e": "unicode_argv.exe"
+    "5da741e44c43be0d311c5d75a2f7c805918328b9334a3835c31f2607f88c0b4d": "append_existing_success.exe",
+    "bf5582391c555627cdac61e1cae18306f59251787f92959ad64927d42e2e9b43": "append_invalid_handle.exe",
+    "a53cf6363792629b2b1e7117abf43ff66924c2410f4aa63b96e6d6332fe2e0d1": "append_missing_file.exe",
+    "7f870d437b15c1c683264f26ddbb30c6d21fc1196d33bce96aa418b677226e45": "append_overlapped_unsupported.exe",
+    "e85503beed2ecc0819264a2202622ef8ef9ca745b62fee5b0dd3c87ccdf92ace": "append_path_traversal.exe",
+    "223cc8008a14a04b817cb6f88a57f1cd663a9f5a836dc3db8baf38d785544cf8": "append_repeated.exe",
+    "deebad6121032701ab06b8dc9269cb18689c6d6906878287dd635be386d34170": "append_unicode.exe",
+    "886ca130f5ff0770762c475613068d13c870f262de3baa7b899940c883a4c30a": "append_zero_length.exe",
+    "ae4c2640f14378caf361350923100435d1c6470b9e5a8b5909eee4d776b66a73": "environment_read.exe",
+    "6026f8ced0ca07ce1e6ae60c346dc3398f5a2415b15c42e6329a0a9d4fbaef82": "exit_code.exe",
+    "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c": "file_append_unsupported.exe",
+    "d48dee7adbafaefc10d833fc1fec97b9855bb0f1b79384c24907347b077047bf": "file_read.exe",
+    "ff53c63283f35b60c392868360b3c80d6d8b6dcff5fcaf7865f4dd1fa9bc963c": "file_write.exe",
+    "1cf6ffffdd39d9dd4db69711e43aca370455c1e007bcb970e60b966128f3835b": "hello64.exe",
+    "eabe3d8a69f9484d1436588fc159b8d4cf9d5ac51e49b83a9e7acd27dce079ba": "stderr_write.exe",
+    "b47417d19852d2496197a0a4bede2c78950ed1a92c6be645b3e3a8ed705d93a3": "stdout_write.exe",
+    "ad9883752adf653105f45a4e7dbc1a1b1a2a0e6491fa1eeffd4a795c74fa00c3": "unicode_argv.exe"
   }
 }
