@@ -16,6 +16,9 @@ from alma_bridge.native_lab.repository import NativeLabRepository
 
 
 def _find_append_candidate_id() -> str:
+    from alma_bridge.compatibility_intelligence.expansion.digest import compute_candidate_id
+    from alma_bridge.compatibility_intelligence.expansion.service import BEHAVIOR_CANDIDATE_SPECS
+
     service = ExpansionPlanningService()
     plan = service.generate_plan()
     for candidate in plan.ranked_candidates:
@@ -24,7 +27,13 @@ def _find_append_candidate_id() -> str:
             and candidate.behavior_id == "append_existing_file"
         ):
             return candidate.candidate_id
-    return "expansion_filesystem.basic_io_append_existing_file"
+    spec = BEHAVIOR_CANDIDATE_SPECS[("filesystem.basic_io", "append_existing_file")]
+    return compute_candidate_id(
+        "native_alma",
+        "filesystem.basic_io",
+        "append_existing_file",
+        spec["implementation_scope"],
+    )
 
 
 def build_seeded_append_work_item() -> NativeRuntimeEngineeringWorkItem:
@@ -45,7 +54,7 @@ def build_seeded_append_work_item() -> NativeRuntimeEngineeringWorkItem:
             kind=EvidenceLinkKind.FIXTURE,
             source="native_runtime_fixtures",
             artifact_id="file_append_unsupported.exe",
-            digest="d4cead243e918d4f5cc4d1c3220ff17d6d2c97a2491db5ba105c05bd5d119a3a",
+            digest="cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c",
             fixture_path="tests/fixtures/native_runtime/bin/file_append_unsupported.exe",
         ),
         EvidenceReference(

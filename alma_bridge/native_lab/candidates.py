@@ -4,8 +4,22 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from alma_bridge.compatibility_intelligence.expansion.models import RuntimeExpansionCandidate
-from alma_bridge.compatibility_intelligence.expansion.service import ExpansionPlanningService
+from alma_bridge.compatibility_intelligence.expansion.complexity import assess_complexity
+from alma_bridge.compatibility_intelligence.expansion.digest import compute_candidate_id
+from alma_bridge.compatibility_intelligence.expansion.models import (
+    BoundedImpactEstimate,
+    DemandCounts,
+    PriorityDimensions,
+    RuntimeExpansionCandidate,
+)
+from alma_bridge.compatibility_intelligence.expansion.risk import (
+    assess_security_risk,
+    assess_semantic_risk,
+)
+from alma_bridge.compatibility_intelligence.expansion.service import (
+    BEHAVIOR_CANDIDATE_SPECS,
+    ExpansionPlanningService,
+)
 from alma_bridge.native_lab.checklists import generate_checklist
 from alma_bridge.native_lab.digest import compute_work_item_id, digest_of
 from alma_bridge.native_lab.errors import CandidateNotFoundError, WorkItemAlreadyExistsError
@@ -22,12 +36,65 @@ from alma_bridge.native_lab.models import (
 from alma_bridge.native_lab.work_items import build_acceptance_criteria_for_behavior
 
 
+def _synthetic_candidate_from_spec(
+    provider_id: str,
+    capability_id: str,
+    behavior_id: str,
+) -> Optional[RuntimeExpansionCandidate]:
+    """Reconstruct a scoped candidate from spec when behavior is no longer ranked."""
+    spec = BEHAVIOR_CANDIDATE_SPECS.get((capability_id, behavior_id))
+    if not spec:
+        return None
+    implementation_scope = spec.get(
+        "implementation_scope",
+        f"{provider_id} / {capability_id} / {behavior_id}",
+    )
+    candidate_id = compute_candidate_id(
+        provider_id, capability_id, behavior_id, implementation_scope
+    )
+    complexity = assess_complexity(capability_id, behavior_id)
+    security = assess_security_risk(capability_id, behavior_id)
+    semantic = assess_semantic_risk(capability_id, behavior_id)
+    return RuntimeExpansionCandidate(
+        candidate_id=candidate_id,
+        provider_id=provider_id,
+        capability_id=capability_id,
+        behavior_id=behavior_id,
+        dll_symbols=list(spec.get("dll_symbols", [])),
+        implementation_scope=implementation_scope,
+        demand=DemandCounts(),
+        impact=BoundedImpactEstimate(
+            impact_summary=f"Historical scoped candidate for {behavior_id}",
+        ),
+        engineering_complexity=complexity,
+        security_risk=security,
+        semantic_risk=semantic,
+        priority=PriorityDimensions(
+            demand_score=0.0,
+            bounded_impact_score=0.0,
+            engineering_cost_score=complexity.score,
+            security_risk_score=security.score,
+            semantic_risk_score=semantic.score,
+            evidence_quality_score=0.5,
+            testability_score=0.5,
+            composite_score=0.0,
+        ),
+        limitations=list(spec.get("limitations", [])),
+        evidence_references=list(spec.get("evidence_references", [])),
+        prerequisite_capabilities=list(spec.get("prerequisites", [])),
+    )
+
+
 def _find_candidate(candidate_id: str) -> RuntimeExpansionCandidate:
     service = ExpansionPlanningService()
     plan = service.generate_plan()
     for candidate in plan.ranked_candidates:
         if candidate.candidate_id == candidate_id:
             return candidate
+    for (cap_id, behavior_id), _spec in BEHAVIOR_CANDIDATE_SPECS.items():
+        synthetic = _synthetic_candidate_from_spec("native_alma", cap_id, behavior_id)
+        if synthetic and synthetic.candidate_id == candidate_id:
+            return synthetic
     raise CandidateNotFoundError(f"Expansion candidate not found: {candidate_id}")
 
 
