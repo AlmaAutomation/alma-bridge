@@ -16,6 +16,19 @@ from alma_bridge.main import create_app
 from alma_bridge.storage.outcomes import init_outcome_store
 
 
+@pytest.fixture(autouse=True)
+def _disable_slow_wine_prefix_bootstrap(monkeypatch):
+    """`.exe` bridge runs trigger dotnet bootstrap that can hang in CI/sandbox."""
+    monkeypatch.setattr(
+        "alma_bridge.learning.orchestrator._ensure_prefix_runtimes",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "alma_bridge.learning.orchestrator.require_wine_windows_version",
+        lambda _prefix: (True, ""),
+    )
+
+
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr("alma_bridge.config.settings.data_dir", tmp_path)
