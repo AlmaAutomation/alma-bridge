@@ -67,6 +67,22 @@ class TestAppendConformance:
         digest = sha256_v1(contract)
         assert len(digest) == 64
 
+    def test_verification_negative_control_rejects_corruption(self, tmp_path):
+        path = FIXTURES / "append_existing_success.exe"
+        if not path.is_file() or not shim_available():
+            pytest.skip("native shim/fixtures required")
+        seed = tmp_path / "seed.txt"
+        seed.write_text("base\n", encoding="utf-8")
+        run_pe_in_workspace(path, workspace=tmp_path)
+        content = seed.read_text(encoding="utf-8")
+
+        def verify_contract(text: str) -> bool:
+            return text.startswith("base\n") and "appended by fixture" in text
+
+        assert verify_contract(content)
+        corrupted = "bXse\n" + content[5:]
+        assert not verify_contract(corrupted)
+
     def test_benchmark_append_success(self):
         path = FIXTURES / "append_existing_success.exe"
         if not path.is_file() or not shim_available():

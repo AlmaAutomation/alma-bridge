@@ -86,11 +86,35 @@ class BenchmarkMetric(BaseModel):
     tolerance_percent: float = 10.0
 
 
+class BenchmarkBaselineStats(BaseModel):
+    warmup_count: int = 3
+    iteration_count: int = 10
+    median_ms: float = 0.0
+    min_ms: float = 0.0
+    max_ms: float = 0.0
+    mean_ms: float = 0.0
+    stddev_ms: float = 0.0
+    mad_ms: float = 0.0
+    sample_size: int = 0
+
+
+class BenchmarkHostEnvironment(BaseModel):
+    host_arch: str = ""
+    cpu_model: str = ""
+    kernel_version: str = ""
+    compiler: str = ""
+    shim_version: str = ""
+    fixture_digest: str = ""
+    workspace_type: str = "isolated_tmp"
+
+
 class BenchmarkResult(BaseModel):
     benchmark_id: str
     fixture_name: str
     api_symbol: str = ""
     metrics: List[BenchmarkMetric] = Field(default_factory=list)
+    baseline: Optional[BenchmarkBaselineStats] = None
+    host_environment: Optional[BenchmarkHostEnvironment] = None
     exit_code: Optional[int] = None
     output_verified: bool = False
     recorded_at: str = Field(default_factory=utc_now_iso)

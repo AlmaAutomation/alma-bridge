@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import platform
+import statistics
+import subprocess
 import time
 from pathlib import Path
 from typing import List, Optional
@@ -10,6 +14,8 @@ from alma_bridge.native_engineering.digest import digest_of
 from alma_bridge.native_engineering.errors import BenchmarkExecutionError
 from alma_bridge.native_engineering.models import (
     NATIVE_ENGINEERING_ENGINE_VERSION,
+    BenchmarkBaselineStats,
+    BenchmarkHostEnvironment,
     BenchmarkMetric,
     BenchmarkResult,
     utc_now_iso,
@@ -42,7 +48,16 @@ FIXTURE_BENCHMARKS = {
     },
 }
 
+APPEND_BASELINE_BENCHMARKS = [
+    "append_existing_success.exe",
+    "append_repeated.exe",
+    "file_write.exe",
+]
+
+DEFAULT_WARMUP = 3
+DEFAULT_ITERATIONS = 10
 DEFAULT_FIXTURES_DIR = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "native_runtime" / "bin"
+SHIM_VERSION = "0.2.1-m2"
 
 
 def list_benchmark_definitions() -> List[dict]:
@@ -52,43 +67,117 @@ def list_benchmark_definitions() -> List[dict]:
     ]
 
 
+def _fixture_digest(fixture_path: Path) -> str:
+    if fixture_path.is_file():
+        return hashlib.sha256(fixture_path.read_bytes()).hexdigest()
+    return ""
+
+
+def _host_environment(fixture_path: Path) -> BenchmarkHostEnvironment:
+    cpu = ""
+    try:
+        with open("/proc/cpuinfo", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("model name"):
+                    cpu = line.split(":", 1)[1].strip()
+                    break
+    except OSError:
+        cpu = platform.processor() or "unknown"
+    compiler = "unknown"
+    try:
+        proc = subprocess.run(
+            ["x86_64-w64-mingw32-gcc", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        if proc.stdout:
+            compiler = proc.stdout.splitlines()[0]
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return BenchmarkHostEnvironment(
+        host_arch=platform.machine(),
+        cpu_model=cpu,
+        kernel_version=platform.release(),
+        compiler=compiler,
+        shim_version=SHIM_VERSION,
+        fixture_digest=_fixture_digest(fixture_path),
+        workspace_type="isolated_tmp",
+    )
+
+
+def _median_abs_deviation(values: List[float]) -> float:
+    if not values:
+        return 0.0
+    med = statistics.median(values)
+    return statistics.median(abs(v - med) for v in values)
+
+
+def _run_single_timing(fixture_path: Path, workspace: Path) -> float:
+    from alma_bridge.native_runtime.runtime import run_pe_in_workspace
+
+    start = time.perf_counter()
+    run_pe_in_workspace(fixture_path, env={"ALMA_TEST_VAR": "benchmark"}, workspace=workspace)
+    return (time.perf_counter() - start) * 1000.0
+
+
 def _run_fixture_benchmark(
     fixture_path: Path,
     *,
     benchmark_id: str,
     api_symbols: List[str],
     expect_failure: bool = False,
+    warmup: int = 0,
+    iterations: int = 1,
 ) -> BenchmarkResult:
     """Run timing benchmark via native runtime worker (explicit invocation only)."""
     if not fixture_path.is_file():
         raise BenchmarkExecutionError(f"Fixture not found: {fixture_path}")
 
-    from alma_bridge.native_runtime.runtime import run_pe_in_workspace
-
     workspace = fixture_path.parent / "_bench_workspace"
     workspace.mkdir(parents=True, exist_ok=True)
 
-    start = time.perf_counter()
-    try:
-        result = run_pe_in_workspace(
-            fixture_path,
-            env={"ALMA_TEST_VAR": "benchmark"},
-            workspace=workspace,
-        )
-    except Exception as exc:
-        raise BenchmarkExecutionError(str(exc)) from exc
-    elapsed_ms = (time.perf_counter() - start) * 1000.0
+    samples: List[float] = []
+    for _ in range(warmup):
+        _run_single_timing(fixture_path, workspace)
+    for _ in range(iterations):
+        samples.append(_run_single_timing(fixture_path, workspace))
 
-    exit_code = result.exit_code if hasattr(result, "exit_code") else getattr(result, "return_code", None)
-    output_verified = bool(getattr(result, "stdout", "") or getattr(result, "stderr", "") or exit_code is not None)
+    elapsed_ms = statistics.median(samples) if samples else 0.0
+
+    from alma_bridge.native_runtime.runtime import run_pe_in_workspace
+
+    run_result = run_pe_in_workspace(
+        fixture_path,
+        env={"ALMA_TEST_VAR": "benchmark"},
+        workspace=workspace,
+    )
+    exit_code = run_result.exit_code
+    output_verified = bool(run_result.stdout or run_result.stderr or exit_code is not None)
     if expect_failure:
-        output_verified = exit_code != 0 or not getattr(result, "success", True)
+        output_verified = exit_code != 0 or not run_result.success
+
+    baseline = None
+    if iterations > 1 and samples:
+        baseline = BenchmarkBaselineStats(
+            warmup_count=warmup,
+            iteration_count=iterations,
+            median_ms=round(statistics.median(samples), 3),
+            min_ms=round(min(samples), 3),
+            max_ms=round(max(samples), 3),
+            mean_ms=round(statistics.mean(samples), 3),
+            stddev_ms=round(statistics.pstdev(samples), 3) if len(samples) > 1 else 0.0,
+            mad_ms=round(_median_abs_deviation(samples), 3),
+            sample_size=len(samples),
+        )
 
     body = {
         "benchmark_id": benchmark_id,
         "fixture_name": fixture_path.name,
         "elapsed_ms": round(elapsed_ms, 3),
         "exit_code": exit_code,
+        "sample_size": len(samples),
     }
     return BenchmarkResult(
         benchmark_id=benchmark_id,
@@ -97,6 +186,8 @@ def _run_fixture_benchmark(
         metrics=[
             BenchmarkMetric(name="elapsed_ms", value=round(elapsed_ms, 3), unit="ms", tolerance_percent=25.0),
         ],
+        baseline=baseline,
+        host_environment=_host_environment(fixture_path),
         exit_code=exit_code,
         output_verified=output_verified,
         recorded_at=utc_now_iso(),
@@ -110,6 +201,9 @@ def run_benchmark(
     *,
     fixtures_dir: Optional[Path] = None,
     allow_execution: bool = False,
+    baseline: bool = False,
+    warmup: int = DEFAULT_WARMUP,
+    iterations: int = DEFAULT_ITERATIONS,
 ) -> BenchmarkResult:
     """Execute a single benchmark. Requires explicit allow_execution=True."""
     if not allow_execution:
@@ -134,7 +228,26 @@ def run_benchmark(
         benchmark_id=meta["benchmark_id"],
         api_symbols=meta["apis"],
         expect_failure=meta.get("expect_failure", False),
+        warmup=warmup if baseline else 0,
+        iterations=iterations if baseline else 1,
     )
+
+
+def run_append_baseline_suite(
+    *,
+    fixtures_dir: Optional[Path] = None,
+    allow_execution: bool = False,
+) -> List[BenchmarkResult]:
+    """Run reproducible append-cycle benchmark baselines."""
+    return [
+        run_benchmark(
+            name,
+            fixtures_dir=fixtures_dir,
+            allow_execution=allow_execution,
+            baseline=True,
+        )
+        for name in APPEND_BASELINE_BENCHMARKS
+    ]
 
 
 def run_all_benchmarks(
