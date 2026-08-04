@@ -1,0 +1,14 @@
+{
+  "review_id": "rr_append_sem_01",
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "category": "semantic",
+  "severity": "low",
+  "likelihood": "medium",
+  "description": "Overlapped I/O must remain unsupported",
+  "mitigation": "Append does not imply overlapped_io support",
+  "residual_risk": "low",
+  "evidence_reference_ids": [],
+  "reviewer": "engineering_cycle",
+  "recorded_at": "2026-08-04T12:00:00+00:00",
+  "review_digest": "475fd0d62691ff4343e5b3c96211b3ab7142d9d252c8761f503067caf3cea1ee"
+}

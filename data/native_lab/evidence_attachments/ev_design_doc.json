@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_design_doc",
+  "kind": "specification",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_existing_file_design.md",
+  "digest": "bd75a62dd2fda857a46dc44f5299504d0b27594477a8398b51892b7af0d24413",
+  "fixture_path": null,
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

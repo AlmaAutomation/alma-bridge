@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_invalid_handle",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_invalid_handle.exe",
+  "digest": "bf5582391c555627cdac61e1cae18306f59251787f92959ad64927d42e2e9b43",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_invalid_handle.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

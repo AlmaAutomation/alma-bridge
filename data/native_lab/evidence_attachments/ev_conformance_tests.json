@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_conformance_tests",
+  "kind": "behavior_test",
+  "source": "append_cycle_v1",
+  "artifact_id": "test_append_conformance.py",
+  "digest": "a3fb9d9319c54074c123a1aee91757eb96f45030622ba4932193c8e04145d500",
+  "fixture_path": null,
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

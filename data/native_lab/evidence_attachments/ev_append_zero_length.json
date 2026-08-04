@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_zero_length",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_zero_length.exe",
+  "digest": "886ca130f5ff0770762c475613068d13c870f262de3baa7b899940c883a4c30a",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_zero_length.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

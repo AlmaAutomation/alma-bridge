@@ -1,0 +1,14 @@
+{
+  "review_id": "rr_append_sec_01",
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "category": "security",
+  "severity": "medium",
+  "likelihood": "medium",
+  "description": "Filesystem escape via path traversal on append",
+  "mitigation": "Workspace resolver rejects .. and absolute paths",
+  "residual_risk": "low",
+  "evidence_reference_ids": [],
+  "reviewer": "engineering_cycle",
+  "recorded_at": "2026-08-04T12:00:00+00:00",
+  "review_digest": "3887fe781bcf9b1f92eb6b5e20ad3c32172800afd8809bf3171e550490c39794"
+}

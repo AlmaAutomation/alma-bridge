@@ -1,0 +1,5 @@
+{
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "schema_version": "benchmark_baseline_v1",
+  "note": "Populated at audit runtime; see append_benchmark_baseline_v1.json"
+}

@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_unicode",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_unicode.exe",
+  "digest": "deebad6121032701ab06b8dc9269cb18689c6d6906878287dd635be386d34170",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_unicode.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

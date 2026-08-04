@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_verification_record",
+  "kind": "verification",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_verification_contract_v1",
+  "digest": "",
+  "fixture_path": null,
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

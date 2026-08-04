@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_certification_evidence",
+  "kind": "certification",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_existing_file_certification_evidence.md",
+  "digest": "95d33b74d6624a7b8205c35a1552971c172edd49a87ba86d33450455fa704067",
+  "fixture_path": null,
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

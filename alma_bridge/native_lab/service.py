@@ -139,6 +139,8 @@ class NativeLabService:
         )
         self._repo.append_status_event(event)
         item.status = to_status
+        if to_status == WorkItemStatus.COMPLETED:
+            item.engineering_complete = True
         item.updated_at = utc_now_iso()
         self._repo.save_work_item(item)
         if to_status == WorkItemStatus.ACCEPTED:

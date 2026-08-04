@@ -1,0 +1,9 @@
+{
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "file_existed": true,
+  "content_preserved": true,
+  "payload_appended": true,
+  "workspace_confined": true,
+  "simulation_used": false,
+  "digest": "e941e3e4fee5f9787bbd1346065e52865c286f6cb9c0e87421374e23bb01f050"
+}

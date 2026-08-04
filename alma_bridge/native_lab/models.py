@@ -20,6 +20,14 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+class GovernanceDisposition(str, Enum):
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    DEFERRED = "deferred"
+    PENDING = "pending"
+    NOT_REQUIRED = "not_required"
+
+
 class WorkItemStatus(str, Enum):
     PROPOSED = "proposed"
     TRIAGED = "triaged"
@@ -217,6 +225,8 @@ class NativeRuntimeEngineeringWorkItem(BaseModel):
     security_review_items: List[SecurityReviewItem] = Field(default_factory=list)
     prerequisite_work_item_ids: List[str] = Field(default_factory=list)
     status: WorkItemStatus = WorkItemStatus.PROPOSED
+    engineering_complete: bool = False
+    governance_disposition: GovernanceDisposition = GovernanceDisposition.PENDING
     owner: str = ""
     reviewer: str = ""
     evidence_references: List[EvidenceReference] = Field(default_factory=list)

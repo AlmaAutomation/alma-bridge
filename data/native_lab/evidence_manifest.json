@@ -1,0 +1,177 @@
+{
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "schema_version": "evidence_manifest_v1",
+  "entries": [
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_file_append_unsupported",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/file_append_unsupported.exe",
+      "digest": "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_existing_success",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_existing_success.exe",
+      "digest": "5da741e44c43be0d311c5d75a2f7c805918328b9334a3835c31f2607f88c0b4d",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_repeated",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_repeated.exe",
+      "digest": "223cc8008a14a04b817cb6f88a57f1cd663a9f5a836dc3db8baf38d785544cf8",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_unicode",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_unicode.exe",
+      "digest": "deebad6121032701ab06b8dc9269cb18689c6d6906878287dd635be386d34170",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_zero_length",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_zero_length.exe",
+      "digest": "886ca130f5ff0770762c475613068d13c870f262de3baa7b899940c883a4c30a",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": false
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_invalid_handle",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_invalid_handle.exe",
+      "digest": "bf5582391c555627cdac61e1cae18306f59251787f92959ad64927d42e2e9b43",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": false
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_missing_file",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_missing_file.exe",
+      "digest": "a53cf6363792629b2b1e7117abf43ff66924c2410f4aa63b96e6d6332fe2e0d1",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": false
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_path_traversal",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_path_traversal.exe",
+      "digest": "e85503beed2ecc0819264a2202622ef8ef9ca745b62fee5b0dd3c87ccdf92ace",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_append_overlapped_unsupported",
+      "artifact_type": "fixture",
+      "path_or_store_id": "tests/fixtures/native_runtime/bin/append_overlapped_unsupported.exe",
+      "digest": "7f870d437b15c1c683264f26ddbb30c6d21fc1196d33bce96aa418b677226e45",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_design_doc",
+      "artifact_type": "specification",
+      "path_or_store_id": "docs/native-runtime/append_existing_file_design.md",
+      "digest": "bd75a62dd2fda857a46dc44f5299504d0b27594477a8398b51892b7af0d24413",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_certification_evidence",
+      "artifact_type": "certification",
+      "path_or_store_id": "docs/certification/append_existing_file_evidence.md",
+      "digest": "95d33b74d6624a7b8205c35a1552971c172edd49a87ba86d33450455fa704067",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_governance_proposal",
+      "artifact_type": "expansion",
+      "path_or_store_id": "tests/seed/governance_append_existing_file_proposal.json",
+      "digest": "90c4ccc2c8c2ff3fab21f4954d8c6f0ccb264dc6a7026c794200bafd1594bb6c",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": false
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_behavior_tests",
+      "artifact_type": "behavior_test",
+      "path_or_store_id": "tests/native_runtime/test_append_behavior.py",
+      "digest": "929f59323b85e0a08ba052b388223f6f85817d9788856a9079bb7f9d82105b2d",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_security_tests",
+      "artifact_type": "behavior_test",
+      "path_or_store_id": "tests/native_runtime/test_append_security.py",
+      "digest": "5274f525c0c5e402bc6568b4183d082b55188dc73a4e3a55d18ef288abe9394b",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_conformance_tests",
+      "artifact_type": "behavior_test",
+      "path_or_store_id": "tests/runtime/test_append_conformance.py",
+      "digest": "a3fb9d9319c54074c123a1aee91757eb96f45030622ba4932193c8e04145d500",
+      "repository_status": "committed_immutable",
+      "resolves_after_restart": true,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_verification_record",
+      "artifact_type": "verification",
+      "path_or_store_id": "data/native_lab/generated/append_verification_contract_v1.json",
+      "digest": "",
+      "repository_status": "missing",
+      "resolves_after_restart": false,
+      "required_for_completion": true
+    },
+    {
+      "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+      "evidence_reference_id": "ev_benchmark_baseline",
+      "artifact_type": "benchmark",
+      "path_or_store_id": "data/native_lab/generated/append_benchmark_baseline_v1.json",
+      "digest": "",
+      "repository_status": "missing",
+      "resolves_after_restart": false,
+      "required_for_completion": true
+    }
+  ],
+  "manifest_digest": "42aea49e9613ca7b6c15e7fd2ebe93ced7227d361dc6f9f9cdcb8a89e32066c5"
+}

@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_path_traversal",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_path_traversal.exe",
+  "digest": "e85503beed2ecc0819264a2202622ef8ef9ca745b62fee5b0dd3c87ccdf92ace",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_path_traversal.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

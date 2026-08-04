@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_repeated",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_repeated.exe",
+  "digest": "223cc8008a14a04b817cb6f88a57f1cd663a9f5a836dc3db8baf38d785544cf8",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_repeated.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

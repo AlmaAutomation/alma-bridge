@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_behavior_tests",
+  "kind": "behavior_test",
+  "source": "append_cycle_v1",
+  "artifact_id": "test_append_behavior.py",
+  "digest": "929f59323b85e0a08ba052b388223f6f85817d9788856a9079bb7f9d82105b2d",
+  "fixture_path": null,
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

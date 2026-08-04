@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_file_append_unsupported",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "file_append_unsupported.exe",
+  "digest": "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c",
+  "fixture_path": "tests/fixtures/native_runtime/bin/file_append_unsupported.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

@@ -6,9 +6,9 @@ import uuid
 from typing import Dict, Optional, Set
 
 from alma_bridge.native_lab.digest import digest_of
-from alma_bridge.native_lab.errors import EvidenceGateError, InvalidStatusTransitionError
+from alma_bridge.native_lab.errors import InvalidStatusTransitionError
 from alma_bridge.native_lab.models import StatusEvent, WorkItemStatus
-from alma_bridge.native_lab.work_items import is_evidence_gated_complete
+from alma_bridge.native_lab.completion import validate_completion_gates as _validate_completion_gates
 
 # Valid forward transitions (planning only — blocked/rejected have special rules)
 VALID_TRANSITIONS: Dict[WorkItemStatus, Set[WorkItemStatus]] = {
@@ -103,10 +103,4 @@ def create_status_event(
 
 def validate_completion_gates(work_item) -> None:
     """Raise if work item cannot transition to completed."""
-    if not is_evidence_gated_complete(work_item):
-        raise EvidenceGateError(
-            "Completion requires all critical acceptance criteria satisfied "
-            "or explicitly waived with reviewer"
-        )
-    if not work_item.evidence_references:
-        raise EvidenceGateError("Completion requires at least one evidence attachment")
+    _validate_completion_gates(work_item)

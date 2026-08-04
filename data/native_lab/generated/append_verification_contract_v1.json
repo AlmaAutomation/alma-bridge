@@ -1,0 +1,8 @@
+{
+  "work_item_id": "wi_native_alma_filesystem_basic_io_append_existing_file_v1",
+  "provider_id": "native_alma",
+  "implementation_version": "0.2.1-m2",
+  "simulation_used": false,
+  "workspace_confined": true,
+  "verification_digest": "8c904e8ef363737e55f41eb75f87b1291e71e2d037f240b0c3909e7835b23a66"
+}

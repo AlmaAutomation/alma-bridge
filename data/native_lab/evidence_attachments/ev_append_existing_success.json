@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_existing_success",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_existing_success.exe",
+  "digest": "5da741e44c43be0d311c5d75a2f7c805918328b9334a3835c31f2607f88c0b4d",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_existing_success.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

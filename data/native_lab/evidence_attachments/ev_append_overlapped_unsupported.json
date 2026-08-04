@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_overlapped_unsupported",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_overlapped_unsupported.exe",
+  "digest": "7f870d437b15c1c683264f26ddbb30c6d21fc1196d33bce96aa418b677226e45",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_overlapped_unsupported.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

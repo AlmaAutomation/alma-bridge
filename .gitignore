@@ -19,6 +19,10 @@ Logs/
 # Runtime data under data/ — never commit DBs, models, locks, or validation exports.
 data/*
 !data/validation/
+!data/native_lab/
+!data/native_lab/**
+!data/releases/
+!data/releases/**
 data/validation/*
 !data/validation/campaigns/
 !data/validation/research/

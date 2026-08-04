@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_security_tests",
+  "kind": "behavior_test",
+  "source": "append_cycle_v1",
+  "artifact_id": "test_append_security.py",
+  "digest": "5274f525c0c5e402bc6568b4183d082b55188dc73a4e3a55d18ef288abe9394b",
+  "fixture_path": null,
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

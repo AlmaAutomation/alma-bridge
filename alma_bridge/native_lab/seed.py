@@ -93,10 +93,25 @@ def build_seeded_append_work_item() -> NativeRuntimeEngineeringWorkItem:
 
 
 def ensure_seeded_work_item(repo: NativeLabRepository) -> NativeRuntimeEngineeringWorkItem:
-    """Idempotent seed — returns existing or creates seeded item."""
+    """Idempotent seed — returns existing, committed completed, or creates proposed item."""
     existing = repo.get_work_item(SEEDED_WORK_ITEM_ID)
     if existing:
         return existing
+
+    from alma_bridge.native_lab.bootstrap_append_cycle import (
+        COMMITTED_STORE,
+        committed_store_available,
+        load_committed_work_item,
+    )
+
+    if (
+        committed_store_available()
+        and repo._store_dir.resolve() == COMMITTED_STORE.resolve()
+    ):
+        committed = load_committed_work_item(repo)
+        if committed:
+            return committed
+
     item = build_seeded_append_work_item()
     repo.save_work_item(item, create_only=True)
     return item

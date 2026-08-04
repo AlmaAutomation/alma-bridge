@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_append_missing_file",
+  "kind": "fixture",
+  "source": "append_cycle_v1",
+  "artifact_id": "append_missing_file.exe",
+  "digest": "a53cf6363792629b2b1e7117abf43ff66924c2410f4aa63b96e6d6332fe2e0d1",
+  "fixture_path": "tests/fixtures/native_runtime/bin/append_missing_file.exe",
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}

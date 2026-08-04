@@ -1,0 +1,22 @@
+{
+  "schema_version": "compatibility_intelligence_calibration_v1",
+  "record_id": "7505553bfbeb0619cc7933691c363540aa82ebe77a4dfbb1e470c3fbdfa5f82e",
+  "snapshot_id": "58d78dbb6580f07dea2d072ce42d6ab7fca0b6240df2e001346ef67f47164fdc",
+  "outcome_id": "c738a56b54fa0975bb7c16fe78e59ae711929896b3f1fa3e42c2c6395636969b",
+  "session_id": "append_verify_sess",
+  "binary_digest": "5da741e44c43be0d311c5d75a2f7c805918328b9334a3835c31f2607f88c0b4d",
+  "analysis_digest": "110bc8e50b3434db248378b58f13e412c86f8ebab5be81da92f6b017d01489e0",
+  "provider_id": "native_alma",
+  "classification": "true_positive",
+  "failure_attribution": null,
+  "predicted_eligible": true,
+  "outcome_type": "verified_success",
+  "verified_success": true,
+  "behavior_gaps": [
+    "open_existing_readwrite"
+  ],
+  "capability_registry_version": "aci_governance_registry_v1",
+  "api_registry_version": "aci_api_registry_v1",
+  "created_at": "2026-08-04T00:27:37+00:00",
+  "engine_version": "aci_calibration_v1"
+}

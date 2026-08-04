@@ -1,0 +1,12 @@
+{
+  "reference_id": "ev_governance_proposal",
+  "kind": "expansion",
+  "source": "append_cycle_v1",
+  "artifact_id": "gov_proposal_append_existing_file_v1",
+  "digest": "90c4ccc2c8c2ff3fab21f4954d8c6f0ccb264dc6a7026c794200bafd1594bb6c",
+  "fixture_path": null,
+  "attached_at": "2026-08-04T00:00:00+00:00",
+  "attached_by": "engineering_cycle",
+  "evidence_stale": false,
+  "stale_reason": ""
+}
