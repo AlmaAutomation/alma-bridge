@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from alma_bridge.compatibility.profile_fingerprints import sha256_v1
 from alma_bridge.research.models import SampleSize
@@ -14,9 +14,11 @@ RUNTIME_INTELLIGENCE_SCHEMA_VERSION = "runtime_intelligence_corpus_v1"
 RUNTIME_INTELLIGENCE_INDEX_SCHEMA_VERSION = "runtime_intelligence_index_v1"
 RUNTIME_INTELLIGENCE_KNOWLEDGE_SCHEMA_VERSION = "runtime_intelligence_knowledge_v1"
 RUNTIME_INTELLIGENCE_DEBT_SCHEMA_VERSION = "runtime_intelligence_debt_v1"
+RUNTIME_INTELLIGENCE_HYPOTHESIS_SCHEMA_VERSION = "runtime_intelligence_hypothesis_v1"
 COMPATIBILITY_INDEX_FORMULA_VERSION = "compatibility_index_v1"
 KNOWLEDGE_COVERAGE_FORMULA_VERSION = "knowledge_coverage_v1"
 DEBT_CLASSIFICATION_FORMULA_VERSION = "debt_classification_v1"
+HYPOTHESIS_FORMULA_VERSION = "engineering_hypothesis_v1"
 
 
 class CorpusKind(str, Enum):
@@ -366,3 +368,181 @@ class CompatibilityDebtReport(BaseModel):
     limitations: List[str] = Field(default_factory=list)
     evidence_references: List[str] = Field(default_factory=list)
     generated_at: Optional[str] = None
+
+
+class EngineeringHypothesisResult(str, Enum):
+    CONFIRMED = "confirmed"
+    PARTIALLY_CONFIRMED = "partially_confirmed"
+    CONTRADICTED = "contradicted"
+    INDETERMINATE = "indeterminate"
+
+
+class EngineeringHypothesisSnapshot(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    hypothesis_id: str
+    created_at: str
+    corpus: CorpusKind
+    provider_id: str
+    provider_version_scope: str
+    family_id: BehaviorFamilyId
+    capability_id: str
+    bounded_scope: str
+    evidence_snapshot_digest: str
+    snapshot_digest: str
+    schema_version: str
+    formula_version: str
+    behavior_id: Optional[str] = None
+    predicted_application_fingerprints: tuple[str, ...] = ()
+    predicted_binary_digests: tuple[str, ...] = ()
+    predicted_application_classes: tuple[str, ...] = ()
+    predicted_applications_unblocked_count: int = Field(ge=0, default=0)
+    predicted_application_classes_unblocked_count: int = Field(ge=0, default=0)
+    predicted_confidence: str = "unknown"
+    predicted_limitations: tuple[str, ...] = ()
+    source_expansion_candidate_ids: tuple[str, ...] = ()
+    source_debt_item_ids: tuple[str, ...] = ()
+    source_registry_version: str = ""
+    source_expansion_plan_version: str = ""
+    evidence_references: tuple[str, ...] = ()
+
+
+class EngineeringHypothesisOutcomeLink(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    outcome_link_id: str
+    hypothesis_id: str
+    linked_at: str
+    evidence_snapshot_digest: str
+    link_digest: str
+    schema_version: str
+    implementation_work_item_id: Optional[str] = None
+    implementation_version: Optional[str] = None
+    provider_version: Optional[str] = None
+    observed_application_fingerprints: tuple[str, ...] = ()
+    observed_binary_digests: tuple[str, ...] = ()
+    observed_application_classes: tuple[str, ...] = ()
+    observed_verified_successes: int = Field(ge=0, default=0)
+    observed_verified_failures: int = Field(ge=0, default=0)
+    observed_unverifiable: int = Field(ge=0, default=0)
+    observed_blockers_removed: tuple[str, ...] = ()
+    observed_new_blockers: tuple[str, ...] = ()
+    authoritative_outcome_references: tuple[str, ...] = ()
+    calibration_record_ids: tuple[str, ...] = ()
+    certification_artifact_ids: tuple[str, ...] = ()
+    governance_artifact_ids: tuple[str, ...] = ()
+    evidence_references: tuple[str, ...] = ()
+    stderr_only_failure: bool = False
+
+
+class EngineeringHypothesisEvaluation(BaseModel):
+    hypothesis_id: str
+    corpus: CorpusKind
+    family_id: BehaviorFamilyId
+    capability_id: str
+    result: EngineeringHypothesisResult
+    evaluation_digest: str
+    predicted_applications_unblocked_count: int = Field(ge=0, default=0)
+    observed_applications_unblocked_count: int = Field(ge=0, default=0)
+    predicted_application_classes_unblocked_count: int = Field(ge=0, default=0)
+    observed_application_classes_unblocked_count: int = Field(ge=0, default=0)
+    application_variance: int = 0
+    application_class_variance: int = 0
+    observed_verified_successes: int = Field(ge=0, default=0)
+    observed_verified_failures: int = Field(ge=0, default=0)
+    confidence: str = "unknown"
+    confidence_factors: List[str] = Field(default_factory=list)
+    behavior_id: Optional[str] = None
+    limitations: List[str] = Field(default_factory=list)
+    evidence_references: List[str] = Field(default_factory=list)
+    outcome_link_digests: List[str] = Field(default_factory=list)
+    snapshot_digest: str = ""
+
+
+class EngineeringHypothesisResult(str, Enum):
+    CONFIRMED = "confirmed"
+    PARTIALLY_CONFIRMED = "partially_confirmed"
+    CONTRADICTED = "contradicted"
+    INDETERMINATE = "indeterminate"
+
+
+class EngineeringHypothesisSnapshot(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    hypothesis_id: str
+    created_at: str
+    corpus: CorpusKind
+    provider_id: str
+    provider_version_scope: str
+    family_id: BehaviorFamilyId
+    capability_id: str
+    bounded_scope: str
+    evidence_snapshot_digest: str
+    snapshot_digest: str
+    schema_version: str
+    formula_version: str
+    behavior_id: Optional[str] = None
+    predicted_application_fingerprints: tuple[str, ...] = ()
+    predicted_binary_digests: tuple[str, ...] = ()
+    predicted_application_classes: tuple[str, ...] = ()
+    predicted_applications_unblocked_count: int = Field(ge=0, default=0)
+    predicted_application_classes_unblocked_count: int = Field(ge=0, default=0)
+    predicted_confidence: str = "unknown"
+    predicted_limitations: tuple[str, ...] = ()
+    source_expansion_candidate_ids: tuple[str, ...] = ()
+    source_debt_item_ids: tuple[str, ...] = ()
+    source_registry_version: str = ""
+    source_expansion_plan_version: str = ""
+    evidence_references: tuple[str, ...] = ()
+
+
+class EngineeringHypothesisOutcomeLink(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    outcome_link_id: str
+    hypothesis_id: str
+    linked_at: str
+    evidence_snapshot_digest: str
+    link_digest: str
+    schema_version: str
+    implementation_work_item_id: Optional[str] = None
+    implementation_version: Optional[str] = None
+    provider_version: Optional[str] = None
+    observed_application_fingerprints: tuple[str, ...] = ()
+    observed_binary_digests: tuple[str, ...] = ()
+    observed_application_classes: tuple[str, ...] = ()
+    observed_verified_successes: int = Field(ge=0, default=0)
+    observed_verified_failures: int = Field(ge=0, default=0)
+    observed_unverifiable: int = Field(ge=0, default=0)
+    observed_blockers_removed: tuple[str, ...] = ()
+    observed_new_blockers: tuple[str, ...] = ()
+    authoritative_outcome_references: tuple[str, ...] = ()
+    calibration_record_ids: tuple[str, ...] = ()
+    certification_artifact_ids: tuple[str, ...] = ()
+    governance_artifact_ids: tuple[str, ...] = ()
+    evidence_references: tuple[str, ...] = ()
+    stderr_only_failure: bool = False
+
+
+class EngineeringHypothesisEvaluation(BaseModel):
+    hypothesis_id: str
+    corpus: CorpusKind
+    family_id: BehaviorFamilyId
+    capability_id: str
+    result: EngineeringHypothesisResult
+    evaluation_digest: str
+    predicted_applications_unblocked_count: int = Field(ge=0, default=0)
+    observed_applications_unblocked_count: int = Field(ge=0, default=0)
+    predicted_application_classes_unblocked_count: int = Field(ge=0, default=0)
+    observed_application_classes_unblocked_count: int = Field(ge=0, default=0)
+    application_variance: int = 0
+    application_class_variance: int = 0
+    observed_verified_successes: int = Field(ge=0, default=0)
+    observed_verified_failures: int = Field(ge=0, default=0)
+    confidence: str = "unknown"
+    confidence_factors: List[str] = Field(default_factory=list)
+    behavior_id: Optional[str] = None
+    limitations: List[str] = Field(default_factory=list)
+    evidence_references: List[str] = Field(default_factory=list)
+    outcome_link_digests: List[str] = Field(default_factory=list)
+    snapshot_digest: str = ""
