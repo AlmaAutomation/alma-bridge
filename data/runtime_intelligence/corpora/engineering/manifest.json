@@ -1,0 +1,177 @@
+{
+  "schema_version": "runtime_intelligence_corpus_v1",
+  "corpus": "engineering",
+  "entries": [
+    {
+      "entry_id": "7fb894a9b658c891a739e8c470035c100eeb4b7dbb9fedd5708bfd246839ddb8",
+      "application_fingerprint": "d87ac1f8a7c5bd11ffa5ccb00cf18d77edd5ce075a5b37835770e32feca15aaf",
+      "binary_digest": "1cf6ffffdd39d9dd4db69711e43aca370455c1e007bcb970e60b966128f3835b",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/hello64.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "f140243ba699ffaed9daffb342fcfb8e25231a27a582e406c4d63d69c3bfbda0",
+      "application_fingerprint": "df1442ffc169f94d14f51c1690b4a3b617184b8ddbe287b035461e79eec5b3ad",
+      "binary_digest": "223cc8008a14a04b817cb6f88a57f1cd663a9f5a836dc3db8baf38d785544cf8",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_repeated.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "92575b5ec42d7b247149d76f91702071b60639c5d8e76637f2fe68fc2a23e215",
+      "application_fingerprint": "1c49aa2f87b79f9e6e91c9a4769affc0b0947f7d0dc32deb1c862cdb08b2c682",
+      "binary_digest": "5da741e44c43be0d311c5d75a2f7c805918328b9334a3835c31f2607f88c0b4d",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_existing_success.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "a5f9f95d3bf411908a4eb678db7f78af5d494bd0731fec318d5beac162e3b9bf",
+      "application_fingerprint": "163c1e78887f273f8195c3185667dcb19de5975ba0a2cb00347c3e78871ea269",
+      "binary_digest": "6026f8ced0ca07ce1e6ae60c346dc3398f5a2415b15c42e6329a0a9d4fbaef82",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/exit_code.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "55765c3bb093b0e4f78e37f1d1ae9cf8ccdce9da01d4e99e717735d3f2463ad9",
+      "application_fingerprint": "38f2d6f0a0abc01f16279b09ef8438f9cbafbefb7d3445b9fa726e19a6df8a28",
+      "binary_digest": "7f870d437b15c1c683264f26ddbb30c6d21fc1196d33bce96aa418b677226e45",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_overlapped_unsupported.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "b559d135bd086f897521752cdedd5d32e12efea0bd8e793dec54bcb4f5e1544a",
+      "application_fingerprint": "98c92fc66112148d4c5d6b53a6cc4be226096f5cd0e4374132e7a4fdb972bb06",
+      "binary_digest": "886ca130f5ff0770762c475613068d13c870f262de3baa7b899940c883a4c30a",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_zero_length.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "15febcd0e3878b87d46cc2389325ddf68376dccc33ba7948bf8f4758ba033b85",
+      "application_fingerprint": "abed14e41389635c5dd98cfba4f82b07c4c59cb6a2a4d914689fffa66cad798b",
+      "binary_digest": "a53cf6363792629b2b1e7117abf43ff66924c2410f4aa63b96e6d6332fe2e0d1",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_missing_file.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "2e96b9fcd604e3a37dbeb36ce0e5269cac43a2c8eb032400106d81bffc014219",
+      "application_fingerprint": "e394ec71226d2797603571617410d15344d59edbbb97440f6473d003a264d962",
+      "binary_digest": "ad9883752adf653105f45a4e7dbc1a1b1a2a0e6491fa1eeffd4a795c74fa00c3",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/unicode_argv.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "ee1d64ebb39bf49484d55320dffe2250a78785966150785a4262d9376bae3dc8",
+      "application_fingerprint": "580474f52581e759c541d7c0ede9202e56bb6c5edbd39221edf723ebdc7ab010",
+      "binary_digest": "ae4c2640f14378caf361350923100435d1c6470b9e5a8b5909eee4d776b66a73",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/environment_read.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "8f0febedf122c2ae650f773d3499fd87be3e8651552c188aa571245ce2cd471c",
+      "application_fingerprint": "8ed7374ef5cc812b801ddeac7428deb7b885d8d35b18de55bfb6ef3ae696f6ba",
+      "binary_digest": "b47417d19852d2496197a0a4bede2c78950ed1a92c6be645b3e3a8ed705d93a3",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/stdout_write.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "8fc5a00a0b7b6ca7b4cf4f7e66b2186093d4bb546ea3d13f6d31633e9736d932",
+      "application_fingerprint": "af456b926bd3187dbb5520fbaf697b6a9706d9f7535d7455e2573d285a0be94d",
+      "binary_digest": "bf5582391c555627cdac61e1cae18306f59251787f92959ad64927d42e2e9b43",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_invalid_handle.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "efa32773b61d683b8a3f399656223634a1563190b2ee07f4ad2e73c056044c2e",
+      "application_fingerprint": "ab175b3413ab1930927ab72109a5cb505a51d049c7043552bd08ea582e8f25cd",
+      "binary_digest": "cc8372f783e88d833219dfc41400a015130c93de4d8703064d78d21f6f2ebe0c",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/file_append_unsupported.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "c8f9263b95cdb5be9a8b5588b5c43fac24bd5b1f68aeb77fe907d3485aea2652",
+      "application_fingerprint": "a4043efc1ec28e11bb0203d4bb7d2fd2a2cbc27338aabc0a3c5b59fa1c47cdb1",
+      "binary_digest": "d48dee7adbafaefc10d833fc1fec97b9855bb0f1b79384c24907347b077047bf",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/file_read.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "e0a728a3a5394c98426e683be60ce4aad86c95841c24b86e9842d34f932adf18",
+      "application_fingerprint": "e453b58733b4cdbe854c2c6565599466aea0357437b47d77312aebd2c10da080",
+      "binary_digest": "deebad6121032701ab06b8dc9269cb18689c6d6906878287dd635be386d34170",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_unicode.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "1ebdc817ec5352fe334a41c4b6fe609f4830a930e7c8249f37ebe2708a04cf2b",
+      "application_fingerprint": "c4733dcd45b61ea1c567db8d82fbbf83808e606c8d672e3256650cfedcf17354",
+      "binary_digest": "e85503beed2ecc0819264a2202622ef8ef9ca745b62fee5b0dd3c87ccdf92ace",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/append_path_traversal.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "5404babbaebb9e0ac1bdb6182be30a7731673fe916a969eec10279ee1e94e340",
+      "application_fingerprint": "cc8b97f877aa2b222a344757a006a055a0c18948db12ebcc567040c22930d031",
+      "binary_digest": "eabe3d8a69f9484d1436588fc159b8d4cf9d5ac51e49b83a9e7acd27dce079ba",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/stderr_write.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    },
+    {
+      "entry_id": "460ae9716c3bb86460e994b29f97bda51cce34a8c4f8d70984620e7afc5c6d62",
+      "application_fingerprint": "c2a73174f72110b038b27a2a8be2a26324ee12b8c77c31b8d611ad5d7d449dc9",
+      "binary_digest": "ff53c63283f35b60c392868360b3c80d6d8b6dcff5fcaf7865f4dd1fa9bc963c",
+      "provenance": {
+        "source": "native_runtime_fixture",
+        "fixture_path": "tests/fixtures/native_runtime/bin/file_write.exe"
+      },
+      "enrolled_at": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "digest": "5f424612600ea893e257b55ab6ffecae9c0e0e8bb81f390178d4790c9a4fa40f"
+}

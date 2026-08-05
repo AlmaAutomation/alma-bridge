@@ -33,6 +33,7 @@ READ_ONLY_PACKAGES = (
     "decision",
     "decision_review",
     "decision_validation",
+    "runtime_intelligence",
 )
 
 

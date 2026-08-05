@@ -23,6 +23,8 @@ data/*
 !data/native_lab/**
 !data/releases/
 !data/releases/**
+!data/runtime_intelligence/
+!data/runtime_intelligence/**
 data/validation/*
 !data/validation/campaigns/
 !data/validation/research/
