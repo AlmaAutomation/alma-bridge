@@ -22,6 +22,14 @@ from alma_bridge.runtime_intelligence.index import (
     normalize_certification_level,
     normalize_governance_maturity,
 )
+from alma_bridge.runtime_intelligence.knowledge import (
+    KNOWLEDGE_COVERAGE_WEIGHTS_V1,
+    compute_knowledge_coverage,
+    compute_knowledge_report_digest,
+    qualifies_as_attributed_failure,
+    qualifies_as_documented_limitation,
+    qualifies_as_explained_blocker,
+)
 from alma_bridge.runtime_intelligence.models import (
     BehaviorFamilyId,
     BehaviorFamilyMapping,
@@ -30,10 +38,14 @@ from alma_bridge.runtime_intelligence.models import (
     CompatibilityIndexInput,
     CompatibilityIndexReport,
     CompatibilityIndexStatus,
+    CompatibilityKnowledgeCoverageReport,
+    CompatibilityKnowledgeInput,
     CorpusEnrollmentEntry,
     CorpusKind,
     CorpusManifest,
     EvidenceRatio,
+    KnowledgeCoverageComponent,
+    KnowledgeCoverageStatus,
 )
 
 __all__ = [
@@ -46,6 +58,8 @@ __all__ = [
     "CompatibilityIndexInput",
     "CompatibilityIndexReport",
     "CompatibilityIndexStatus",
+    "CompatibilityKnowledgeCoverageReport",
+    "CompatibilityKnowledgeInput",
     "CorpusEnrollmentEntry",
     "CorpusEnrollmentResolver",
     "CorpusKind",
@@ -53,7 +67,12 @@ __all__ = [
     "CorpusResolutionError",
     "EvidenceRatio",
     "GOVERNANCE_MATURITY_NORMALIZATION_V1",
+    "KNOWLEDGE_COVERAGE_WEIGHTS_V1",
+    "KnowledgeCoverageComponent",
+    "KnowledgeCoverageStatus",
     "compute_compatibility_index",
+    "compute_knowledge_coverage",
+    "compute_knowledge_report_digest",
     "compute_report_digest",
     "evidence_ratio_from_certification",
     "evidence_ratio_from_maturity",
@@ -63,5 +82,8 @@ __all__ = [
     "load_corpus_manifest",
     "normalize_certification_level",
     "normalize_governance_maturity",
+    "qualifies_as_attributed_failure",
+    "qualifies_as_documented_limitation",
+    "qualifies_as_explained_blocker",
     "require_corpus",
 ]

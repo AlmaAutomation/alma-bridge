@@ -12,7 +12,9 @@ from alma_bridge.research.models import SampleSize
 
 RUNTIME_INTELLIGENCE_SCHEMA_VERSION = "runtime_intelligence_corpus_v1"
 RUNTIME_INTELLIGENCE_INDEX_SCHEMA_VERSION = "runtime_intelligence_index_v1"
+RUNTIME_INTELLIGENCE_KNOWLEDGE_SCHEMA_VERSION = "runtime_intelligence_knowledge_v1"
 COMPATIBILITY_INDEX_FORMULA_VERSION = "compatibility_index_v1"
+KNOWLEDGE_COVERAGE_FORMULA_VERSION = "knowledge_coverage_v1"
 
 
 class CorpusKind(str, Enum):
@@ -179,4 +181,76 @@ class CompatibilityIndexReport(BaseModel):
     provider_version: Optional[str] = None
     evidence_snapshot_digest: str
     generated_from: str = ""
+    generated_at: Optional[str] = None
+
+
+class KnowledgeCoverageStatus(str, Enum):
+    COMPUTED = "computed"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+
+
+class KnowledgeCoverageComponent(BaseModel):
+    component_id: str
+    numerator: int = Field(ge=0, default=0)
+    denominator: int = Field(ge=0, default=0)
+    value: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    available: bool
+    raw_weight: float
+    effective_weight: float
+    insufficient_reason: Optional[str] = None
+    limitations: List[str] = Field(default_factory=list)
+    evidence_references: List[str] = Field(default_factory=list)
+    snapshot_digest: Optional[str] = None
+
+
+class CompatibilityKnowledgeInput(BaseModel):
+    corpus: CorpusKind
+    family_id: BehaviorFamilyId
+    provider_id: Optional[str] = None
+    behavior_classification_coverage: EvidenceRatio
+    blocker_explanation_coverage: EvidenceRatio
+    failure_attribution_coverage: EvidenceRatio
+    prediction_outcome_linkage_coverage: EvidenceRatio
+    limitation_documentation_coverage: EvidenceRatio
+    contradiction_quality: EvidenceRatio
+    observed_behavior_count: int = Field(ge=0, default=0)
+    classified_behavior_count: int = Field(ge=0, default=0)
+    explained_blocker_count: int = Field(ge=0, default=0)
+    unknown_behavior_ids: List[str] = Field(default_factory=list)
+    unknown_api_names: List[str] = Field(default_factory=list)
+    attributed_failure_count: int = Field(ge=0, default=0)
+    unattributed_failure_count: int = Field(ge=0, default=0)
+    contradictory_evidence_count: int = Field(ge=0, default=0)
+    evidence_backed_limitations: List[str] = Field(default_factory=list)
+    evidence_snapshot_digest: str
+    registry_version: Optional[str] = None
+    provider_version: Optional[str] = None
+    evidence_references: List[str] = Field(default_factory=list)
+    limitations: List[str] = Field(default_factory=list)
+
+
+class CompatibilityKnowledgeCoverageReport(BaseModel):
+    corpus: CorpusKind
+    family_id: BehaviorFamilyId
+    provider_id: Optional[str] = None
+    status: KnowledgeCoverageStatus
+    knowledge_coverage_value: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    components: List[KnowledgeCoverageComponent]
+    observed_behavior_count: int = Field(ge=0, default=0)
+    classified_behavior_count: int = Field(ge=0, default=0)
+    explained_blocker_count: int = Field(ge=0, default=0)
+    unknown_behavior_ids: List[str] = Field(default_factory=list)
+    unknown_api_names: List[str] = Field(default_factory=list)
+    attributed_failure_count: int = Field(ge=0, default=0)
+    unattributed_failure_count: int = Field(ge=0, default=0)
+    contradictory_evidence_count: int = Field(ge=0, default=0)
+    evidence_backed_limitations: List[str] = Field(default_factory=list)
+    formula_version: str
+    schema_version: str
+    limitations: List[str] = Field(default_factory=list)
+    evidence_references: List[str] = Field(default_factory=list)
+    report_digest: str
+    registry_version: Optional[str] = None
+    provider_version: Optional[str] = None
+    evidence_snapshot_digest: str
     generated_at: Optional[str] = None
