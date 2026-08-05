@@ -13,8 +13,10 @@ from alma_bridge.research.models import SampleSize
 RUNTIME_INTELLIGENCE_SCHEMA_VERSION = "runtime_intelligence_corpus_v1"
 RUNTIME_INTELLIGENCE_INDEX_SCHEMA_VERSION = "runtime_intelligence_index_v1"
 RUNTIME_INTELLIGENCE_KNOWLEDGE_SCHEMA_VERSION = "runtime_intelligence_knowledge_v1"
+RUNTIME_INTELLIGENCE_DEBT_SCHEMA_VERSION = "runtime_intelligence_debt_v1"
 COMPATIBILITY_INDEX_FORMULA_VERSION = "compatibility_index_v1"
 KNOWLEDGE_COVERAGE_FORMULA_VERSION = "knowledge_coverage_v1"
+DEBT_CLASSIFICATION_FORMULA_VERSION = "debt_classification_v1"
 
 
 class CorpusKind(str, Enum):
@@ -253,4 +255,114 @@ class CompatibilityKnowledgeCoverageReport(BaseModel):
     registry_version: Optional[str] = None
     provider_version: Optional[str] = None
     evidence_snapshot_digest: str
+    generated_at: Optional[str] = None
+
+
+class CompatibilityDebtKind(str, Enum):
+    UNSUPPORTED_BEHAVIOR = "unsupported_behavior"
+    UNSUPPORTED_CAPABILITY = "unsupported_capability"
+    UNKNOWN_API = "unknown_api"
+    UNKNOWN_BEHAVIOR = "unknown_behavior"
+    BLOCKED_BY_PREREQUISITE = "blocked_by_prerequisite"
+    CALIBRATION_FALSE_POSITIVE = "calibration_false_positive"
+    CALIBRATION_FALSE_NEGATIVE = "calibration_false_negative"
+    STALE_EVIDENCE = "stale_evidence"
+    STALE_CERTIFICATION = "stale_certification"
+    MATURITY_REGRESSION = "maturity_regression"
+    MISSING_FIXTURE = "missing_fixture"
+    ACKNOWLEDGED_OUT_OF_SCOPE = "acknowledged_out_of_scope"
+
+
+class CompatibilityDebtDisposition(str, Enum):
+    ADDRESSABLE = "addressable"
+    BLOCKED_BY_PREREQUISITE = "blocked_by_prerequisite"
+    ACKNOWLEDGED_OUT_OF_SCOPE = "acknowledged_out_of_scope"
+    UNKNOWN = "unknown"
+    STALE_EVIDENCE = "stale_evidence"
+
+
+class CompatibilityDebtSignal(BaseModel):
+    kind: CompatibilityDebtKind
+    corpus: CorpusKind
+    family_id: BehaviorFamilyId
+    capability_id: str
+    evidence_snapshot_digest: str
+    evidence_references: List[str] = Field(default_factory=list)
+    provider_id: Optional[str] = None
+    behavior_id: Optional[str] = None
+    distinct_binary_count: int = Field(ge=0, default=0)
+    distinct_application_count: int = Field(ge=0, default=0)
+    blocked_session_count: int = Field(ge=0, default=0)
+    calibration_gap_count: int = Field(ge=0, default=0)
+    authoritative_failure_count: int = Field(ge=0, default=0)
+    security_risk_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    semantic_risk_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    first_observed: Optional[str] = None
+    last_observed: Optional[str] = None
+    limitations: List[str] = Field(default_factory=list)
+    prerequisite_capability_ids: List[str] = Field(default_factory=list)
+    prerequisites_unmet: bool = False
+    fixture_available: bool = False
+    current_maturity: Optional[str] = None
+    current_certification: Optional[str] = None
+    evidence_stale: bool = False
+    explicitly_out_of_scope: bool = False
+    stderr_only: bool = False
+    affected_binary_digests: List[str] = Field(default_factory=list)
+    affected_application_fingerprints: List[str] = Field(default_factory=list)
+    expansion_candidate_id: Optional[str] = None
+    work_item_id: Optional[str] = None
+    certification_artifact_id: Optional[str] = None
+    governance_artifact_id: Optional[str] = None
+
+
+class CompatibilityDebtItem(BaseModel):
+    debt_id: str
+    kind: CompatibilityDebtKind
+    disposition: CompatibilityDebtDisposition
+    severity: str
+    corpus: CorpusKind
+    family_id: BehaviorFamilyId
+    capability_id: str
+    evidence_snapshot_digest: str
+    evidence_references: List[str] = Field(default_factory=list)
+    provider_id: Optional[str] = None
+    behavior_id: Optional[str] = None
+    distinct_binary_count: int = Field(ge=0, default=0)
+    distinct_application_count: int = Field(ge=0, default=0)
+    blocked_session_count: int = Field(ge=0, default=0)
+    calibration_gap_count: int = Field(ge=0, default=0)
+    first_observed: Optional[str] = None
+    last_observed: Optional[str] = None
+    age_days: Optional[int] = Field(default=None, ge=0)
+    prerequisite_capability_ids: List[str] = Field(default_factory=list)
+    fixture_available: bool = False
+    current_maturity: Optional[str] = None
+    current_certification: Optional[str] = None
+    severity_factors: List[str] = Field(default_factory=list)
+    limitations: List[str] = Field(default_factory=list)
+    expansion_candidate_id: Optional[str] = None
+    work_item_id: Optional[str] = None
+    schema_version: str
+    formula_version: str
+    digest: str
+
+
+class CompatibilityDebtReport(BaseModel):
+    corpus: CorpusKind
+    family_id: BehaviorFamilyId
+    items: List[CompatibilityDebtItem]
+    evidence_snapshot_digest: str
+    report_digest: str
+    schema_version: str
+    formula_version: str
+    provider_id: Optional[str] = None
+    counts_by_kind: Dict[str, int] = Field(default_factory=dict)
+    counts_by_disposition: Dict[str, int] = Field(default_factory=dict)
+    counts_by_severity: Dict[str, int] = Field(default_factory=dict)
+    total_distinct_binaries: int = Field(ge=0, default=0)
+    total_distinct_applications: int = Field(ge=0, default=0)
+    summed_item_application_mentions: int = Field(ge=0, default=0)
+    limitations: List[str] = Field(default_factory=list)
+    evidence_references: List[str] = Field(default_factory=list)
     generated_at: Optional[str] = None
