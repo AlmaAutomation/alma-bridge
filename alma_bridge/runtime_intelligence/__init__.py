@@ -47,6 +47,9 @@ from alma_bridge.runtime_intelligence.index import (
     normalize_certification_level,
     normalize_governance_maturity,
 )
+from alma_bridge.runtime_intelligence.history import RuntimeIntelligenceHistory
+from alma_bridge.runtime_intelligence.queries import RuntimeIntelligenceQueries
+from alma_bridge.runtime_intelligence.service import RuntimeIntelligenceService
 from alma_bridge.runtime_intelligence.knowledge import (
     KNOWLEDGE_COVERAGE_WEIGHTS_V1,
     compute_knowledge_coverage,
@@ -80,6 +83,19 @@ from alma_bridge.runtime_intelligence.models import (
     EvidenceRatio,
     KnowledgeCoverageComponent,
     KnowledgeCoverageStatus,
+    QueryMetadata,
+    RuntimeIntelligenceError,
+    RuntimeIntelligenceFamilySummary,
+    RuntimeIntelligenceHistoryPoint,
+    RuntimeIntelligenceHistoryReport,
+    RuntimeIntelligenceHistoryStatus,
+    RuntimeIntelligenceHypothesisSummary,
+    RuntimeIntelligenceMetricId,
+    RuntimeIntelligenceReport,
+    TimelineAppendResult,
+    TimelineAppendStatus,
+    compute_history_report_digest,
+    compute_runtime_intelligence_report_digest,
 )
 
 __all__ = [
@@ -113,6 +129,22 @@ __all__ = [
     "HYPOTHESIS_EVENT_TYPE_CREATED",
     "HYPOTHESIS_EVENT_TYPE_OUTCOME_LINKED",
     "KNOWLEDGE_COVERAGE_WEIGHTS_V1",
+    "QueryMetadata",
+    "RuntimeIntelligenceError",
+    "RuntimeIntelligenceFamilySummary",
+    "RuntimeIntelligenceHistory",
+    "RuntimeIntelligenceHistoryPoint",
+    "RuntimeIntelligenceHistoryReport",
+    "RuntimeIntelligenceHistoryStatus",
+    "RuntimeIntelligenceHypothesisSummary",
+    "RuntimeIntelligenceMetricId",
+    "RuntimeIntelligenceQueries",
+    "RuntimeIntelligenceReport",
+    "RuntimeIntelligenceService",
+    "TimelineAppendResult",
+    "TimelineAppendStatus",
+    "compute_history_report_digest",
+    "compute_runtime_intelligence_report_digest",
     "KnowledgeCoverageComponent",
     "KnowledgeCoverageStatus",
     "DEBT_BACKLOG_LIMITATION",

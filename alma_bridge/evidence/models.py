@@ -36,6 +36,8 @@ class TimelineEventType(str, Enum):
     CERTIFICATION_REQUESTED = "CertificationRequested"
     ENGINEERING_WORK_ITEM_COMPLETED = "EngineeringWorkItemCompleted"
     ENGINEERING_WORK_ITEM_SUPERSEDED = "EngineeringWorkItemSuperseded"
+    ENGINEERING_HYPOTHESIS_CREATED = "EngineeringHypothesisCreated"
+    ENGINEERING_HYPOTHESIS_OUTCOME_LINKED = "EngineeringHypothesisOutcomeLinked"
 
 
 class Provenance(BaseModel):

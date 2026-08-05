@@ -163,6 +163,7 @@ from alma_bridge.api.research_routes import router as research_router
 from alma_bridge.api.native_engineering_routes import router as native_engineering_router
 from alma_bridge.api.certification_routes import router as certification_router
 from alma_bridge.api.native_lab_routes import router as native_lab_router
+from alma_bridge.api.runtime_intelligence_routes import router as runtime_intelligence_router
 from alma_bridge.bridge.recent_sessions import build_recent_sessions_response
 from alma_bridge.config import settings
 from alma_bridge.storage import outcomes
@@ -188,6 +189,7 @@ router.include_router(research_router)
 router.include_router(native_engineering_router)
 router.include_router(certification_router)
 router.include_router(native_lab_router)
+router.include_router(runtime_intelligence_router)
 orchestrator = BridgeOrchestrator()
 import_service = ImportService()
 tls_modernizer = TlsModernizer(ca_file=settings.compliance_ca_file)

@@ -459,6 +459,202 @@ class EngineeringHypothesisEvaluation(BaseModel):
     snapshot_digest: str = ""
 
 
+RUNTIME_INTELLIGENCE_SERVICE_SCHEMA_VERSION = "runtime_intelligence_service_v1"
+RUNTIME_INTELLIGENCE_ENGINE_VERSION = "runtime_intelligence_service_v1"
+RUNTIME_INTELLIGENCE_HISTORY_SCHEMA_VERSION = "runtime_intelligence_history_v1"
+
+
+class RuntimeIntelligenceHistoryStatus(str, Enum):
+    COMPUTED = "computed"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+
+
+class RuntimeIntelligenceMetricId(str, Enum):
+    COMPATIBILITY_INDEX = "compatibility_index"
+    KNOWLEDGE_COVERAGE = "knowledge_coverage"
+    COMPATIBILITY_DEBT = "compatibility_debt"
+    HYPOTHESIS_ACCURACY = "hypothesis_accuracy"
+    VERIFICATION_RATE = "verification_rate"
+    PREDICTION_ACCURACY = "prediction_accuracy"
+    DETERMINISM_RATE = "determinism_rate"
+    APPLICATIONS_UNLOCKED = "applications_unlocked"
+    APPLICATION_CLASSES_UNLOCKED = "application_classes_unlocked"
+
+
+class RuntimeIntelligenceError(Exception):
+    """Base error for Runtime Intelligence service boundaries."""
+
+
+class CorpusRequiredError(RuntimeIntelligenceError):
+    """Raised when an explicit corpus query parameter is missing."""
+
+
+class InvalidCorpusError(RuntimeIntelligenceError):
+    """Raised when corpus value is not engineering or real_world."""
+
+
+class InvalidFamilyError(RuntimeIntelligenceError):
+    """Raised when family_id is not one of the eight canonical families."""
+
+
+class InvalidProviderError(RuntimeIntelligenceError):
+    """Raised when provider_id cannot be resolved in the requested scope."""
+
+
+class HypothesisNotFoundError(RuntimeIntelligenceError):
+    """Raised when hypothesis_id is unknown in the requested corpus scope."""
+
+
+class HypothesisTimelineConflictError(RuntimeIntelligenceError):
+    """Raised when an immutable hypothesis timeline event conflicts with prior payload."""
+
+
+class EvidenceSnapshotMismatchError(RuntimeIntelligenceError):
+    """Raised when evidence snapshot digest does not match prepared inputs."""
+
+
+class QueryMetadata(BaseModel):
+    excluded_unenrolled_artifact_count: int = Field(ge=0, default=0)
+    limitations: List[str] = Field(default_factory=list)
+
+
+class RuntimeIntelligenceHistoryPoint(BaseModel):
+    timestamp_bucket: str
+    corpus: CorpusKind
+    family_id: Optional[BehaviorFamilyId] = None
+    provider_id: Optional[str] = None
+    metric_id: str
+    numerator: int = Field(ge=0, default=0)
+    denominator: int = Field(ge=0, default=0)
+    sample_size: SampleSize
+    value: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    evidence_references: List[str] = Field(default_factory=list)
+    status: RuntimeIntelligenceHistoryStatus
+
+
+class RuntimeIntelligenceHistoryReport(BaseModel):
+    corpus: CorpusKind
+    metric_id: str
+    family_id: Optional[BehaviorFamilyId] = None
+    provider_id: Optional[str] = None
+    points: List[RuntimeIntelligenceHistoryPoint] = Field(default_factory=list)
+    report_digest: str
+    limitations: List[str] = Field(default_factory=list)
+    schema_version: str = RUNTIME_INTELLIGENCE_HISTORY_SCHEMA_VERSION
+
+
+class RuntimeIntelligenceFamilySummary(BaseModel):
+    family_id: BehaviorFamilyId
+    name: str
+    description: str
+    enrolled_application_count: int = Field(ge=0, default=0)
+
+
+class RuntimeIntelligenceHypothesisSummary(BaseModel):
+    total_count: int = Field(ge=0, default=0)
+    by_result: Dict[str, int] = Field(default_factory=dict)
+    limitations: List[str] = Field(default_factory=list)
+
+
+class TimelineAppendStatus(str, Enum):
+    APPENDED = "appended"
+    DUPLICATE = "duplicate"
+
+
+class TimelineAppendResult(BaseModel):
+    status: TimelineAppendStatus
+    event_id: str
+    bundle_id: str = ""
+
+
+class RuntimeIntelligenceReport(BaseModel):
+    corpus: CorpusKind
+    generated_at: str
+    evidence_snapshot_digest: str
+    family_summaries: List[RuntimeIntelligenceFamilySummary] = Field(default_factory=list)
+    compatibility_indexes: List[CompatibilityIndexReport] = Field(default_factory=list)
+    knowledge_coverage: List[CompatibilityKnowledgeCoverageReport] = Field(default_factory=list)
+    debt_reports: List[CompatibilityDebtReport] = Field(default_factory=list)
+    hypothesis_summary: RuntimeIntelligenceHypothesisSummary = Field(
+        default_factory=RuntimeIntelligenceHypothesisSummary
+    )
+    history_summary: Optional[Dict[str, Any]] = None
+    excluded_unenrolled_artifact_count: int = Field(ge=0, default=0)
+    limitations: List[str] = Field(default_factory=list)
+    evidence_references: List[str] = Field(default_factory=list)
+    schema_version: str = RUNTIME_INTELLIGENCE_SERVICE_SCHEMA_VERSION
+    engine_version: str = RUNTIME_INTELLIGENCE_ENGINE_VERSION
+    report_digest: str = ""
+
+
+def compute_runtime_intelligence_report_digest(
+    *,
+    corpus: CorpusKind,
+    evidence_snapshot_digest: str,
+    family_summaries: List[RuntimeIntelligenceFamilySummary],
+    compatibility_indexes: List[CompatibilityIndexReport],
+    knowledge_coverage: List[CompatibilityKnowledgeCoverageReport],
+    debt_reports: List[CompatibilityDebtReport],
+    hypothesis_summary: RuntimeIntelligenceHypothesisSummary,
+    excluded_unenrolled_artifact_count: int,
+    limitations: List[str],
+    evidence_references: List[str],
+) -> str:
+    payload: Mapping[str, Any] = {
+        "corpus": corpus.value,
+        "evidence_snapshot_digest": evidence_snapshot_digest,
+        "family_summaries": [
+            {
+                "family_id": summary.family_id.value,
+                "enrolled_application_count": summary.enrolled_application_count,
+            }
+            for summary in sorted(family_summaries, key=lambda s: s.family_id.value)
+        ],
+        "compatibility_indexes": sorted(r.report_digest for r in compatibility_indexes),
+        "knowledge_coverage": sorted(r.report_digest for r in knowledge_coverage),
+        "debt_reports": sorted(r.report_digest for r in debt_reports),
+        "hypothesis_summary": {
+            "total_count": hypothesis_summary.total_count,
+            "by_result": dict(sorted(hypothesis_summary.by_result.items())),
+        },
+        "excluded_unenrolled_artifact_count": excluded_unenrolled_artifact_count,
+        "limitations": sorted(set(limitations)),
+        "evidence_references": sorted(set(evidence_references)),
+        "schema_version": RUNTIME_INTELLIGENCE_SERVICE_SCHEMA_VERSION,
+        "engine_version": RUNTIME_INTELLIGENCE_ENGINE_VERSION,
+    }
+    return sha256_v1(payload)
+
+
+def compute_history_report_digest(
+    *,
+    corpus: CorpusKind,
+    metric_id: str,
+    family_id: Optional[BehaviorFamilyId],
+    provider_id: Optional[str],
+    points: List[RuntimeIntelligenceHistoryPoint],
+) -> str:
+    payload: Mapping[str, Any] = {
+        "corpus": corpus.value,
+        "metric_id": metric_id,
+        "family_id": family_id.value if family_id else "",
+        "provider_id": provider_id or "",
+        "points": [
+            {
+                "timestamp_bucket": point.timestamp_bucket,
+                "metric_id": point.metric_id,
+                "numerator": point.numerator,
+                "denominator": point.denominator,
+                "value": point.value,
+                "status": point.status.value,
+            }
+            for point in sorted(points, key=lambda p: (p.timestamp_bucket, p.metric_id))
+        ],
+        "schema_version": RUNTIME_INTELLIGENCE_HISTORY_SCHEMA_VERSION,
+    }
+    return sha256_v1(payload)
+
+
 class EngineeringHypothesisResult(str, Enum):
     CONFIRMED = "confirmed"
     PARTIALLY_CONFIRMED = "partially_confirmed"
