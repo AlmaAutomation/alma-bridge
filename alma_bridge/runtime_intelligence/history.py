@@ -281,16 +281,24 @@ class RuntimeIntelligenceHistory:
         family_id: Optional[BehaviorFamilyId],
         provider_id: Optional[str],
     ) -> List[RuntimeIntelligenceHistoryPoint]:
-        from alma_bridge.research.queries import ResearchQueries
+        enrolled_digests = {
+            entry.binary_digest for entry in self._queries.enrolled_entries(corpus)
+        }
+        if not enrolled_digests:
+            return []
 
-        queries = ResearchQueries()
-        window = TimeWindow(label="all_time")
         buckets: Dict[str, Dict[str, int]] = defaultdict(lambda: {"verified": 0, "total": 0})
-        for _bundle_id, event in queries.list_timeline_events(window, event_type="VerificationCompleted"):
-            bucket = _bucket_key(event.timestamp)
-            buckets[bucket]["total"] += 1
-            if event.metadata.get("verified"):
-                buckets[bucket]["verified"] += 1
+        for artifact in self._queries.enrolled_entries(corpus):
+            bundle = self._queries._evidence.by_binary_digest(artifact.binary_digest)
+            if bundle is None:
+                continue
+            for event in self._queries._evidence.timeline(bundle.bundle_id):
+                if event.event_type.value != "VerificationCompleted":
+                    continue
+                bucket = _bucket_key(event.timestamp)
+                buckets[bucket]["total"] += 1
+                if event.metadata.get("verified"):
+                    buckets[bucket]["verified"] += 1
 
         points: List[RuntimeIntelligenceHistoryPoint] = []
         for bucket in sorted(buckets.keys()):

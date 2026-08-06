@@ -71,6 +71,22 @@ def _bucket_key(timestamp: str) -> str:
     return timestamp[:10] if timestamp else "unknown"
 
 
+def _unavailable_ratio(
+    reason: str,
+    evidence_snapshot_digest: str,
+    *,
+    evidence_references: Optional[List[str]] = None,
+) -> EvidenceRatio:
+    return EvidenceRatio(
+        numerator=0,
+        denominator=0,
+        available=False,
+        insufficient_reason=reason,
+        evidence_references=evidence_references or [],
+        snapshot_digest=evidence_snapshot_digest,
+    )
+
+
 class RuntimeIntelligenceQueries:
     """Aggregate read-only queries across evidence subsystems for Runtime Intelligence."""
 
@@ -98,6 +114,9 @@ class RuntimeIntelligenceQueries:
     def enrolled_entries(self, corpus: CorpusKind) -> List[CorpusEnrollmentEntry]:
         require_corpus(corpus)
         return list(self._corpus.manifest_for(corpus).entries)
+
+    def _corpus_has_enrolled_artifacts(self, corpus: CorpusKind) -> bool:
+        return bool(self.enrolled_entries(corpus))
 
     def filter_enrolled_artifacts(
         self,
@@ -226,11 +245,18 @@ class RuntimeIntelligenceQueries:
 
     def _behavior_coverage_ratio(
         self,
+        corpus: CorpusKind,
         *,
         family_id: BehaviorFamilyId,
         provider_id: str,
         evidence_snapshot_digest: str,
     ) -> EvidenceRatio:
+        if not self._corpus_has_enrolled_artifacts(corpus):
+            return _unavailable_ratio(
+                "no_enrolled_corpus_artifacts",
+                evidence_snapshot_digest,
+            )
+
         behaviors = self._behaviors_for_family(family_id)
         if not behaviors:
             return EvidenceRatio(
@@ -292,8 +318,7 @@ class RuntimeIntelligenceQueries:
             cap = record.get("capability_id", "")
             if family_for_capability(cap) != family_id:
                 continue
-            fp = record.get("application_fingerprint") or record.get("binary_digest", "")
-            if fp and not self._corpus.is_enrolled(
+            if not self._corpus.is_enrolled(
                 corpus,
                 binary_digest=record.get("binary_digest"),
                 application_fingerprint=record.get("application_fingerprint"),
@@ -327,11 +352,18 @@ class RuntimeIntelligenceQueries:
 
     def _governance_maturity_ratio(
         self,
+        corpus: CorpusKind,
         *,
         family_id: BehaviorFamilyId,
         provider_id: str,
         evidence_snapshot_digest: str,
     ) -> EvidenceRatio:
+        if not self._corpus_has_enrolled_artifacts(corpus):
+            return _unavailable_ratio(
+                "no_enrolled_corpus_artifacts",
+                evidence_snapshot_digest,
+            )
+
         try:
             version = self._governance.get_current_version()
         except Exception:
@@ -379,11 +411,18 @@ class RuntimeIntelligenceQueries:
 
     def _certification_level_ratio(
         self,
+        corpus: CorpusKind,
         *,
         family_id: BehaviorFamilyId,
         provider_id: str,
         evidence_snapshot_digest: str,
     ) -> EvidenceRatio:
+        if not self._corpus_has_enrolled_artifacts(corpus):
+            return _unavailable_ratio(
+                "no_enrolled_corpus_artifacts",
+                evidence_snapshot_digest,
+            )
+
         behaviors = self._behaviors_for_family(family_id)
         if not behaviors:
             return EvidenceRatio(
@@ -456,6 +495,28 @@ class RuntimeIntelligenceQueries:
         evidence_snapshot_digest: str,
     ) -> Tuple[CompatibilityIndexInput, QueryMetadata]:
         require_corpus(corpus)
+        if not self._corpus_has_enrolled_artifacts(corpus):
+            unavailable = lambda reason: _unavailable_ratio(reason, evidence_snapshot_digest)
+            input_data = CompatibilityIndexInput(
+                corpus=corpus,
+                family_id=family_id,
+                provider_id=provider_id,
+                behavior_coverage=unavailable("no_enrolled_corpus_artifacts"),
+                authoritative_verification_rate=unavailable("no_enrolled_corpus_artifacts"),
+                calibration_accuracy=unavailable("no_enrolled_corpus_artifacts"),
+                governance_maturity=unavailable("no_enrolled_corpus_artifacts"),
+                certification_level=unavailable("no_enrolled_corpus_artifacts"),
+                registry_version=self._registry_version(),
+                provider_version=self._provider_version(provider_id),
+                evidence_snapshot_digest=evidence_snapshot_digest,
+                generated_from="runtime_intelligence_queries",
+                limitations=["no_enrolled_corpus_artifacts"],
+            )
+            return input_data, QueryMetadata(
+                excluded_unenrolled_artifact_count=0,
+                limitations=["no_enrolled_corpus_artifacts"],
+            )
+
         limitations: List[str] = []
         excluded = 0
 
@@ -481,6 +542,7 @@ class RuntimeIntelligenceQueries:
             )
 
         behavior_ratio = self._behavior_coverage_ratio(
+            corpus,
             family_id=family_id,
             provider_id=provider_id,
             evidence_snapshot_digest=evidence_snapshot_digest,
@@ -498,6 +560,7 @@ class RuntimeIntelligenceQueries:
             limitations.append(calibration_ratio.insufficient_reason or "calibration_unavailable")
 
         governance_ratio = self._governance_maturity_ratio(
+            corpus,
             family_id=family_id,
             provider_id=provider_id,
             evidence_snapshot_digest=evidence_snapshot_digest,
@@ -506,6 +569,7 @@ class RuntimeIntelligenceQueries:
             limitations.append(governance_ratio.insufficient_reason or "governance_unavailable")
 
         certification_ratio = self._certification_level_ratio(
+            corpus,
             family_id=family_id,
             provider_id=provider_id,
             evidence_snapshot_digest=evidence_snapshot_digest,
@@ -541,6 +605,38 @@ class RuntimeIntelligenceQueries:
         evidence_snapshot_digest: str,
     ) -> Tuple[CompatibilityKnowledgeInput, QueryMetadata]:
         require_corpus(corpus)
+        if not self._corpus_has_enrolled_artifacts(corpus):
+            unavailable = lambda reason: _unavailable_ratio(reason, evidence_snapshot_digest)
+            input_data = CompatibilityKnowledgeInput(
+                corpus=corpus,
+                family_id=family_id,
+                provider_id=provider_id,
+                behavior_classification_coverage=unavailable("no_enrolled_corpus_artifacts"),
+                blocker_explanation_coverage=unavailable("no_enrolled_corpus_artifacts"),
+                failure_attribution_coverage=unavailable("no_enrolled_corpus_artifacts"),
+                prediction_outcome_linkage_coverage=unavailable("no_enrolled_corpus_artifacts"),
+                limitation_documentation_coverage=unavailable("no_enrolled_corpus_artifacts"),
+                contradiction_quality=unavailable("no_enrolled_corpus_artifacts"),
+                observed_behavior_count=0,
+                classified_behavior_count=0,
+                explained_blocker_count=0,
+                unknown_behavior_ids=[],
+                unknown_api_names=[],
+                attributed_failure_count=0,
+                unattributed_failure_count=0,
+                contradictory_evidence_count=0,
+                evidence_backed_limitations=[],
+                evidence_snapshot_digest=evidence_snapshot_digest,
+                registry_version=self._registry_version(),
+                provider_version=self._provider_version(provider_id),
+                evidence_references=[],
+                limitations=["no_enrolled_corpus_artifacts"],
+            )
+            return input_data, QueryMetadata(
+                excluded_unenrolled_artifact_count=0,
+                limitations=["no_enrolled_corpus_artifacts"],
+            )
+
         behaviors = self._behaviors_for_family(family_id)
         observed = len(behaviors)
         classified = 0
@@ -646,7 +742,7 @@ class RuntimeIntelligenceQueries:
             prediction_outcome_linkage_coverage=_ratio(linkage_num, linkage_den, reason="no_calibration_records"),
             limitation_documentation_coverage=_ratio(
                 documented_limitations,
-                max(documented_limitations, 1),
+                documented_limitations,
                 reason="no_documented_limitations",
             ),
             contradiction_quality=EvidenceRatio(
@@ -684,9 +780,17 @@ class RuntimeIntelligenceQueries:
         evidence_snapshot_digest: str,
     ) -> Tuple[List[CompatibilityDebtSignal], QueryMetadata]:
         require_corpus(corpus)
+        if not self._corpus_has_enrolled_artifacts(corpus):
+            return [], QueryMetadata(
+                excluded_unenrolled_artifact_count=0,
+                limitations=["no_enrolled_corpus_artifacts"],
+            )
+
         signals: List[CompatibilityDebtSignal] = []
         excluded = 0
         limitations: List[str] = []
+        enrolled_digests = [entry.binary_digest for entry in self.enrolled_entries(corpus)]
+        enrolled_fps = [entry.application_fingerprint for entry in self.enrolled_entries(corpus)]
 
         for capability_id in self._capabilities_for_family(family_id):
             profile = get_behavior_profile(capability_id, provider_id)
@@ -695,10 +799,6 @@ class RuntimeIntelligenceQueries:
             for behavior_id in profile.unsupported_behaviors:
                 if family_for_behavior(behavior_id) != family_id:
                     continue
-                artifacts, exc = self.filter_enrolled_artifacts(corpus, application_fingerprints=[])
-                excluded += exc
-                enrolled_digests = [entry.binary_digest for entry in self.enrolled_entries(corpus)]
-                enrolled_fps = [entry.application_fingerprint for entry in self.enrolled_entries(corpus)]
                 signals.append(
                     CompatibilityDebtSignal(
                         kind=CompatibilityDebtKind.UNSUPPORTED_BEHAVIOR,
@@ -833,22 +933,29 @@ class RuntimeIntelligenceQueries:
                 elif event.event_type in (
                     TimelineEventType.ENGINEERING_HYPOTHESIS_OUTCOME_LINKED,
                 ) or event.event_type.value == HYPOTHESIS_EVENT_TYPE_OUTCOME_LINKED:
+                    if metadata.get("corpus") != corpus.value:
+                        continue
                     link = self._link_from_event_metadata(metadata)
                     if link:
                         links.append(link)
 
-        return list(snapshots.values()), links
+        snapshot_ids = set(snapshots.keys())
+        scoped_links = [link for link in links if link.hypothesis_id in snapshot_ids]
+        return list(snapshots.values()), scoped_links
 
     @staticmethod
     def _snapshot_from_event_metadata(metadata: Mapping[str, object]) -> Optional[EngineeringHypothesisSnapshot]:
         hypothesis_id = metadata.get("hypothesis_id")
         if not hypothesis_id:
             return None
+        corpus_value = metadata.get("corpus")
+        if not corpus_value:
+            return None
         try:
             return EngineeringHypothesisSnapshot(
                 hypothesis_id=str(hypothesis_id),
                 created_at=str(metadata.get("created_at", "")),
-                corpus=CorpusKind(str(metadata.get("corpus", CorpusKind.ENGINEERING.value))),
+                corpus=CorpusKind(str(corpus_value)),
                 provider_id=str(metadata.get("provider_id", "")),
                 provider_version_scope=str(metadata.get("provider_version_scope", "")),
                 family_id=BehaviorFamilyId(str(metadata.get("family_id", BehaviorFamilyId.FILESYSTEM.value))),
