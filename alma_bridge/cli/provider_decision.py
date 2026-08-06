@@ -13,9 +13,6 @@ from alma_bridge.runtime.registry import RuntimeRegistry, build_default_registry
 from alma_bridge.runtime.selection import select_providers
 
 
-_PROVIDER_PREFERENCE = ("native_alma", "wine", "proton", "container")
-
-
 def is_provider_compatible(analysis: CompatibilityAnalysisResult, provider_id: str) -> bool:
     """Return True when ACI predicts the provider can run this binary."""
     pred = analysis.prediction
@@ -23,6 +20,11 @@ def is_provider_compatible(analysis: CompatibilityAnalysisResult, provider_id: s
         return pred.native_compatible
     if provider_id == "wine":
         return pred.wine_compatible
+    if provider_id in ("proton", "container"):
+        # Delegated/partial coverage must not imply execution eligibility when
+        # both primary providers are incompatible (CLI interpretation only).
+        if not pred.native_compatible and not pred.wine_compatible:
+            return False
     provider = analysis.coverage.providers.get(provider_id)
     if provider is None:
         return False
@@ -53,20 +55,12 @@ def _registry_eligible_ids(
     return [p.provider_id for p in select_providers(req, registry)]
 
 
-def _pick_preferred(provider_ids: List[str]) -> Optional[str]:
-    for preferred in _PROVIDER_PREFERENCE:
-        if preferred in provider_ids:
-            return preferred
-    return provider_ids[0] if provider_ids else None
-
-
 @dataclass(frozen=True)
 class ProviderDecision:
     highest_coverage_provider: Optional[str]
     highest_coverage_percent: float
     highest_coverage_eligible: bool
-    eligible_provider: Optional[str]
-    eligible_provider_ids: List[str]
+    eligible_providers: List[str]
     recommended_provider: Optional[str]
     selected_execution_provider: Optional[str]
     prediction_status: str
@@ -76,8 +70,7 @@ class ProviderDecision:
             "highest_coverage_provider": self.highest_coverage_provider,
             "highest_coverage_percent": self.highest_coverage_percent,
             "highest_coverage_eligible": self.highest_coverage_eligible,
-            "eligible_provider": self.eligible_provider,
-            "eligible_provider_ids": list(self.eligible_provider_ids),
+            "eligible_providers": list(self.eligible_providers),
             "recommended_provider": self.recommended_provider,
             "selected_execution_provider": self.selected_execution_provider,
             "prediction_status": self.prediction_status,
@@ -98,19 +91,15 @@ def resolve_provider_decision(
     compatible_eligible = [
         pid for pid in registry_eligible if is_provider_compatible(analysis, pid)
     ]
-    eligible_provider = _pick_preferred(compatible_eligible)
 
     predicted = analysis.prediction.recommended_provider_id
     recommended = predicted if predicted and predicted in compatible_eligible else None
 
     selected: Optional[str] = None
-    if explicit_provider_id:
-        if explicit_provider_id in compatible_eligible:
-            selected = explicit_provider_id
+    if explicit_provider_id and explicit_provider_id in compatible_eligible:
+        selected = explicit_provider_id
     elif recommended:
         selected = recommended
-    elif eligible_provider:
-        selected = eligible_provider
 
     highest_eligible = bool(highest_id and highest_id in compatible_eligible)
     status = "ok" if compatible_eligible else "no_eligible_provider"
@@ -119,8 +108,7 @@ def resolve_provider_decision(
         highest_coverage_provider=highest_id,
         highest_coverage_percent=highest_pct,
         highest_coverage_eligible=highest_eligible,
-        eligible_provider=eligible_provider,
-        eligible_provider_ids=compatible_eligible,
+        eligible_providers=compatible_eligible,
         recommended_provider=recommended,
         selected_execution_provider=selected,
         prediction_status=status,

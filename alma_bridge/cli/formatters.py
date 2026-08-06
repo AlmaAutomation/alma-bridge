@@ -77,7 +77,7 @@ def print_analysis(console: Console, result: Any) -> None:
 
 def print_predict(console: Console, payload: Dict[str, Any]) -> None:
     provider_decision = payload.get("provider_decision") or {}
-    selected = payload.get("selected_provider_id") or "—"
+    selected = _selected_label(provider_decision, payload)
     recommended = _recommended_label(provider_decision, payload.get("prediction") or {})
     console.print(
         Panel(
@@ -273,6 +273,17 @@ def _highest_coverage_label(provider_decision: Dict[str, Any]) -> str:
     if not provider_decision.get("highest_coverage_eligible"):
         return f"{label} — highest coverage, not eligible"
     return label
+
+
+def _selected_label(provider_decision: Dict[str, Any], payload: Dict[str, Any]) -> str:
+    selected = provider_decision.get("selected_execution_provider")
+    if selected is None:
+        selected = payload.get("selected_provider_id")
+    if provider_decision.get("prediction_status") == "no_eligible_provider":
+        return "—"
+    if selected is None and provider_decision.get("recommended_provider") is None:
+        return "—"
+    return str(selected) if selected else "—"
 
 
 def _metric_value(value: Any) -> str:

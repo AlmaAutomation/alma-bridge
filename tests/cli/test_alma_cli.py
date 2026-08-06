@@ -398,7 +398,7 @@ class TestAlmaCliProviderDecision:
             unsupported=142,
             unknown=0,
             total=272,
-            coverage_percent=47.8,
+            coverage_percent=88.9,
             blockers=["unsupported_api:sqlite3_open"],
         )
         prediction = CompatibilityPrediction(
@@ -461,7 +461,7 @@ class TestAlmaCliProviderDecision:
         assert decision.highest_coverage_eligible is False
         assert decision.recommended_provider is None
         assert decision.selected_execution_provider is None
-        assert decision.eligible_provider is None
+        assert decision.eligible_providers == []
         assert decision.prediction_status == "no_eligible_provider"
 
     @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
@@ -555,6 +555,102 @@ class TestAlmaCliProviderDecision:
         assert result.exit_code == 2
         orchestrator.run.assert_called_once()
 
+    @staticmethod
+    def _sqlite_like_with_proton_fallback() -> CompatibilityAnalysisResult:
+        """Both primary providers incompatible; registry would rank proton via delegated coverage."""
+        base = TestAlmaCliProviderDecision._sqlite_like_analysis()
+        wine = ProviderCoverageBreakdown(
+            provider_id="wine",
+            supported=240,
+            partial=2,
+            unsupported=0,
+            unknown=0,
+            total=272,
+            coverage_percent=88.9,
+            blockers=["api.unknown=unknown"],
+        )
+        proton = ProviderCoverageBreakdown(
+            provider_id="proton",
+            supported=0,
+            partial=0,
+            delegated=272,
+            unsupported=0,
+            unknown=0,
+            total=272,
+            coverage_percent=60.0,
+            blockers=[],
+        )
+        container = ProviderCoverageBreakdown(
+            provider_id="container",
+            supported=0,
+            partial=0,
+            delegated=272,
+            unsupported=0,
+            unknown=0,
+            total=272,
+            coverage_percent=60.0,
+            blockers=[],
+        )
+        providers = dict(base.coverage.providers)
+        providers["wine"] = wine
+        providers["proton"] = proton
+        providers["container"] = container
+        coverage = CoverageReport(
+            total_capabilities=base.coverage.total_capabilities,
+            total_apis=base.coverage.total_apis,
+            known_apis=base.coverage.known_apis,
+            unknown_apis=base.coverage.unknown_apis,
+            providers=providers,
+            unsupported_api_names=base.coverage.unsupported_api_names,
+        )
+        return base.model_copy(update={"coverage": coverage})
+
+    def test_provider_decision_proton_fallback_not_selected(self):
+        analysis = self._sqlite_like_with_proton_fallback()
+        decision = resolve_provider_decision(analysis)
+        assert decision.highest_coverage_provider == "wine"
+        assert decision.highest_coverage_percent == pytest.approx(88.9)
+        assert decision.eligible_providers == []
+        assert decision.recommended_provider is None
+        assert decision.selected_execution_provider is None
+        assert decision.prediction_status == "no_eligible_provider"
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_predict_json_proton_fallback_not_selected(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_with_proton_fallback()
+        result = runner.invoke(alma_app.app, ["--json", "predict", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 0
+        data = _parse_json_stdout(result)["data"]
+        decision = data["provider_decision"]
+        assert decision["eligible_providers"] == []
+        assert decision["selected_execution_provider"] is None
+        assert data["selected_provider_id"] is None
+        assert decision["prediction_status"] == "no_eligible_provider"
+        assert "No execution provider is recommended" in data["disclaimer"]
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_predict_rich_no_selected_when_ineligible(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_with_proton_fallback()
+        result = runner.invoke(alma_app.app, ["predict", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 0
+        assert "proton" not in result.stdout.lower() or "highest coverage" in result.stdout.lower()
+        assert "Selected provider" in result.stdout
+        # Selected line should show em-dash, not proton
+        for line in result.stdout.splitlines():
+            if "Selected provider" in line:
+                assert "proton" not in line.lower()
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_predict_rich_highest_coverage_label(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_with_proton_fallback()
+        result = runner.invoke(alma_app.app, ["predict", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 0
+        assert "highest coverage, not eligible" in result.stdout.lower()
+        assert "wine" in result.stdout.lower()
+
 
 class TestAlmaCliHandlers:
     def test_resolve_path_absolute(self, hello64_path):
@@ -565,9 +661,10 @@ class TestAlmaCliHandlers:
         from alma_bridge.config import settings
 
         monkeypatch.setattr(settings, "data_dir", tmp_path)
-        payload = handlers.predict_executable(str(hello64_path), persist=True)
+        payload = handlers.predict_executable(str(hello64_path), provider_id="wine", persist=True)
         assert payload["snapshot_persisted"] is True
         assert payload.get("snapshot_id")
+        assert payload["selected_provider_id"] == "wine"
 
 
 class TestAlmaCliBoundaries:
