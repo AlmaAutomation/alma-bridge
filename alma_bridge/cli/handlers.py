@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from alma_bridge.compatibility_intelligence.planner_integration import select_provider_from_capabilities
+from alma_bridge.cli.provider_decision import ProviderDecision, resolve_provider_decision
 from alma_bridge.compatibility_intelligence.service import CompatibilityIntelligenceService
 from alma_bridge.config import settings
 from alma_bridge.learning.orchestrator import BridgeOrchestrator
@@ -75,7 +75,26 @@ def analyze_executable(file_path: str, *, persist: bool = False) -> Any:
         raise
 
 
+def _provider_decision_payload(
+    result: Any,
+    *,
+    registry: Optional[RuntimeRegistry] = None,
+    explicit_provider_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    decision = resolve_provider_decision(
+        result,
+        registry=registry or _runtime_registry(),
+        explicit_provider_id=explicit_provider_id,
+    )
+    return decision.to_dict()
+
+
 def serialize_analysis(result: Any) -> Dict[str, Any]:
+    registry = _runtime_registry()
+    provider_decision = _provider_decision_payload(result, registry=registry)
+    prediction = result.prediction.model_dump(mode="json")
+    prediction["recommended_provider_id"] = provider_decision["recommended_provider"]
+    prediction["prediction_status"] = provider_decision["prediction_status"]
     return {
         "analysis_id": result.analysis_id,
         "file_path": result.file_path,
@@ -83,7 +102,8 @@ def serialize_analysis(result: Any) -> Dict[str, Any]:
         "metadata": result.metadata.model_dump(mode="json"),
         "import_count": len(result.imports),
         "coverage": result.coverage.model_dump(mode="json"),
-        "prediction": result.prediction.model_dump(mode="json"),
+        "prediction": prediction,
+        "provider_decision": provider_decision,
         "read_only": True,
     }
 
@@ -93,26 +113,44 @@ def predict_executable(file_path: str, *, provider_id: Optional[str] = None, per
     resolved = resolve_executable_path(file_path)
     result = analyze_executable(resolved, persist=False)
     registry = _runtime_registry()
-    recommended = select_provider_from_capabilities(result, registry=registry)
-    chosen_provider = provider_id or recommended or result.prediction.recommended_provider_id or "native_alma"
+    decision = resolve_provider_decision(
+        result,
+        registry=registry,
+        explicit_provider_id=provider_id,
+    )
+    disclaimer = "Pre-execution prediction only; not verified compatibility."
+    if decision.prediction_status == "no_eligible_provider":
+        disclaimer = (
+            "Pre-execution prediction only; not verified compatibility. "
+            "No execution provider is recommended — all providers failed compatibility or eligibility checks."
+        )
+    prediction = result.prediction.model_dump(mode="json")
+    prediction["recommended_provider_id"] = decision.recommended_provider
+    prediction["prediction_status"] = decision.prediction_status
     payload: Dict[str, Any] = {
         "authority": "non_authoritative_prediction",
-        "disclaimer": "Pre-execution prediction only; not verified compatibility.",
+        "disclaimer": disclaimer,
         "analysis_id": result.analysis_id,
         "binary_digest": result.binary_digest,
         "file_path": result.file_path,
-        "recommended_provider_id": recommended,
-        "selected_provider_id": chosen_provider,
-        "prediction": result.prediction.model_dump(mode="json"),
+        "provider_decision": decision.to_dict(),
+        "recommended_provider_id": decision.recommended_provider,
+        "selected_provider_id": decision.selected_execution_provider,
+        "prediction": prediction,
         "coverage": {
             pid: breakdown.model_dump(mode="json") for pid, breakdown in result.coverage.providers.items()
         },
         "snapshot_persisted": False,
     }
     if persist:
+        if not decision.selected_execution_provider:
+            raise AlmaCliError(
+                "Cannot persist prediction snapshot: no eligible execution provider. "
+                "Analysis found no provider that passes compatibility and registry eligibility."
+            )
         snapshot = _aci_service().create_prediction_snapshot(
             resolved,
-            provider_id=chosen_provider,
+            provider_id=decision.selected_execution_provider,
             persist=True,
         )
         payload["snapshot_id"] = snapshot.snapshot_id
@@ -124,7 +162,7 @@ def inspect_executable(file_path: str) -> Dict[str, Any]:
     resolved = resolve_executable_path(file_path)
     result = analyze_executable(resolved, persist=False)
     registry = _runtime_registry()
-    recommended = select_provider_from_capabilities(result, registry=registry)
+    decision = resolve_provider_decision(result, registry=registry)
     imports = [
         {"dll": item.dll, "function": item.name, "ordinal": item.is_ordinal}
         for item in result.imports
@@ -160,7 +198,8 @@ def inspect_executable(file_path: str) -> Dict[str, Any]:
         "import_count": len(imports),
         "capabilities": capabilities,
         "provider_coverage": provider_coverage,
-        "recommended_provider_id": recommended,
+        "provider_decision": decision.to_dict(),
+        "recommended_provider_id": decision.recommended_provider,
         "confidence": result.prediction.confidence.model_dump(mode="json"),
         "prediction_summary": result.prediction.evidence_summary,
         "native_compatible": result.prediction.native_compatible,
@@ -176,6 +215,15 @@ def run_executable(
     session_id: Optional[str] = None,
 ) -> BridgeSessionResult:
     resolved = resolve_executable_path(file_path)
+    if preferred_strategy_id is None:
+        result = analyze_executable(resolved, persist=False)
+        decision = resolve_provider_decision(result, registry=_runtime_registry())
+        if decision.prediction_status == "no_eligible_provider":
+            raise AlmaCliError(
+                "No eligible execution provider for this binary. "
+                "Compatibility analysis found no provider that passes registry eligibility and "
+                "compatibility checks. Use --strategy to specify an explicit execution strategy."
+            )
     request = BridgeRequest(
         file_path=resolved,
         args=list(args or []),

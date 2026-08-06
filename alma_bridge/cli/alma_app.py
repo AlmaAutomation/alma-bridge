@@ -82,6 +82,8 @@ def _run_command(
         _emit_failure(ctx, command, str(exc), exc=exc, code="session_not_found")
     except handlers.UnsupportedFileCliError as exc:
         _emit_failure(ctx, command, str(exc), exc=exc, code="unsupported_file")
+    except handlers.AlmaCliError as exc:
+        _emit_failure(ctx, command, str(exc), exc=exc, code="cli_error")
     except ValueError as exc:
         _emit_failure(ctx, command, str(exc), exc=exc, code="invalid_argument")
     except typer.Exit:

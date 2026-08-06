@@ -15,6 +15,20 @@ import pytest
 from typer.testing import CliRunner
 
 from alma_bridge.cli import alma_app, handlers
+from alma_bridge.cli.provider_decision import resolve_provider_decision
+from alma_bridge.compatibility_intelligence.models import (
+    ACI_SCHEMA_VERSION,
+    CapabilityRequirement,
+    CompatibilityAnalysisResult,
+    CompatibilityGraph,
+    CompatibilityPrediction,
+    ConfidenceAssessment,
+    ConfidenceLevelName,
+    CoverageReport,
+    PeAnalysisMetadata,
+    ProviderCoverageBreakdown,
+    ProvenanceEvidence,
+)
 from alma_bridge.runtime_intelligence.models import CorpusKind
 from alma_bridge.schemas.models import AttemptRecord, BridgeSessionResult, ExecutionMode
 from alma_bridge.storage.outcomes import finalize_session, init_outcome_store, new_session, record_attempt
@@ -355,6 +369,191 @@ class TestAlmaCliCommands:
         with patch("alma_bridge.cli.alma_app.handlers.list_providers", side_effect=_raise_interrupt):
             result = runner.invoke(alma_app.app, ["providers"])
         assert result.exit_code == 130
+
+
+class TestAlmaCliProviderDecision:
+    """Regression: coverage ranking must not imply eligibility or recommendation."""
+
+    @staticmethod
+    def _sqlite_like_analysis() -> CompatibilityAnalysisResult:
+        """Both providers incompatible; wine has highest coverage (SQLite-like)."""
+        provenance = ProvenanceEvidence(
+            source="test",
+            artifact_id="sqlite_like_fixture",
+        )
+        native = ProviderCoverageBreakdown(
+            provider_id="native_alma",
+            supported=10,
+            partial=0,
+            unsupported=50,
+            unknown=5,
+            total=65,
+            coverage_percent=15.4,
+            blockers=["unsupported_api:sqlite3_open"],
+        )
+        wine = ProviderCoverageBreakdown(
+            provider_id="wine",
+            supported=120,
+            partial=10,
+            unsupported=142,
+            unknown=0,
+            total=272,
+            coverage_percent=47.8,
+            blockers=["unsupported_api:sqlite3_open"],
+        )
+        prediction = CompatibilityPrediction(
+            native_compatible=False,
+            wine_compatible=False,
+            needs_unsupported_apis=True,
+            confidence=ConfidenceAssessment(
+                level=ConfidenceLevelName.LOW,
+                score=0.2,
+                factors=["unsupported_apis"],
+                provenance=provenance,
+            ),
+            potential_blockers=["unsupported_api:sqlite3_open"] * 142,
+            recommended_provider_id=None,
+            evidence_summary="native=no; wine=no; confidence=low(0.2); blockers=142",
+        )
+        return CompatibilityAnalysisResult(
+            schema_version=ACI_SCHEMA_VERSION,
+            analysis_id="aci-sqlite-like",
+            file_path="/tmp/sqlite3.exe",
+            binary_digest="digest-sqlite-like",
+            metadata=PeAnalysisMetadata(
+                architecture="AMD64",
+                subsystem="WINDOWS_CUI",
+                entry_point_rva=4096,
+                image_size=65536,
+                is_pe32_plus=True,
+                has_tls=False,
+                has_relocations=True,
+                has_clr=False,
+                has_manifest=False,
+                has_debug=False,
+                has_load_config=False,
+                has_exception_directory=False,
+                export_count=0,
+            ),
+            required_capabilities=[
+                CapabilityRequirement(
+                    capability_id="filesystem.basic_io",
+                    description="File I/O",
+                )
+            ],
+            coverage=CoverageReport(
+                total_capabilities=1,
+                total_apis=272,
+                known_apis=272,
+                unknown_apis=0,
+                providers={"native_alma": native, "wine": wine},
+                unsupported_api_names=["sqlite3_open"],
+            ),
+            prediction=prediction,
+            graph=CompatibilityGraph(),
+            provenance=provenance,
+        )
+
+    def test_provider_decision_sqlite_like(self):
+        analysis = self._sqlite_like_analysis()
+        decision = resolve_provider_decision(analysis)
+        assert decision.highest_coverage_provider == "wine"
+        assert decision.highest_coverage_eligible is False
+        assert decision.recommended_provider is None
+        assert decision.selected_execution_provider is None
+        assert decision.eligible_provider is None
+        assert decision.prediction_status == "no_eligible_provider"
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_analyze_json_sqlite_like(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_analysis()
+        result = runner.invoke(alma_app.app, ["--json", "analyze", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 0
+        payload = _parse_json_stdout(result)
+        data = payload["data"]
+        decision = data["provider_decision"]
+        assert decision["highest_coverage_provider"] == "wine"
+        assert decision["recommended_provider"] is None
+        assert data["prediction"]["recommended_provider_id"] is None
+        assert data["prediction"]["prediction_status"] == "no_eligible_provider"
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_inspect_json_sqlite_like(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_analysis()
+        result = runner.invoke(alma_app.app, ["--json", "inspect", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 0
+        data = _parse_json_stdout(result)["data"]
+        assert data["recommended_provider_id"] is None
+        assert data["provider_decision"]["highest_coverage_provider"] == "wine"
+        assert data["provider_decision"]["highest_coverage_eligible"] is False
+        assert data["native_compatible"] is False
+        assert data["wine_compatible"] is False
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_predict_json_sqlite_like(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_analysis()
+        result = runner.invoke(alma_app.app, ["--json", "predict", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 0
+        data = _parse_json_stdout(result)["data"]
+        assert data["recommended_provider_id"] is None
+        assert data["selected_provider_id"] is None
+        assert data["prediction"]["prediction_status"] == "no_eligible_provider"
+        assert "No execution provider is recommended" in data["disclaimer"]
+        assert data["provider_decision"]["highest_coverage_provider"] == "wine"
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_inspect_rich_shows_highest_coverage_not_eligible(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_analysis()
+        result = runner.invoke(alma_app.app, ["inspect", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 0
+        assert "highest coverage, not eligible" in result.stdout.lower()
+        assert "wine" in result.stdout.lower()
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_analyze_rich_agrees_with_json(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_analysis()
+        rich = runner.invoke(alma_app.app, ["analyze", "/tmp/sqlite3.exe"])
+        json_result = runner.invoke(alma_app.app, ["--json", "analyze", "/tmp/sqlite3.exe"])
+        data = _parse_json_stdout(json_result)["data"]
+        assert rich.exit_code == 0
+        assert data["provider_decision"]["recommended_provider"] is None
+        assert "—" in rich.stdout or "none" in rich.stdout.lower()
+        assert "highest coverage, not eligible" in rich.stdout.lower()
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers.analyze_executable")
+    def test_run_fail_closed_no_eligible_provider(self, mock_analyze, _mock_resolve):
+        mock_analyze.return_value = self._sqlite_like_analysis()
+        result = runner.invoke(alma_app.app, ["run", "/tmp/sqlite3.exe"])
+        assert result.exit_code == 1
+        assert "No eligible execution provider" in result.stdout
+
+    @patch("alma_bridge.cli.handlers.resolve_executable_path", return_value="/tmp/sqlite3.exe")
+    @patch("alma_bridge.cli.handlers._orchestrator")
+    def test_run_allows_explicit_strategy_override(self, mock_orchestrator_factory, _mock_resolve):
+        orchestrator = MagicMock()
+        mock_orchestrator_factory.return_value = orchestrator
+        orchestrator.run.return_value = BridgeSessionResult(
+            session_id="sess-override",
+            file_path="/tmp/sqlite3.exe",
+            file_hash="digest-sqlite-like",
+            started_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(timezone.utc),
+            success=False,
+            summary="forced",
+            attempts=[],
+        )
+        result = runner.invoke(
+            alma_app.app,
+            ["run", "/tmp/sqlite3.exe", "--strategy", "wine_host"],
+        )
+        assert result.exit_code == 2
+        orchestrator.run.assert_called_once()
 
 
 class TestAlmaCliHandlers:

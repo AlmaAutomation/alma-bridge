@@ -53,6 +53,7 @@ def print_analysis_from_payload(console: Console, data: Dict[str, Any]) -> None:
     console.print(Panel(header, subtitle=f"digest {digest}", border_style="green"))
     pred = (data.get("prediction") or {})
     conf = pred.get("confidence") or {}
+    provider_decision = data.get("provider_decision") or {}
     table = Table(box=box.SIMPLE_HEAD)
     table.add_column("Field")
     table.add_column("Value")
@@ -61,7 +62,8 @@ def print_analysis_from_payload(console: Console, data: Dict[str, Any]) -> None:
     table.add_row("Wine compatible", _bool_label(pred.get("wine_compatible")))
     table.add_row("Confidence", str(conf.get("level", "unknown")))
     table.add_row("Score", str(conf.get("score", "—")))
-    table.add_row("Recommended provider", pred.get("recommended_provider_id") or "—")
+    table.add_row("Recommended provider", _recommended_label(provider_decision, pred))
+    table.add_row("Highest coverage", _highest_coverage_label(provider_decision))
     coverage = data.get("coverage") or {}
     table.add_row("APIs analyzed", str(coverage.get("total_apis", "—")))
     console.print(table)
@@ -74,11 +76,16 @@ def print_analysis(console: Console, result: Any) -> None:
 
 
 def print_predict(console: Console, payload: Dict[str, Any]) -> None:
+    provider_decision = payload.get("provider_decision") or {}
+    selected = payload.get("selected_provider_id") or "—"
+    recommended = _recommended_label(provider_decision, payload.get("prediction") or {})
     console.print(
         Panel(
             f"[bold yellow]Non-authoritative prediction[/] — not verified compatibility\n"
-            f"[bold]Selected provider[/] [cyan]{payload.get('selected_provider_id')}[/]\n"
-            f"[bold]Recommended[/] [cyan]{payload.get('recommended_provider_id')}[/]",
+            f"{payload.get('disclaimer', '')}\n"
+            f"[bold]Selected provider[/] [cyan]{selected}[/]\n"
+            f"[bold]Recommended[/] [cyan]{recommended}[/]\n"
+            f"[bold]Highest coverage[/] {_highest_coverage_label(provider_decision)}",
             title="Runtime Intelligence Prediction",
             border_style="blue",
         )
@@ -108,11 +115,19 @@ def print_inspect(console: Console, payload: Dict[str, Any]) -> None:
         )
     )
     conf = payload.get("confidence") or {}
+    provider_decision = payload.get("provider_decision") or {}
     console.print(
         f"[bold]Confidence[/] {conf.get('level', 'unknown')} "
         f"({conf.get('score', '—')}) · "
-        f"[bold]Recommended provider[/] [cyan]{payload.get('recommended_provider_id')}[/]"
+        f"[bold]Recommended provider[/] [cyan]{_recommended_label(provider_decision, payload)}[/]"
     )
+    highest = provider_decision.get("highest_coverage_provider")
+    if highest and not provider_decision.get("highest_coverage_eligible"):
+        console.print(
+            f"[bold]Highest coverage[/] [cyan]{highest}[/] "
+            f"({provider_decision.get('highest_coverage_percent', 0):.1f}%) "
+            f"[yellow]— highest coverage, not eligible[/]"
+        )
     _print_coverage_table(console, payload.get("provider_coverage") or [])
     _print_imports_table(console, payload.get("imports") or [], limit=12)
     _print_capabilities_table(console, payload.get("capabilities") or [])
@@ -240,6 +255,24 @@ def _bool_label(value: Any) -> str:
     if value is False:
         return "[red]no[/]"
     return str(value)
+
+
+def _recommended_label(provider_decision: Dict[str, Any], pred_or_payload: Dict[str, Any]) -> str:
+    recommended = provider_decision.get("recommended_provider")
+    if recommended is None:
+        recommended = pred_or_payload.get("recommended_provider_id")
+    return str(recommended) if recommended else "—"
+
+
+def _highest_coverage_label(provider_decision: Dict[str, Any]) -> str:
+    highest = provider_decision.get("highest_coverage_provider")
+    if not highest:
+        return "—"
+    pct = provider_decision.get("highest_coverage_percent", 0)
+    label = f"{highest} ({pct:.1f}%)"
+    if not provider_decision.get("highest_coverage_eligible"):
+        return f"{label} — highest coverage, not eligible"
+    return label
 
 
 def _metric_value(value: Any) -> str:
