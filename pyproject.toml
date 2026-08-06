@@ -17,6 +17,8 @@ dependencies = [
     "joblib>=1.3.0",
     "numpy>=1.26.0",
     "certifi>=2024.2.2",
+    "typer>=0.12.0",
+    "rich>=13.7.0",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +28,7 @@ dev = [
 ]
 
 [project.scripts]
+alma = "alma_bridge.cli.alma_app:main"
 alma-bridge = "alma_bridge.main:main"
 alma-bridge-shadow-validation = "alma_bridge.cli.shadow_validation:main"
 alma-native-lab = "alma_bridge.cli.native_lab:main"
