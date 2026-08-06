@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -51,10 +53,26 @@ APPEND_FIXTURES = [
 
 
 class TestCollectionIntegrity:
+    def test_collection_uses_active_interpreter(self):
+        """Regression: subprocess must not invoke bare ``python3`` (system site-packages)."""
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", "--collect-only", "-q"],
+            cwd=PROJECT_ROOT,
+            env=os.environ.copy(),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        combined = proc.stdout + proc.stderr
+        assert proc.returncode == 0, combined
+        assert "ModuleNotFoundError" not in combined
+        assert "/usr/lib/python3/dist-packages/_pytest" not in combined
+
     def test_no_collection_errors(self):
         proc = subprocess.run(
-            ["python3", "-m", "pytest", "--collect-only", "-q"],
+            [sys.executable, "-m", "pytest", "--collect-only", "-q"],
             cwd=PROJECT_ROOT,
+            env=os.environ.copy(),
             capture_output=True,
             text=True,
             check=False,

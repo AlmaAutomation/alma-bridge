@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
-import shutil
 import subprocess
 import sys
+import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -64,12 +65,49 @@ COMMANDS_WITH_JSON = (
 )
 
 
+def _installed_alma_bin() -> Path | None:
+    alma_bin = Path(sys.executable).parent / "alma"
+    if not alma_bin.is_file():
+        return None
+    try:
+        importlib.metadata.distribution("alma-bridge")
+    except importlib.metadata.PackageNotFoundError:
+        return None
+    return alma_bin
+
+
 class TestAlmaCliPackaging:
+    def test_pyproject_declares_alma_entry_point(self):
+        pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+        with pyproject.open("rb") as handle:
+            scripts = tomllib.load(handle)["project"]["scripts"]
+        assert scripts["alma"] == "alma_bridge.cli.alma_app:main"
+
+    def test_package_metadata_exposes_alma_console_script(self):
+        try:
+            dist = importlib.metadata.distribution("alma-bridge")
+        except importlib.metadata.PackageNotFoundError:
+            pytest.skip("alma-bridge package not installed in active interpreter")
+        entry_points = {
+            ep.name: ep.value
+            for ep in dist.entry_points
+            if ep.group == "console_scripts"
+        }
+        assert entry_points.get("alma") == "alma_bridge.cli.alma_app:main"
+
     def test_installed_entry_point(self):
-        alma_path = shutil.which("alma")
-        if alma_path is None:
-            pytest.skip("alma not installed on PATH")
-        proc = subprocess.run(["alma", "version"], capture_output=True, text=True, check=False)
+        alma_bin = _installed_alma_bin()
+        if alma_bin is None:
+            pytest.skip(
+                "alma console script missing under active interpreter "
+                f"({Path(sys.executable).parent / 'alma'}) or alma-bridge not installed"
+            )
+        proc = subprocess.run(
+            [str(alma_bin), "version"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         assert proc.returncode == 0
         assert "alma-bridge" in proc.stdout or "Alma" in proc.stdout
 
