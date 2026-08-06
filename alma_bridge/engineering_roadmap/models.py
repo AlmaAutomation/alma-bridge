@@ -41,6 +41,74 @@ class EngineeringConfidenceLevel(str, Enum):
     UNKNOWN = "unknown"
 
 
+class BlockerClusterClassification(str, Enum):
+    KNOWN = "known"
+    PROVISIONAL = "provisional"
+    UNKNOWN = "unknown"
+
+
+class BlockerClusterSpec(BaseModel):
+    """Registry-backed specification for a bounded blocker cluster."""
+
+    model_config = {"frozen": True}
+
+    cluster_id: str
+    title: str
+    api_symbols: List[str]
+    capability_id: str
+    behavior_id: Optional[str] = None
+    family_id: BehaviorFamilyId
+    prerequisite_capability_ids: List[str] = Field(default_factory=list)
+    independently_implementable: bool = True
+    registry_version: str
+    limitations: List[str] = Field(default_factory=list)
+
+
+class ProvisionalBlockerCluster(BaseModel):
+    """Observed blocker symbols grouped into a bounded behavior cluster."""
+
+    cluster_id: str
+    title: str
+    api_symbols: List[str]
+    capability_id: str
+    behavior_id: Optional[str] = None
+    family_id: BehaviorFamilyId
+    classification: BlockerClusterClassification
+    prerequisite_capability_ids: List[str] = Field(default_factory=list)
+    independently_implementable: bool = True
+    fixture_available: bool = False
+    native_alma_coverage_percent: Optional[float] = None
+    evidence_quality: EvidenceQualityLevel = EvidenceQualityLevel.INSUFFICIENT
+    suitable_as_bounded_opportunity: bool = False
+    suitability_reason: str = ""
+    limitations: List[str] = Field(default_factory=list)
+    evidence_references: List[str] = Field(default_factory=list)
+    digest: str
+
+
+class UnclusteredBlocker(BaseModel):
+    """Blocker that could not be assigned to a registry-backed cluster."""
+
+    raw_blocker: str
+    parsed_symbol: Optional[str] = None
+    reason: str
+    evidence_references: List[str] = Field(default_factory=list)
+    digest: str
+
+
+class BlockerClusteringResult(BaseModel):
+    """Deterministic output of registry-backed blocker clustering."""
+
+    clusters: List[ProvisionalBlockerCluster] = Field(default_factory=list)
+    unclustered: List[UnclusteredBlocker] = Field(default_factory=list)
+    input_blocker_count: int = Field(ge=0, default=0)
+    clustered_blocker_count: int = Field(ge=0, default=0)
+    unclustered_blocker_count: int = Field(ge=0, default=0)
+    registry_version: str
+    evidence_snapshot_digest: str
+    report_digest: str
+
+
 class EngineeringRoadmapOpportunity(BaseModel):
     """Evidence-backed engineering consideration — not approved or implemented."""
 
